@@ -34,6 +34,11 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','
 # Accepte automatiquement tous les sous-domaines onrender.com
 ALLOWED_HOSTS += ['.onrender.com']
 
+# Render : proxy SSL + origines CSRF (requis Django 4.0+, quel que soit DEBUG)
+# Render injecte automatiquement X-Forwarded-Proto: https
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = ['https://plateforme-pedagogique.onrender.com']
+
 
 # Application definition
 
@@ -196,11 +201,9 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SESSION_COOKIE_SECURE = True                # Cookie session HTTPS uniquement
     CSRF_COOKIE_SECURE = True                   # Cookie CSRF HTTPS uniquement
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Render proxy
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = 'DENY'
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    CSRF_TRUSTED_ORIGINS = ['https://plateforme-pedagogique.onrender.com']  # Requis Django 4+
 
 # IA — Gemini
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
