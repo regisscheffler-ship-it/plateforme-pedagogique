@@ -1,0 +1,445 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Gestion des sorties{% endblock %}
+
+{% block content %}
+<style>
+    .sorties-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* ── HEADER ── */
+    .page-header-block {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        border-left: 6px solid #d94f4f;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+    .page-header-block h1 {
+        display: flex; align-items: center; gap: 1rem;
+        color: #2c3e50; font-size: 1.8rem; margin: 0 0 0.3rem; font-weight: 700;
+    }
+    .page-header-block h1 svg { width: 32px; height: 32px; color: #d94f4f; }
+    .page-header-block p { color: #6c757d; margin: 0; font-size: 0.9rem; }
+
+    /* ── BOUCHON page-header (ancien) pour ne pas casser ── */
+    .page-header { display: none; }
+    .tabs {
+        display: flex; gap: 1rem; margin-bottom: 2rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    /* ── ONGLETS ── */
+    .tabs {
+        display: flex; gap: 0; margin-bottom: 1.5rem;
+        background: white; border-radius: 12px; padding: 0.4rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05); width: fit-content;
+    }
+    .tab {
+        padding: 0.75rem 1.6rem; background: none; border: none; border-radius: 8px;
+        cursor: pointer; font-size: 0.95rem; font-weight: 600; color: #6c757d;
+        transition: all 0.25s; display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .tab svg { width: 16px; height: 16px; }
+    .tab.active { background: #d94f4f; color: white; box-shadow: 0 4px 10px rgba(217,79,79,0.25); }
+    .tab:not(.active):hover { color: #d94f4f; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── TABLEAUX ── */
+    .eleves-table {
+        background: white; border-radius: 16px;
+        overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #fef2f2; }
+    th {
+        padding: 1rem 1.2rem; text-align: left; font-weight: 700;
+        color: #d94f4f; font-size: 0.9rem;
+        text-transform: uppercase; letter-spacing: 0.03em;
+        border-bottom: 2px solid #fca5a5;
+    }
+    td { padding: 1rem 1.2rem; border-bottom: 1px solid #f1f3f5; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fff8f8; }
+
+    /* ── BADGES ── */
+    .badge {
+        padding: 0.3rem 0.75rem; border-radius: 20px;
+        font-size: 0.82rem; font-weight: 600; display: inline-block;
+    }
+    .badge-success   { background: #d1fae5; color: #065f46; }
+    .badge-danger    { background: #fee2e2; color: #991b1b; }
+    .badge-warning   { background: #fef3c7; color: #92400e; }
+    .badge-info      { background: #dbeafe; color: #1e40af; }
+    .badge-secondary { background: #e2e3e5; color: #383d41; }
+    .badge-purple    { background: #ede9fe; color: #5b21b6; }
+
+    /* ── BOUTONS outlined sémantiques ── */
+    .btn-sortir {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.5rem 1.1rem; border: 2px solid #d94f4f; color: #d94f4f;
+        background: white; border-radius: 8px; font-weight: 600; font-size: 0.85rem;
+        text-decoration: none; transition: all 0.25s; white-space: nowrap;
+    }
+    .btn-sortir:hover { background: #d94f4f; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(217,79,79,0.25); }
+    .btn-sortir svg { width: 14px; height: 14px; }
+
+    .btn-reactiver {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.5rem 1.1rem; border: 2px solid #2ab090; color: #2ab090;
+        background: white; border-radius: 8px; font-weight: 600; font-size: 0.85rem;
+        text-decoration: none; transition: all 0.25s; white-space: nowrap;
+    }
+    .btn-reactiver:hover { background: #2ab090; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(42,176,144,0.25); }
+    .btn-reactiver svg { width: 14px; height: 14px; }
+
+    .btn-modifier-sortie {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.5rem 1.1rem; border: 2px solid #f59e0b; color: #f59e0b;
+        background: white; border-radius: 8px; font-weight: 600; font-size: 0.85rem;
+        text-decoration: none; transition: all 0.25s; white-space: nowrap;
+    }
+    .btn-modifier-sortie:hover { background: #f59e0b; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(245,158,11,0.25); }
+    .btn-modifier-sortie svg { width: 14px; height: 14px; }
+
+    /* Filtre année */
+    .filter-bar {
+        display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;
+        padding: 0.7rem 1rem; background: white; border-radius: 10px;
+        border: 1px solid #f1f5f9; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .filter-bar label { font-size: 0.85rem; font-weight: 600; color: #64748b; white-space: nowrap; }
+    .filter-bar select {
+        padding: 0.4rem 0.8rem; border: 1.5px solid #e2e8f0; border-radius: 8px;
+        font-size: 0.88rem; background: white; cursor: pointer; outline: none;
+    }
+    .filter-bar select:focus { border-color: #d94f4f; }
+
+    /* ── ÉTAT VIDE / NOTE ── */
+    .no-data {
+        text-align: center; padding: 3rem 2rem; color: #6c757d;
+        display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+    }
+    .no-data svg { width: 48px; height: 48px; stroke: #dee2e6; }
+
+    .info-note {
+        background: #fff8f8; border: 1px solid #fca5a5; border-radius: 10px;
+        padding: 0.9rem 1.2rem; margin-bottom: 1.5rem; color: #7f1d1d;
+        font-size: 0.88rem; display: flex; align-items: flex-start; gap: 0.75rem;
+    }
+    .info-note svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; }
+
+    .raison-badge { font-size: 0.8rem; max-width: 220px; word-break: break-word; line-height: 1.4; }
+
+    @media (max-width: 768px) {
+        .page-header-block { flex-direction: column; align-items: flex-start; }
+        table { font-size: 0.85rem; }
+        th, td { padding: 0.75rem 0.8rem; }
+        .tabs { width: 100%; }
+        .tab { flex: 1; justify-content: center; }
+    }
+</style>
+
+<div class="sorties-container">
+
+    <!-- BOUTON RETOUR -->
+    <a href="{% url 'core:dashboard_professeur' %}" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#d94f4f;
+              border:2px solid #d94f4f;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- HEADER -->
+    <div class="page-header-block">
+        <div>
+            <h1>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"></path>
+                </svg>
+                Gestion des sorties
+            </h1>
+            <p>Gérez les élèves actifs et les élèves ayant quitté l'établissement.</p>
+        </div>
+    </div>
+
+    <!-- NOTE INFO -->
+    <div class="info-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            <line x1="12" y1="12" x2="12" y2="16"></line>
+        </svg>
+        <span>Les élèves sortis restent dans la base de données pour les statistiques. Leur compte est désactivé.</span>
+    </div>
+
+    <!-- ONGLETS -->
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('actifs', event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Élèves actifs ({{ eleves_actifs.count }})
+        </button>
+        <button class="tab" onclick="showTab('sortis', event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"></path>
+            </svg>
+            Élèves sortis ({{ eleves_sortis.count }})
+        </button>
+    </div>
+
+    <!-- TAB ÉLÈVES ACTIFS -->
+    <div id="actifs" class="tab-content active">
+        {% if eleves_actifs %}
+        <div class="eleves-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th><th>Prénom</th><th>Classe</th>
+                        <th>Date de naissance</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for profil in eleves_actifs %}
+                    <tr>
+                        <td><strong>{{ profil.user.last_name }}</strong></td>
+                        <td>{{ profil.user.first_name }}</td>
+                        <td><span class="badge badge-success">{{ profil.classe.nom }}</span></td>
+                        <td>{{ profil.date_naissance|date:"d/m/Y"|default:"Non renseigné" }}</td>
+                        <td>
+                            <a href="{% url 'core:marquer_sortie' profil.id %}" class="btn-sortir">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 16l4-4m0 0l-4-4m4 4H7"></path>
+                                </svg>
+                                Marquer sortie
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="eleves-table">
+            <div class="no-data">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                </svg>
+                <p>Aucun élève actif dans l'établissement.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- TAB ÉLÈVES SORTIS -->
+    <div id="sortis" class="tab-content">
+        <!-- Filtre année -->
+        <div class="filter-bar">
+            <label>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M22 3H2l8 9.46V19l4 2V12.46L22 3z"/></svg>
+                Filtrer par année :
+            </label>
+            <select id="filtre-annee" onchange="filtrerSortis()">
+                <option value="">Toutes les années</option>
+                {% for profil in eleves_sortis %}
+                    {% if profil.annee_scolaire_sortie %}
+                    <option value="{{ profil.annee_scolaire_sortie }}">{{ profil.annee_scolaire_sortie }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        {% if eleves_sortis %}
+        <div class="eleves-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th><th>Prénom</th><th>Classe</th>
+                        <th>Collège / Lycée d'origine</th>
+                        <th>Année scolaire</th><th>Situation</th><th>Mention / Poursuite</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="sortis-tbody">
+                    {% for profil in eleves_sortis %}
+                    <tr data-annee="{{ profil.annee_scolaire_sortie|default:'' }}">
+                        <td><strong>{{ profil.user.last_name }}</strong></td>
+                        <td>{{ profil.user.first_name }}</td>
+                        <td>
+                            <span class="badge badge-secondary">
+                                {% if profil.classe %}{{ profil.classe.nom }}{% else %}—{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if profil.etablissement_origine %}
+                                <span style="font-size:0.85rem;color:#1e293b;">{{ profil.etablissement_origine.nom }}</span>
+                                {% if profil.classe_origine %}<br><small style="color:#94a3b8;">{{ profil.classe_origine }}</small>{% endif %}
+                            {% elif profil.etablissement_origine_autre %}
+                                <span style="font-size:0.85rem;color:#1e293b;">{{ profil.etablissement_origine_autre }}</span>
+                                {% if profil.classe_origine %}<br><small style="color:#94a3b8;">{{ profil.classe_origine }}</small>{% endif %}
+                            {% else %}
+                                <span style="color:#cbd5e1;font-size:0.82rem;">Non renseigné</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if profil.annee_scolaire_sortie %}
+                                <span style="font-weight:600;color:#334155;">{{ profil.annee_scolaire_sortie }}</span>
+                            {% else %}
+                                <span style="color:#94a3b8;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="raison-badge badge
+                                {% if profil.raison_sortie == 'cap_mention' or profil.raison_sortie == 'bac_pro_mention' or profil.raison_sortie == 'cap_sans_mention' or profil.raison_sortie == 'bac_pro_sans_mention' %}badge-success
+                                {% elif profil.raison_sortie == 'echec_cap' or profil.raison_sortie == 'echec_bac_pro' %}badge-danger
+                                {% elif 'poursuite' in profil.raison_sortie|default:'' %}badge-info
+                                {% elif 'travail' in profil.raison_sortie|default:'' %}badge-purple
+                                {% elif profil.raison_sortie == 'exclusion' or profil.raison_sortie == 'decrocheur' %}badge-danger
+                                {% elif 'reorientation' in profil.raison_sortie|default:'' %}badge-warning
+                                {% else %}badge-secondary{% endif %}">
+                                {% if profil.raison_sortie == 'cap_mention' %}CAP avec mention
+                                {% elif profil.raison_sortie == 'cap_sans_mention' %}CAP sans mention
+                                {% elif profil.raison_sortie == 'bac_pro_mention' %}Bac Pro mention
+                                {% elif profil.raison_sortie == 'bac_pro_sans_mention' %}Bac Pro sans mention
+                                {% elif profil.raison_sortie == 'echec_cap' %}Échec CAP
+                                {% elif profil.raison_sortie == 'echec_bac_pro' %}Échec Bac Pro
+                                {% elif profil.raison_sortie == 'poursuite_bac_pro' %}Poursuite Bac Pro
+                                {% elif profil.raison_sortie == 'poursuite_bts' %}Poursuite BTS
+                                {% elif profil.raison_sortie == 'poursuite_autre' %}Autre poursuite
+                                {% elif profil.raison_sortie == 'travail_formation' %}Travaille (formation)
+                                {% elif profil.raison_sortie == 'travail_hors_formation' %}Travaille (autre)
+                                {% elif profil.raison_sortie == 'sans_emploi' %}Sans emploi
+                                {% elif profil.raison_sortie == 'apprentissage' %}Apprentissage
+                                {% elif profil.raison_sortie == 'reorientation_interne' %}Réorien. interne
+                                {% elif profil.raison_sortie == 'reorientation_externe' %}Réorien. externe
+                                {% elif profil.raison_sortie == 'retour_pays' %}Retour pays
+                                {% elif profil.raison_sortie == 'exclusion' %}Exclusion
+                                {% elif profil.raison_sortie == 'decrocheur' %}Décrocheur
+                                {% elif profil.raison_sortie == 'deces' %}Décès
+                                {% elif profil.raison_sortie %}{{ profil.raison_sortie }}
+                                {% else %}— Non renseigné —{% endif %}
+                            </span>
+                            {% if profil.commentaire_sortie %}
+                            <div style="font-size:0.78rem;color:#64748b;margin-top:4px;font-style:italic;">
+                                {{ profil.commentaire_sortie|truncatechars:50 }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td style="white-space:nowrap;">
+                            {% if profil.mention_obtenue %}
+                                <span class="badge badge-success" style="margin-bottom:3px;display:inline-block;">{{ profil.mention_obtenue }}</span><br>
+                            {% endif %}
+                            {% if profil.type_poursuite == 'bac_pro' %}
+                                <span class="badge badge-info" style="font-size:0.75rem;">&#8594; Bac Pro</span>
+                            {% elif profil.type_poursuite == 'bts' %}
+                                <span class="badge badge-info" style="font-size:0.75rem;">&#8594; BTS</span>
+                            {% elif not profil.mention_obtenue %}
+                                <span style="color:#cbd5e1;font-size:0.82rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="white-space:nowrap;">
+                            <div style="display:flex;flex-direction:column;gap:0.4rem;">
+                            <a href="{% url 'core:modifier_sortie' profil.id %}"
+                               class="btn-modifier-sortie">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                                Modifier
+                            </a>
+                            <a href="{% url 'core:reactiver_eleve' profil.id %}"
+                               class="btn-reactiver"
+                               onclick="return confirm('Réactiver {{ profil.user.get_full_name }} ?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                                Réactiver
+                            </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="eleves-table">
+            <div class="no-data">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"></path>
+                </svg>
+                <p>Aucun élève sorti pour le moment.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+function showTab(tabName, event) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    if (event && event.target) {
+        let btn = event.target.closest('.tab');
+        if (btn) btn.classList.add('active');
+    }
+}
+
+function filtrerSortis() {
+    const val = document.getElementById('filtre-annee').value;
+    document.querySelectorAll('#sortis-tbody tr').forEach(row => {
+        row.style.display = (!val || row.dataset.annee === val) ? '' : 'none';
+    });
+}
+
+// Dédupliquer les options du filtre année
+(function() {
+    const sel = document.getElementById('filtre-annee');
+    if (!sel) return;
+    const seen = new Set();
+    Array.from(sel.options).forEach(opt => {
+        if (opt.value && seen.has(opt.value)) {
+            opt.remove();
+        } else {
+            seen.add(opt.value);
+        }
+    });
+    // Trier par ordre décroissant
+    const opts = Array.from(sel.options).filter(o => o.value);
+    opts.sort((a,b) => b.value.localeCompare(a.value));
+    opts.forEach(o => sel.appendChild(o));
+})();
+</script>
+
+{% endblock %}

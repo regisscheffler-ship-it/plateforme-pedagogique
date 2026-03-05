@@ -1,0 +1,587 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Modifier - {{ fichier.nom }}{% endblock %}
+
+{% block content %}
+
+<style>
+    .upload-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .upload-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .upload-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .upload-header-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #f5f3ff 0%, #e8d8ff 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .upload-header-icon svg {
+        width: 30px;
+        height: 30px;
+        stroke: white;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .upload-header h1 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.5rem;
+    }
+
+    .upload-header p {
+        margin: 0.25rem 0 0 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    /* Type selector */
+    .type-selector {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .type-option {
+        position: relative;
+    }
+
+    .type-option input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .type-option label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1.5rem 1rem;
+        background: #f8f9fa;
+        border: 3px solid transparent;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .type-option label:hover {
+        background: #e9ecef;
+    }
+
+    .type-option input:checked + label {
+        background: #f5f3ff;
+        border-color: #7c5cbf;
+    }
+
+    .type-icon {
+        font-size: 2rem;
+    }
+
+    .type-name {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .type-desc {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    /* Ressource actuelle */
+    .current-resource {
+        background: #e8f8f3;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .current-resource-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .current-resource-info {
+        flex: 1;
+    }
+
+    .current-resource-info strong {
+        color: #2c3e50;
+    }
+
+    .current-resource-info a {
+        color: #20c997;
+        text-decoration: none;
+    }
+
+    .current-resource-info a:hover {
+        text-decoration: underline;
+    }
+
+    /* Form groups */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #7c5cbf;
+        box-shadow: 0 0 0 3px rgba(124, 92, 191, 0.1);
+    }
+
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    /* Champs conditionnels */
+    .conditional-field {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .conditional-field.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Zone de drop fichier */
+    .file-drop-zone {
+        border: 3px dashed #dee2e6;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: #f8f9fa;
+    }
+
+    .file-drop-zone:hover,
+    .file-drop-zone.dragover {
+        border-color: #7c5cbf;
+        background: #f5f3ff;
+    }
+
+    .file-drop-zone svg {
+        width: 50px;
+        height: 50px;
+        stroke: #6c757d;
+        stroke-width: 1.5;
+        fill: none;
+        margin-bottom: 1rem;
+    }
+
+    .file-drop-zone p {
+        color: #6c757d;
+        margin: 0;
+    }
+
+    .file-drop-zone .file-name {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: #7c5cbf;
+        color: white;
+        border-radius: 6px;
+        display: inline-block;
+        font-weight: 600;
+    }
+
+    /* Aide iframe */
+    .iframe-help {
+        background: #fff3cd;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .iframe-help h4 {
+        margin: 0 0 0.5rem 0;
+        color: #856404;
+        font-size: 0.9rem;
+    }
+
+    .iframe-help p {
+        margin: 0;
+        color: #856404;
+        font-size: 0.85rem;
+    }
+
+    .iframe-help code {
+        background: rgba(0,0,0,0.1);
+        padding: 0.1rem 0.3rem;
+        border-radius: 4px;
+    }
+
+    /* Boutons */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #e9ecef;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .btn-primary {
+        background: white;
+        color: #7c5cbf;
+        border: 2px solid #7c5cbf;
+    }
+
+    .btn-primary:hover {
+        background: #7c5cbf;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(124, 92, 191, 0.3);
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #6c757d;
+        border: 2px solid #dee2e6;
+    }
+
+    .btn-secondary:hover {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .type-selector {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="upload-container">
+
+    <!-- BOUTON RETOUR -->
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#7c5cbf;
+              border:2px solid #7c5cbf;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="upload-card">
+        
+        <!-- Header -->
+        <div class="upload-header">
+            <div class="upload-header-icon">
+                <svg viewBox="0 0 24 24" stroke="#7c5cbf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </div>
+            <div>
+                <h1>Modifier la ressource</h1>
+                <p>{{ dossier.nom }} → {{ dossier.theme.nom }}</p>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Sélection du type -->
+            <div class="type-selector">
+                <div class="type-option">
+                    <input type="radio" name="type_contenu" id="type_fichier" value="fichier" 
+                           {% if fichier.type_contenu == 'fichier' or not fichier.type_contenu %}checked{% endif %}>
+                    <label for="type_fichier">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <span class="type-name">Fichier</span>
+                        <span class="type-desc">PDF, Word, Image...</span>
+                    </label>
+                </div>
+                
+                <div class="type-option">
+                    <input type="radio" name="type_contenu" id="type_lien" value="lien"
+                           {% if fichier.type_contenu == 'lien' %}checked{% endif %}>
+                    <label for="type_lien">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        <span class="type-name">Lien externe</span>
+                        <span class="type-desc">URL vers un site</span>
+                    </label>
+                </div>
+                
+                <div class="type-option">
+                    <input type="radio" name="type_contenu" id="type_iframe" value="iframe"
+                           {% if fichier.type_contenu == 'iframe' %}checked{% endif %}>
+                    <label for="type_iframe">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        <span class="type-name">Intégration</span>
+                        <span class="type-desc">YouTube, Genially...</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Nom -->
+            <div class="form-group">
+                <label for="nom">Nom de la ressource *</label>
+                <input type="text" name="nom" id="nom" required value="{{ fichier.nom }}">
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label for="description">Description (optionnel)</label>
+                <textarea name="description" id="description">{{ fichier.description }}</textarea>
+            </div>
+
+            <!-- CHAMP FICHIER -->
+            <div class="form-group conditional-field {% if fichier.type_contenu == 'fichier' or not fichier.type_contenu %}active{% endif %}" id="field_fichier">
+                <label>Fichier</label>
+                
+                {% if fichier.fichier %}
+                <div class="current-resource">
+                    <div class="current-resource-icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#7c5cbf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    </div>
+                    <div class="current-resource-info">
+                        <strong>Fichier actuel :</strong><br>
+                        <a href="{{ fichier.fichier.url }}" target="_blank">{{ fichier.fichier.name }}</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="file-drop-zone" id="dropZone">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>{% if fichier.fichier %}Remplacer le fichier{% else %}Ajouter un fichier{% endif %}</p>
+                    <p style="font-size: 0.8rem; margin-top: 0.5rem;">Glissez ou cliquez pour sélectionner</p>
+                    <input type="file" name="fichier" id="fichier" style="display: none;">
+                    <div class="file-name" id="fileName" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- CHAMP LIEN -->
+            <div class="form-group conditional-field {% if fichier.type_contenu == 'lien' %}active{% endif %}" id="field_lien">
+                <label for="lien_externe">URL du lien</label>
+                <input type="url" name="lien_externe" id="lien_externe" 
+                       value="{{ fichier.lien_externe|default:'' }}"
+                       placeholder="https://exemple.com/page">
+            </div>
+
+            <!-- CHAMP IFRAME -->
+            <div class="form-group conditional-field {% if fichier.type_contenu == 'iframe' %}active{% endif %}" id="field_iframe">
+                <label for="code_iframe">Code d'intégration (iframe)</label>
+                <textarea name="code_iframe" id="code_iframe" rows="5" 
+                          placeholder='<iframe src="..." width="100%" height="400"></iframe>'>{{ fichier.code_iframe|default:'' }}</textarea>
+                
+                <div class="iframe-help">
+                    <h4>Comment obtenir le code ?</h4>
+                    <p>
+                        <strong>YouTube :</strong> Partager → Intégrer → Copiez le code<br>
+                        <strong>Genially :</strong> Partager → Insérer → Copiez le code
+                    </p>
+                </div>
+            </div>
+
+            <!-- Ordre -->
+            <div class="form-group">
+                <label for="ordre">Ordre d'affichage</label>
+                <input type="number" name="ordre" id="ordre" value="{{ fichier.ordre }}" min="0">
+            </div>
+
+            <!-- Type de ressource -->
+            {% if types_ressources %}
+            <div class="form-group">
+                <label for="type_ressource">Catégorie (optionnel)</label>
+                <select name="type_ressource" id="type_ressource">
+                    <option value="">-- Aucune catégorie --</option>
+                    {% for type in types_ressources %}
+                    <option value="{{ type.id }}" {% if fichier.type_ressource.id == type.id %}selected{% endif %}>
+                        {{ type.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Enregistrer les modifications
+                </button>
+                
+                <a href="{% url 'core:dossier_detail' dossier.id %}" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Gestion des champs conditionnels
+    const typeRadios = document.querySelectorAll('input[name="type_contenu"]');
+    const fieldFichier = document.getElementById('field_fichier');
+    const fieldLien = document.getElementById('field_lien');
+    const fieldIframe = document.getElementById('field_iframe');
+
+    function updateFields() {
+        const selectedType = document.querySelector('input[name="type_contenu"]:checked').value;
+        
+        fieldFichier.classList.remove('active');
+        fieldLien.classList.remove('active');
+        fieldIframe.classList.remove('active');
+        
+        if (selectedType === 'fichier') {
+            fieldFichier.classList.add('active');
+        } else if (selectedType === 'lien') {
+            fieldLien.classList.add('active');
+        } else if (selectedType === 'iframe') {
+            fieldIframe.classList.add('active');
+        }
+    }
+
+    typeRadios.forEach(radio => {
+        radio.addEventListener('change', updateFields);
+    });
+
+    // Drag & drop
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fichier');
+    const fileNameDisplay = document.getElementById('fileName');
+
+    if (dropZone) {
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                showFileName(e.dataTransfer.files[0].name);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                showFileName(fileInput.files[0].name);
+            }
+        });
+    }
+
+    function showFileName(name) {
+        fileNameDisplay.textContent = name;
+        fileNameDisplay.style.display = 'inline-block';
+    }
+</script>
+
+{% endblock %}

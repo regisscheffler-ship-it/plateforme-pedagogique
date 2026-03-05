@@ -1,0 +1,209 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon évaluation - {{ fiche_contrat.titre_tp }}</title>
+    <style>
+        @page { size: A4; margin: 0; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+        }
+
+        :root {
+            --bg-ne: #d9d9d9;
+            --bg-0: #ffc0c0;
+            --bg-1: #ffe6cc;
+            --bg-2: #ffff99;
+            --bg-3: #c6e0b4;
+            --bg-4: #a9d08e;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: #555; margin: 0; padding: 20px; }
+
+        .sheet {
+            background: white; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column;
+        }
+
+        @media print {
+            body { background: none; margin: 0; padding: 0; }
+            .sheet { margin: 0; box-shadow: none; min-height: 297mm; }
+            .no-print { display: none !important; }
+        }
+
+        /* --- BARRE D'ACTIONS --- */
+        .action-bar {
+            background: white; padding: 10px; text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;
+            display: flex; justify-content: center; gap: 15px; border-bottom: 4px solid #10b981;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 15px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+            text-decoration: none; color: white; transition: 0.2s;
+        }
+        .btn-back { background: #f3f4f6; color: #333; border: 1px solid #ccc; }
+        .btn-print { background: #3b82f6; }
+
+        /* --- EN-TÊTE --- */
+        .header-container { display: flex; gap: 15px; margin-bottom: 5px; align-items: flex-start; flex-shrink: 0; }
+        .logo-box { width: 80px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .logo-img { width: 100%; height: auto; object-fit: contain; }
+
+        .header-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .title-box { border: 2px solid #000; background: #f0f0f0; text-align: center; font-weight: bold; font-size: 14px; padding: 5px; text-transform: uppercase; }
+        
+        .types-box {
+            display: flex; justify-content: center; gap: 15px;
+            border: 1px solid #ccc; background: #f9f9f9; padding: 4px; border-radius: 4px;
+        }
+        .check-item { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; }
+        .check-box {
+            width: 14px; height: 14px; border: 2px solid #555; border-radius: 3px;
+            display: flex; align-items: center; justify-content: center; font-size: 10px;
+        }
+        .check-box.checked { background: #10b981; border-color: #10b981; color: white; }
+
+        .info-split { display: flex; gap: 6px; }
+        .student-info { width: 40%; border: 2px solid #000; padding: 5px; font-size: 11px; line-height: 1.4; }
+        .context-info { flex: 1; border: 2px solid #f59e0b; padding: 5px; font-size: 11px; }
+
+        /* --- TABLEAU --- */
+        .eval-section { flex: 2; overflow-y: auto; margin-bottom: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.70em; }
+        th, td { border: 1px solid #000; padding: 2px 3px; vertical-align: middle; }
+        th { text-align: center; background: #343a40; color: white; padding: 3px; font-weight: 700; }
+        .th-cp { background: #5b9bd5; color: #000; text-align: left; padding-left: 7px; font-weight: bold; border-top: 2px solid #000; }
+        .th-sc { background: #f2f2f2; color: #333; text-align: left; padding-left: 16px; font-weight: bold; font-style: italic; }
+        .critere-cell { background: #fff; padding-left: 6px; }
+        
+        .bg-ne { background: var(--bg-ne); } .bg-0 { background: var(--bg-0); }
+        .bg-1 { background: var(--bg-1); } .bg-2 { background: var(--bg-2); }
+        .bg-3 { background: var(--bg-3); } .bg-4 { background: var(--bg-4); }
+        
+        .radio-cell { text-align: center; }
+        input[type="radio"] { transform: scale(1.05); cursor: not-allowed; }
+
+        /* --- PIED DE PAGE --- */
+        .footer-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #eee; padding: 8px 12px; border: 2px solid #000; margin-bottom: 4px; flex-shrink: 0;
+        }
+        .note-display { 
+            border: 2px solid #000; 
+            padding: 8px 20px; 
+            background: white; 
+            font-size: 1.5em; 
+            font-weight: bold; 
+            text-align: center; 
+            border-radius: 8px;
+        }
+        
+        .n-red { background: #e74c3c; color: white; } 
+        .n-orange { background: #e67e22; color: white; }
+        .n-yellow { background: #f1c40f; color: black; } 
+        .n-green { background: #2ecc71; color: white; }
+
+        .comments-section { border: 2px solid #000; padding: 10px; flex: 0 0 auto; min-height: 80px; background: #fffef5; }
+        .comments-label { font-weight: bold; font-size: 0.85em; margin-bottom: 5px; color: #2c3e50; }
+        .comments-text { font-size: 0.8em; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <div class="no-print action-bar">
+        <a href="{% url 'core:dashboard_eleve' %}" class="btn btn-back">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg> Retour
+        </a>
+        <button onclick="window.print()" class="btn btn-print">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimer
+        </button>
+    </div>
+
+    <div class="sheet">
+        
+        <!-- EN-TÊTE -->
+        <div class="header-container">
+            <div class="logo-box">
+                <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg" class="logo-img" alt="Logo Lycée">
+            </div>
+            <div class="header-content">
+                <div class="title-box">{{ fiche_contrat.titre_tp }}</div>
+                <div class="types-box">
+                    <div class="check-item"><div class="check-box {% if fiche_contrat.type_evaluation == 'formative' %}checked{% endif %}">{% if fiche_contrat.type_evaluation == 'formative' %}✓{% endif %}</div> Formative</div>
+                    <div class="check-item"><div class="check-box {% if fiche_contrat.type_evaluation == 'sommative' %}checked{% endif %}">{% if fiche_contrat.type_evaluation == 'sommative' %}✓{% endif %}</div> Sommative</div>
+                    <div class="check-item"><div class="check-box {% if fiche_contrat.type_evaluation == 'certificative' %}checked{% endif %}">{% if fiche_contrat.type_evaluation == 'certificative' %}✓{% endif %}</div> Certificative</div>
+                </div>
+                <div class="info-split">
+                    <div class="student-info">
+                        <strong>Nom :</strong> {{ eleve.user.last_name|upper }}<br>
+                        <strong>Prénom :</strong> {{ eleve.user.first_name }}<br>
+                        <strong>Classe :</strong> {{ fiche_contrat.classe.nom }}<br>
+                        <strong>Date :</strong> {{ fiche_contrat.date_tp|date:"d/m/Y"|default:"__/__/____" }}
+                    </div>
+                    <div class="context-info">
+                        <strong>Contexte Professionnel :</strong><br>
+                        {{ fiche_contrat.contexte|default:"-"|linebreaksbr }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau -->
+        <div class="eval-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:46%">Critère d'évaluation</th>
+                        <th class="bg-ne" style="width:7%">NE</th>
+                        <th class="bg-0"  style="width:7%">0</th>
+                        <th class="bg-1"  style="width:7%">1</th>
+                        <th class="bg-2"  style="width:7%">2</th>
+                        <th class="bg-3"  style="width:7%">3</th>
+                        <th class="bg-4"  style="width:7%">4</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for groupe in groupes_competences %}
+                        <tr><td colspan="7" class="th-cp">{% if groupe.competence_pro %}{{ groupe.competence_pro.code }} - {{ groupe.competence_pro.nom }}{% else %}Transversales{% endif %}</td></tr>
+                        {% for sc_group in groupe.sous_competences %}
+                            <tr><td colspan="7" class="th-sc">{{ sc_group.sous_competence.nom }}</td></tr>
+                            {% for ligne in sc_group.lignes %}
+                            <tr>
+                                <td class="critere-cell">{{ ligne.ligne_contrat.critere.nom }}</td>
+                                <td class="radio-cell bg-ne"><input type="radio" {% if ligne.note == 'NE' %}checked{% endif %} disabled></td>
+                                <td class="radio-cell bg-0"><input type="radio" {% if ligne.note == '0' %}checked{% endif %} disabled></td>
+                                <td class="radio-cell bg-1"><input type="radio" {% if ligne.note == '1' %}checked{% endif %} disabled></td>
+                                <td class="radio-cell bg-2"><input type="radio" {% if ligne.note == '2' %}checked{% endif %} disabled></td>
+                                <td class="radio-cell bg-3"><input type="radio" {% if ligne.note == '3' %}checked{% endif %} disabled></td>
+                                <td class="radio-cell bg-4"><input type="radio" {% if ligne.note == '4' %}checked{% endif %} disabled></td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer avec note -->
+        <div class="footer-row">
+            <div style="font-weight:bold;font-size:0.9em;">Évaluation {{ fiche_contrat.type_evaluation }}</div>
+            <div class="note-display {% if fiche_eval.note_sur_20 < 10 %}n-red{% elif fiche_eval.note_sur_20 < 12 %}n-orange{% elif fiche_eval.note_sur_20 < 15 %}n-yellow{% else %}n-green{% endif %}">
+                Ma note : {{ fiche_eval.note_sur_20|floatformat:1 }} / 20
+            </div>
+        </div>
+
+        {% if fiche_eval.compte_rendu %}
+        <div class="comments-section">
+            <div class="comments-label">📝 Compte rendu du professeur :</div>
+            <div class="comments-text">{{ fiche_eval.compte_rendu|linebreaksbr }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>

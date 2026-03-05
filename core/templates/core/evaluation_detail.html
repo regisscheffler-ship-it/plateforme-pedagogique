@@ -1,0 +1,563 @@
+{% extends 'core/base.html' %}
+{% block title %}Détail - {{ fiche_contrat.titre_tp }}{% endblock %}
+
+{% block content %}
+<style>
+    /* ═══════════════════════════════════════
+       DÉTAIL ÉVALUATION - HARMONISÉ
+       ═══════════════════════════════════════ */
+
+    .page-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* Bouton retour */
+    .btn-retour {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.5rem;
+        background: white;
+        color: #4a9fc1;
+        border: 2px solid #4a9fc1;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-retour:hover {
+        background: #4a9fc1;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-retour svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        fill: none;
+    }
+
+    /* Header */
+    .header-banner {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #4a9fc1;
+    }
+
+    .header-banner h1 {
+        color: #2c3e50;
+        font-size: 2rem;
+        margin: 0 0 1rem 0;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .header-banner h1 svg {
+        width: 32px;
+        height: 32px;
+        stroke: #4a9fc1;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .header-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        font-size: 0.95rem;
+        color: #6c757d;
+    }
+
+    .header-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .header-meta svg {
+        width: 18px;
+        height: 18px;
+        stroke: #4a9fc1;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    /* Action bar */
+    .action-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s;
+        cursor: pointer;
+        font-size: 0.95rem;
+        background: white;
+        border: 2px solid currentColor;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+
+    .btn-action svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .btn-blue   { color: #4a9fc1; }
+    .btn-blue:hover   { background: #4a9fc1; color: white; box-shadow: 0 6px 16px rgba(74,159,193,0.3); }
+
+    .btn-green  { color: #059669; }
+    .btn-green:hover  { background: #059669; color: white; box-shadow: 0 6px 16px rgba(5,150,105,0.3); }
+
+    .btn-orange { color: #dc3545; }
+    .btn-orange:hover { background: #dc3545; color: white; box-shadow: 0 6px 16px rgba(220,53,69,0.3); }
+
+    /* Info cards */
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+        border-left: 5px solid #4a9fc1;
+    }
+
+    .info-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .info-title svg {
+        width: 24px;
+        height: 24px;
+        stroke: #4a9fc1;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-item {
+        margin-bottom: 0.5rem;
+    }
+
+    .info-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        color: #2c3e50;
+        font-weight: 500;
+        font-size: 1rem;
+        background: #f8f9fa;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+    }
+
+    /* Students grid */
+    .students-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .student-card {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .student-card:hover {
+        border-color: #4a9fc1;
+        box-shadow: 0 4px 12px rgba(74,159,193,0.15);
+        transform: translateY(-2px);
+        color: inherit;
+    }
+
+    .student-info {
+        flex: 1;
+    }
+
+    .student-info div:first-child {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 1rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .student-info div:last-child {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    .grade-badge {
+        background: #f8f9fa;
+        color: #6c757d;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .grade-badge.done {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .btn-unlock {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.35rem 0.75rem;
+        background: white;
+        color: #f59e0b;
+        border: 2px solid #f59e0b;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-left: 0.5rem;
+        text-decoration: none;
+    }
+    .btn-unlock:hover { background: #f59e0b; color: white; }
+    .btn-unlock svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; fill: none; }
+
+    .btn-create-absent {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 1.2rem;
+        background: white;
+        color: #e74c3c;
+        border: 2px solid #e74c3c;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-create-absent:hover { background: #e74c3c; color: white; }
+    .btn-create-absent svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    .absent-card {
+        background: white;
+        border: 2px solid #fecaca;
+        border-radius: 12px;
+        padding: 1.2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .absent-name { font-weight: 700; color: #2c3e50; font-size: 1rem; }
+    .absent-label { font-size: 0.82rem; color: #e74c3c; margin-top: 0.2rem; }
+
+    /* Badge connaissance */
+    .connaissance-badge {
+        display: inline-block;
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+        border-radius: 6px;
+        padding: 0.4rem 0.8rem;
+        margin: 0.3rem 0.3rem 0.3rem 0;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .action-bar {
+            flex-direction: column;
+        }
+
+        .btn-action {
+            justify-content: center;
+        }
+
+        .students-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="page-container">
+
+    <!-- Bouton retour -->
+    <a href="{% url 'core:evaluations_home' %}" class="btn-retour">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- Header -->
+    <div class="header-banner">
+        <h1>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            {{ fiche_contrat.titre_tp }}
+        </h1>
+        <div class="header-meta">
+            <span>
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                {{ fiche_contrat.classe.nom }}
+            </span>
+            <span>
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                {{ fiche_contrat.referentiel.nom }}
+            </span>
+            <span>
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                {{ fiche_contrat.date_tp|default:"Date non définie" }}
+            </span>
+            <span>
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                {{ nb_eleves }} élève(s)
+            </span>
+        </div>
+    </div>
+
+    <!-- Boutons d'action -->
+    <div class="action-bar">
+        <a href="{% url 'core:generer_fiches_eleves' fiche_contrat.id %}" target="_blank" class="btn-action btn-blue">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            Fiches Contrat ({{ nb_eleves }})
+        </a>
+        <a href="{% url 'core:generer_fiches_evaluation' fiche_contrat.id %}" target="_blank" class="btn-action btn-blue">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="9" x2="15" y2="9"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            Fiches Évaluation ({{ nb_eleves }})
+        </a>
+        {% if peut_archiver %}
+        <form method="post" action="{% url 'core:fiche_contrat_archiver' fiche_contrat.id %}" style="display:inline;"
+              onsubmit="return confirm('Archiver ce TP et notifier les élèves ?')">
+            {% csrf_token %}
+            <button type="submit" class="btn-action btn-green">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Archiver ce TP
+            </button>
+        </form>
+        {% else %}
+        <span class="btn-action btn-green" style="opacity:0.4;cursor:not-allowed;" title="{{ raison_blocage_archivage }}">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Archiver ce TP
+        </span>
+        {% endif %}
+        <a href="{% url 'core:fiche_contrat_supprimer' fiche_contrat.id %}" class="btn-action btn-orange"
+           onclick="return confirm('Supprimer définitivement cette évaluation ?')">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+            Supprimer
+        </a>
+    </div>
+
+    <!-- Informations du TP -->
+    <div class="info-card">
+        <div class="info-title">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Informations du TP
+        </div>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Type d'évaluation</div>
+                <div class="info-value" style="text-transform: capitalize;">
+                    {{ fiche_contrat.type_evaluation }}
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">Connaissances</div>
+                <div class="info-value">
+                    {% if fiche_contrat.savoirs_associes %}
+                        {% for ligne in fiche_contrat.savoirs_associes.splitlines %}
+                            {% if ligne %}
+                                <span class="connaissance-badge">{{ ligne }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <span style="color:#94a3b8;font-style:italic;">Aucune</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="info-item" style="grid-column: 1 / -1;">
+                <div class="info-label">Problématique</div>
+                <div class="info-value">{{ fiche_contrat.problematique|default:"Non renseignée" }}</div>
+            </div>
+
+            <div class="info-item" style="grid-column: 1 / -1;">
+                <div class="info-label">Contexte Professionnel</div>
+                <div class="info-value">{{ fiche_contrat.contexte|default:"Non renseigné" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des élèves -->
+    <div class="info-card">
+        <div class="info-title">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Élèves à évaluer
+        </div>
+        <div class="students-grid">
+            {% for evaluation in evaluations %}
+            <div style="display:flex;align-items:center;gap:0;">
+                <a href="{% url 'core:fiche_evaluation_saisie' fiche_contrat.id evaluation.eleve.id %}" class="student-card" style="flex:1;border-radius:{% if evaluation.validee %}12px 0 0 12px{% else %}12px{% endif %};">
+                    <div class="student-info">
+                        <div>{{ evaluation.eleve.user.last_name|upper }} {{ evaluation.eleve.user.first_name }}</div>
+                        <div>{% if evaluation.validee %}Validée — lecture seule{% else %}Cliquez pour noter{% endif %}</div>
+                    </div>
+                    {% if evaluation.validee %}
+                        <span class="grade-badge done">{{ evaluation.note_sur_20|floatformat:1 }}/20</span>
+                    {% else %}
+                        <span class="grade-badge">En cours</span>
+                    {% endif %}
+                </a>
+                {% if evaluation.validee %}
+                <form method="post" action="{% url 'core:deverrouiller_fiche_evaluation' evaluation.id %}" style="margin:0;"
+                      onsubmit="return confirm('Déverrouiller la fiche de {{ evaluation.eleve.user.get_full_name }} ? Les notes pourront être modifiées.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-unlock" title="Déverrouiller pour corriger"
+                            style="border-radius:0 12px 12px 0;height:100%;padding:0.85rem 0.9rem;">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        Déverrouiller
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if eleves_sans_fiche %}
+    <!-- Élèves absents sans fiche -->
+    <div class="info-card" style="border-left-color:#e74c3c;">
+        <div class="info-title" style="color:#e74c3c;">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:#e74c3c;stroke-width:2;fill:none;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            Élèves absents ({{ eleves_sans_fiche|length }}) — sans fiche d'évaluation
+        </div>
+        <div class="students-grid">
+            {% for eleve in eleves_sans_fiche %}
+            <div class="absent-card">
+                <div>
+                    <div class="absent-name">{{ eleve.user.last_name|upper }} {{ eleve.user.first_name }}</div>
+                    <div class="absent-label">Aucune fiche créée</div>
+                </div>
+                <form method="post" action="{% url 'core:creer_fiche_absent' fiche_contrat.id eleve.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-create-absent">
+                        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Créer fiche
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

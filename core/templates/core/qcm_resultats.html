@@ -1,0 +1,206 @@
+{% extends 'core/base.html' %}
+{% block title %}Résultats — {{ qcm.titre }}{% endblock %}
+{% block content %}
+<style>
+    :root { --qcm: #2ab090; }
+    .page-container { max-width: 760px; margin: 0 auto; padding: 2rem 1rem; }
+
+    /* ── En-tête résultat ── */
+    .resultat-header {
+        border-radius: 16px; padding: 2.5rem 2rem; text-align: center;
+        margin-bottom: 2rem; color: white;
+    }
+    .resultat-header.excellent  { background: linear-gradient(135deg, #2ab090, #20c997); }
+    .resultat-header.bien       { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+    .resultat-header.passable   { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+    .resultat-header.echec      { background: linear-gradient(135deg, #ef4444, #f87171); }
+
+    .note-cercle {
+        width: 120px; height: 120px; border-radius: 50%;
+        background: rgba(255,255,255,0.25); border: 4px solid rgba(255,255,255,0.6);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        margin: 0 auto 1.2rem;
+    }
+    .note-valeur { font-size: 2.4rem; font-weight: 800; line-height: 1; }
+    .note-denom  { font-size: 1rem; opacity: 0.8; }
+    .resultat-titre { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.3rem; }
+    .resultat-sous  { opacity: 0.85; font-size: 0.95rem; }
+
+    /* ── Barre stats ── */
+    .stats-grid {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: white; border-radius: 12px; padding: 1.2rem;
+        text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .stat-val { font-size: 1.8rem; font-weight: 800; }
+    .stat-val.vert  { color: #2ab090; }
+    .stat-val.rouge { color: #ef4444; }
+    .stat-val.bleu  { color: #3b82f6; }
+    .stat-label { font-size: 0.82rem; color: #6c757d; margin-top: 0.2rem; }
+
+    /* ── Récapitulatif ── */
+    .recap-titre {
+        font-size: 1.05rem; font-weight: 700; color: #2c3e50;
+        margin: 0 0 1.2rem;
+    }
+    .recap-item {
+        background: white; border-radius: 12px; padding: 1.2rem 1.5rem;
+        margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-left: 4px solid transparent;
+    }
+    .recap-item.correct   { border-left-color: #2ab090; }
+    .recap-item.incorrect { border-left-color: #ef4444; }
+    .recap-item.aucune    { border-left-color: #adb5bd; }
+
+    .recap-header {
+        display: flex; align-items: flex-start; gap: 0.8rem; margin-bottom: 0.8rem;
+    }
+    .recap-badge {
+        flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; font-weight: 700;
+    }
+    .badge-ok  { background: #d1fae5; color: #065f46; }
+    .badge-ko  { background: #fee2e2; color: #991b1b; }
+    .badge-_   { background: #f1f3f5; color: #6c757d; }
+    .recap-enonce { font-weight: 600; color: #2c3e50; font-size: 0.95rem; line-height: 1.45; }
+
+    .recap-image { margin-top: 0.6rem; text-align: center; }
+    .recap-image img { max-height: 150px; border-radius: 8px; object-fit: contain; }
+
+    .recap-reponses {
+        display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem;
+    }
+    .rep-chip {
+        padding: 0.25rem 0.7rem; border-radius: 100px; font-size: 0.82rem; font-weight: 600;
+    }
+    .rep-eleve-ok  { background: #d1fae5; color: #065f46; }
+    .rep-eleve-ko  { background: #fee2e2; color: #991b1b; }
+    .rep-eleve-_   { background: #f1f3f5; color: #6c757d; }
+    .rep-bonne     { background: #d1fae5; color: #065f46; border: 1.5px solid #2ab090; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.65rem 1.4rem; background: white; color: var(--qcm);
+        border: 2px solid var(--qcm); border-radius: 10px; font-weight: 600; text-decoration: none;
+        font-size: 0.95rem; transition: all 0.2s; margin-top: 1.5rem;
+    }
+    .btn-retour:hover { background: #f0fdf9; }
+
+    @media (max-width: 600px) {
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+        .page-container { padding: 1rem 0.5rem; }
+    }
+</style>
+
+<div class="page-container">
+
+    {% with note=session.note_sur_20 %}
+
+    <!--  En-tête résultat avec couleur selon note -->
+    {% if note >= 16 %}
+    <div class="resultat-header excellent">
+    {% elif note >= 12 %}
+    <div class="resultat-header bien">
+    {% elif note >= 10 %}
+    <div class="resultat-header passable">
+    {% else %}
+    <div class="resultat-header echec">
+    {% endif %}
+        <div class="note-cercle">
+            <span class="note-valeur">{{ note|floatformat:1 }}</span>
+            <span class="note-denom">/20</span>
+        </div>
+        <p class="resultat-titre">
+            {% if note >= 16 %}Excellent !
+            {% elif note >= 12 %}Bien !
+            {% elif note >= 10 %}Passable
+            {% else %}À retravailler
+            {% endif %}
+        </p>
+        <p class="resultat-sous">{{ qcm.titre }}</p>
+    </div>
+
+    {% endwith %}
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-val vert">{{ session.nb_bonnes_reponses }}</div>
+            <div class="stat-label">Bonne{{ session.nb_bonnes_reponses|pluralize }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val rouge">{{ nb_mauvaises }}</div>
+            <div class="stat-label">Mauvaise{{ nb_mauvaises|pluralize }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val bleu">{{ total }}</div>
+            <div class="stat-label">Question{{ total|pluralize }}</div>
+        </div>
+    </div>
+
+    <!-- Récapitulatif détaillé -->
+    <h2 class="recap-titre">Récapitulatif détaillé</h2>
+
+    {% for item in recap %}
+    <div class="recap-item {% if item.correct %}correct{% elif item.rep_eleve == '—' %}aucune{% else %}incorrect{% endif %}">
+        <div class="recap-header">
+            <div class="recap-badge {% if item.correct %}badge-ok{% elif item.rep_eleve == '—' %}badge-_{% else %}badge-ko{% endif %}">
+                {% if item.correct %}
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                     stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                {% elif item.rep_eleve == '—' %}?
+                {% else %}
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                     stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                {% endif %}
+            </div>
+            <div class="recap-enonce">{{ item.question.enonce }}</div>
+        </div>
+
+        {% if item.question.image_url %}
+        <div class="recap-image">
+            <img src="{{ item.question.image_url }}" alt="">
+        </div>
+        {% endif %}
+
+        <div class="recap-reponses">
+            {% if item.correct %}
+            <span class="rep-chip rep-eleve-ok">
+                Votre réponse : {{ item.rep_eleve }} — {{ item.rep_eleve_texte }}
+            </span>
+            {% elif item.rep_eleve == '—' %}
+            <span class="rep-chip rep-eleve-_">Sans réponse</span>
+            <span class="rep-chip rep-bonne">
+                Bonne réponse : {{ item.question.bonne_reponse }} — {{ item.bonne_rep_texte }}
+            </span>
+            {% else %}
+            <span class="rep-chip rep-eleve-ko">
+                Votre réponse : {{ item.rep_eleve }} — {{ item.rep_eleve_texte }}
+            </span>
+            <span class="rep-chip rep-bonne">
+                Bonne réponse : {{ item.question.bonne_reponse }} — {{ item.bonne_rep_texte }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <a href="{% url 'core:dashboard_eleve' %}" class="btn-retour">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+</div>
+{% endblock %}

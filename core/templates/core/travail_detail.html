@@ -1,0 +1,297 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ travail.titre }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-container { max-width: 1600px; width: 100%; margin: 0 auto; padding: 2rem; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #d94f4f;
+        border: 2px solid #d94f4f; border-radius: 8px; text-decoration: none;
+        font-weight: 600; font-size: 0.9rem; transition: all 0.3s; margin-bottom: 1.5rem;
+    }
+    .btn-retour:hover { background: #d94f4f; color: white; transform: translateY(-2px); }
+    .btn-retour svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2.5; fill: none; }
+
+    /* Header */
+    .travail-header {
+        background: white; border-radius: 16px; padding: 2rem;
+        margin-bottom: 2rem; box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #d94f4f;
+    }
+    .travail-header h1 {
+        margin: 0 0 1rem 0; color: #2c3e50; font-size: 1.8rem; font-weight: 700;
+        display: flex; align-items: center; gap: 0.8rem;
+    }
+    .travail-header h1 svg { width: 28px; height: 28px; stroke: #d94f4f; stroke-width: 2; fill: none; }
+    .travail-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; color: #6c757d; }
+    .travail-meta span { display: flex; align-items: center; gap: 0.4rem; }
+    .travail-meta svg { width: 16px; height: 16px; stroke: #d94f4f; stroke-width: 2; fill: none; }
+    .badge-retard { background: #fee2e2; color: #dc3545; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+
+    /* Infos TP */
+    .info-card {
+        background: white; border-radius: 12px; padding: 1.5rem;
+        margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border-left: 4px solid #e9ecef;
+    }
+    .info-card h3 { color: #2c3e50; font-size: 1rem; font-weight: 700; margin: 0 0 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem; }
+    .description-text { color: #495057; line-height: 1.6; white-space: pre-wrap; }
+
+    /* Bouton télécharger consigne */
+    .btn-dl-consigne {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #d94f4f;
+        border: 2px solid #d94f4f;
+        border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        transition: all 0.3s; margin-top: 0.8rem;
+    }
+    .btn-dl-consigne:hover { background: #d94f4f; color: white; transform: translateY(-2px); }
+    .btn-dl-consigne svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    /* Stats */
+    .stats-row {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat-box {
+        background: white; border-radius: 12px; padding: 1.2rem;
+        text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .stat-box .stat-val { font-size: 2rem; font-weight: 800; color: #d94f4f; line-height: 1; }
+    .stat-box .stat-label { font-size: 0.8rem; color: #6c757d; margin-top: 0.3rem; }
+    .stat-box.green .stat-val { color: #10b981; }
+    .stat-box.red .stat-val   { color: #ef4444; }
+
+    /* Liste rendus */
+    .rendus-card {
+        background: white; border-radius: 16px; padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 2rem;
+    }
+    .rendus-title {
+        font-size: 1.2rem; font-weight: 700; color: #2c3e50;
+        margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.6rem;
+    }
+    .rendus-title svg { width: 22px; height: 22px; stroke: #d94f4f; stroke-width: 2; fill: none; }
+
+    .rendu-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 1rem 1.2rem; background: #f8f9fa; border-radius: 10px;
+        margin-bottom: 0.75rem; border-left: 3px solid #10b981; gap: 1rem;
+        transition: all 0.2s;
+    }
+    .rendu-row:hover { background: #f0fdf4; }
+    .rendu-row.corrige { border-left-color: #6366f1; }
+    .rendu-info .eleve-nom { font-weight: 700; color: #2c3e50; font-size: 1rem; }
+    .rendu-info .rendu-date { font-size: 0.82rem; color: #6c757d; margin-top: 0.2rem; }
+
+    .badge-note {
+        background: #ddd6fe; color: #6d28d9;
+        padding: 0.3rem 0.8rem; border-radius: 20px;
+        font-size: 0.85rem; font-weight: 700;
+    }
+    .badge-en-cours {
+        background: #fef9c3; color: #854d0e;
+        padding: 0.3rem 0.8rem; border-radius: 20px;
+        font-size: 0.85rem; font-weight: 600;
+    }
+
+    .rendu-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+    .btn-dl {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.4rem 0.9rem; background: #eff6ff; color: #3b82f6;
+        border: 1px solid #bfdbfe; border-radius: 6px; text-decoration: none;
+        font-weight: 600; font-size: 0.82rem; transition: all 0.2s;
+    }
+    .btn-dl:hover { background: #3b82f6; color: white; }
+    .btn-dl svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    .btn-corriger {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.4rem 0.9rem; background: white; color: #d94f4f;
+        border: 1px solid #d94f4f;
+        border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.82rem; transition: all 0.2s;
+    }
+    .btn-corriger:hover { background: #d94f4f; color: white; }
+    .btn-corriger svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    /* Élèves n'ayant pas rendu */
+    .absent-card {
+        background: #fff7ed; border-radius: 12px; padding: 1.5rem;
+        border-left: 4px solid #f97316; margin-bottom: 2rem;
+    }
+    .absent-title { font-weight: 700; color: #9a3412; margin-bottom: 1rem; font-size: 0.95rem; }
+    .absent-badge {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        background: #fed7aa; color: #9a3412; padding: 0.3rem 0.7rem;
+        border-radius: 20px; font-size: 0.82rem; font-weight: 600; margin: 0.2rem;
+    }
+
+    .empty-rendus {
+        text-align: center; padding: 3rem; color: #94a3b8;
+    }
+    .empty-rendus svg { width: 48px; height: 48px; stroke: #cbd5e1; stroke-width: 1.5; fill: none; margin-bottom: 1rem; }
+</style>
+
+<div class="page-container">
+
+    <a href="#" class="btn-retour btn-back-universal">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- Header -->
+    <div class="travail-header">
+        <h1>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            {{ travail.titre }}
+        </h1>
+        <div class="travail-meta">
+            <span>
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                </svg>
+                Classe : <strong>{{ travail.classe.nom }}</strong>
+            </span>
+            <span>
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Date limite : <strong>{{ travail.date_limite|date:"d/m/Y H:i" }}</strong>
+            </span>
+            <span>Publié le {{ travail.date_creation|date:"d/m/Y" }}</span>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-box">
+            <div class="stat-val">{{ nb_eleves_classe }}</div>
+            <div class="stat-label">Élèves dans la classe</div>
+        </div>
+        <div class="stat-box green">
+            <div class="stat-val">{{ rendus|length }}</div>
+            <div class="stat-label">Travaux rendus</div>
+        </div>
+        <div class="stat-box red">
+            <div class="stat-val">{{ nb_manquants }}</div>
+            <div class="stat-label">Non rendus</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-val">{{ nb_corriges }}</div>
+            <div class="stat-label">Corrigés</div>
+        </div>
+    </div>
+
+    <!-- Description + consigne -->
+    {% if travail.description or travail.fichier_consigne %}
+    <div class="info-card">
+        <h3>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line></svg>
+            CONSIGNES
+        </h3>
+        {% if travail.description %}
+        <p class="description-text">{{ travail.description }}</p>
+        {% endif %}
+        {% if travail.fichier_consigne %}
+        <a href="{{ travail.fichier_consigne.url }}" target="_blank" class="btn-dl-consigne">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Télécharger le sujet / consigne
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Élèves n'ayant pas rendu -->
+    {% if eleves_sans_rendu %}
+    <div class="absent-card">
+        <div class="absent-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#9a3412" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            Élèves n'ayant pas encore rendu ({{ eleves_sans_rendu|length }})
+        </div>
+        {% for eleve in eleves_sans_rendu %}
+        <span class="absent-badge">{{ eleve.user.last_name|upper }} {{ eleve.user.first_name }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Liste des rendus -->
+    <div class="rendus-card">
+        <div class="rendus-title">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Travaux rendus ({{ rendus|length }})
+        </div>
+
+        {% if rendus %}
+            {% for rendu in rendus %}
+            <div class="rendu-row {% if rendu.corrige %}corrige{% endif %}">
+                <div class="rendu-info">
+                    <div class="eleve-nom">
+                        {{ rendu.eleve.user.last_name|upper }} {{ rendu.eleve.user.first_name }}
+                    </div>
+                    <div class="rendu-date">
+                        Rendu le {{ rendu.date_rendu|date:"d/m/Y à H:i" }}
+                        {% if rendu.commentaire %} · "{{ rendu.commentaire|truncatewords:8 }}"{% endif %}
+                    </div>
+                </div>
+                <div class="rendu-actions">
+                    {% if rendu.corrige and rendu.note %}
+                        <span class="badge-note">{{ rendu.note }}/20</span>
+                    {% elif rendu.corrige %}
+                        <span class="badge-note">Vu</span>
+                    {% else %}
+                        <span class="badge-en-cours">En attente</span>
+                    {% endif %}
+                    {% if rendu.fichier_rendu %}
+                    <a href="{{ rendu.fichier_rendu.url }}" target="_blank" class="btn-dl">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Télécharger
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'core:corriger_rendu' rendu.id %}" class="btn-corriger">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        {% if rendu.corrige %}Modifier{% else %}Corriger{% endif %}
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-rendus">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <p>Aucun travail rendu pour l'instant.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

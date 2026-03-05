@@ -1,0 +1,132 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Inscription Élève{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 3rem auto;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg" 
+             alt="Logo" style="width: 100px; margin-bottom: 1rem;">
+        <h1 style="color: #667eea;">✏️ Inscription Élève</h1>
+        <p style="color: #666;">Créez votre compte pour accéder aux cours</p>
+    </div>
+
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+
+            <h3 style="margin-bottom: 1.5rem; color: #667eea;">📋 Informations personnelles</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label for="nom" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                        Nom *
+                    </label>
+                    <input type="text" 
+                           id="nom" 
+                           name="nom" 
+                           required 
+                           placeholder="Dupont"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                </div>
+
+                <div>
+                    <label for="prenom" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                        Prénom *
+                    </label>
+                    <input type="text" 
+                           id="prenom" 
+                           name="prenom" 
+                           required 
+                           placeholder="Jean"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="date_naissance" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Date de naissance *
+                </label>
+                <input type="date" 
+                       id="date_naissance" 
+                       name="date_naissance" 
+                       required 
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="classe" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Classe *
+                </label>
+                <select id="classe" 
+                        name="classe" 
+                        required 
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    <option value="">-- Choisissez votre classe --</option>
+                    {% for classe in classes %}
+                    <option value="{{ classe.id }}">{{ classe.nom }} - {{ classe.niveau.get_nom_display }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <hr style="margin: 2rem 0; border: none; border-top: 1px solid #ddd;">
+
+            <h3 style="margin-bottom: 1.5rem; color: #667eea;">🔐 Identifiants de connexion</h3>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="username" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Identifiant *
+                </label>
+                <input type="text" 
+                       id="username" 
+                       name="username" 
+                       required 
+                       placeholder="jean.dupont"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                <small style="color: #666;">Cet identifiant servira pour vous connecter</small>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="password1" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Mot de passe *
+                </label>
+                <input type="password" 
+                       id="password1" 
+                       name="password1" 
+                       required 
+                       minlength="6"
+                       placeholder="Au moins 6 caractères"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label for="password2" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Confirmer le mot de passe *
+                </label>
+                <input type="password" 
+                       id="password2" 
+                       name="password2" 
+                       required 
+                       minlength="6"
+                       placeholder="Retapez votre mot de passe"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+            </div>
+
+            <button type="submit" class="btn" style="width: 100%; padding: 1rem; font-size: 1.1rem; background-color: #28a745;">
+                ✅ Créer mon compte
+            </button>
+        </form>
+    </div>
+
+    <div style="text-align: center; margin-top: 2rem;">
+        <p style="color: #666;">Vous avez déjà un compte ?</p>
+        <a href="{% url 'core:login_eleve' %}" class="btn btn-secondary" style="margin-top: 0.5rem;">
+            🔑 Se connecter
+        </a>
+    </div>
+
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="{% url 'core:choix_eleve' %}" style="color: #667eea;">← Retour</a>
+    </div>
+</div>
+{% endblock %}

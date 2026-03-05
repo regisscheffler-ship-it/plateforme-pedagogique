@@ -1,0 +1,168 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ classe.nom }}{% endblock %}
+
+{% block content %}
+<style>
+    .detail-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    .detail-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border-left: 5px solid #4a7fc1;
+    }
+    .detail-header h2 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .info-chip {
+        background: #eff6ff;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+        color: #2c3e50;
+    }
+    .info-chip strong { color: #4a7fc1; }
+    .section-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .section-card h3 {
+        margin: 0 0 1.5rem 0;
+        color: #2c3e50;
+        font-size: 1.2rem;
+        font-weight: 700;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #eff6ff;
+    }
+    .eleves-table { width: 100%; border-collapse: collapse; }
+    .eleves-table th {
+        text-align: left;
+        padding: 0.75rem 1rem;
+        background: #eff6ff;
+        color: #4a7fc1;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .eleves-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f0f0f0;
+        color: #2c3e50;
+    }
+    .eleves-table tr:last-child td { border-bottom: none; }
+    .eleves-table tr:hover td { background: #f9fbff; }
+    .btn-edit {
+        padding: 0.3rem 0.8rem;
+        background: #4a7fc1;
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .btn-edit:hover { background: #3a6faf; color: white; }
+    .themes-list { list-style: none; padding: 0; margin: 0; }
+    .themes-list li { margin-bottom: 0.5rem; }
+    .themes-list a {
+        color: #4a7fc1;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+    .themes-list a:hover { color: #3a6faf; text-decoration: underline; }
+    .empty-msg { color: #7a8694; font-style: italic; }
+</style>
+
+<div class="detail-container">
+
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#4a7fc1;
+              border:2px solid #4a7fc1;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="detail-header">
+        <h2>Classe {{ classe.nom }}</h2>
+        <div class="info-grid">
+            <div class="info-chip"><strong>Niveau :</strong> {{ classe.niveau.nom }}</div>
+            {% if classe.description %}<div class="info-chip"><strong>Description :</strong> {{ classe.description }}</div>{% endif %}
+            <div class="info-chip"><strong>Élèves :</strong> {{ eleves.count }}</div>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <h3>Élèves de la classe</h3>
+        {% if eleves %}
+        <table class="eleves-table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for eleve in eleves %}
+                <tr>
+                    <td>{{ eleve.user.last_name }}</td>
+                    <td>{{ eleve.user.first_name }}</td>
+                    <td style="display:flex;gap:6px;">
+                        <a href="{% url 'core:modifier_eleve' eleve.id %}" class="btn-edit">Modifier</a>
+                        <a href="{% url 'core:passer_en_classe_superieure' eleve.id %}" class="btn-edit" style="background:#f5f3ff;color:#8b5cf6;border-color:#8b5cf6;" title="Passer en classe supérieure">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 11l-5-5-5 5"/><path d="M12 6v11"/></svg>
+                            Classe sup.
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-msg">Aucun élève dans cette classe.</p>
+        {% endif %}
+    </div>
+
+    <div class="section-card">
+        <h3>Thèmes de la classe</h3>
+        {% if themes %}
+        <ul class="themes-list">
+            {% for theme in themes %}
+            <li><a href="{% url 'core:theme_detail' theme.id %}">{{ theme.nom }}</a></li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty-msg">Aucun thème pour cette classe.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

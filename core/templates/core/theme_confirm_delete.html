@@ -1,0 +1,135 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Supprimer le thème{% endblock %}
+
+{% block content %}
+
+<style>
+    .delete-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .delete-card {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border-top: 6px solid #d94f4f;
+    }
+
+    .icon-danger {
+        width: 72px; height: 72px;
+        background: #fee2e2;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.5rem;
+        color: #d94f4f;
+    }
+    .icon-danger svg { width: 36px; height: 36px; }
+
+    .delete-card h1 { color: #2c3e50; margin-bottom: 1rem; font-size: 1.6rem; }
+    .delete-card p  { color: #6c757d; font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem; }
+
+    .warning-box {
+        background: #fff5f5;
+        border: 1px solid #fca5a5;
+        color: #c53030;
+        padding: 1rem 1.2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        font-size: 0.92rem;
+        text-align: left;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    .warning-box svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; }
+
+    .actions { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+
+    .btn-annuler {
+        padding: 0.8rem 2rem; border-radius: 8px; font-weight: 600;
+        text-decoration: none; background: white;
+        border: 2px solid #dee2e6; color: #6c757d;
+        transition: all 0.2s; cursor: pointer; font-size: 0.95rem;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-annuler:hover { border-color: #adb5bd; color: #343a40; background: #f8f9fa; }
+
+    .btn-supprimer {
+        padding: 0.8rem 2rem; border-radius: 8px; font-weight: 600;
+        background: white; border: 2px solid #d94f4f; color: #d94f4f;
+        transition: all 0.2s; cursor: pointer; font-size: 0.95rem;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-supprimer:hover { background: #d94f4f; color: white; box-shadow: 0 4px 12px rgba(217,79,79,0.3); transform: translateY(-2px); }
+    .btn-supprimer svg, .btn-annuler svg { width: 16px; height: 16px; }
+</style>
+
+<div class="delete-container">
+
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#7c5cbf;
+              border:2px solid #7c5cbf;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="delete-card">
+        <div class="icon-danger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+        </div>
+
+        <h1>Supprimer le thème ?</h1>
+        <p>Vous êtes sur le point de supprimer le thème <strong>"{{ theme.nom }}"</strong>.</p>
+
+        <div class="warning-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Cette action est irréversible. Tous les dossiers et fichiers contenus dans ce thème seront définitivement effacés.</span>
+        </div>
+
+        <form method="post" class="actions">
+            {% csrf_token %}
+            <a href="{% url 'core:gestion_themes' %}" class="btn-annuler">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Annuler
+            </a>
+            <button type="submit" class="btn-supprimer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Oui, supprimer
+            </button>
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}

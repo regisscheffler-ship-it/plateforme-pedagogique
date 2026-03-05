@@ -1,0 +1,660 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Tableau de bord — {{ request.user.first_name }}{% endblock %}
+
+{% block content %}
+
+<style>
+    /* ═══════════════════════════════════════
+       TABLEAU DE BORD ÉLÈVE
+       ═══════════════════════════════════════ */
+
+    body { background: #f0f4f8; }
+
+    .dashboard-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem 2rem 4rem;
+        background: transparent;
+    }
+
+    /* ═══ HEADER ═══ */
+    .dashboard-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-left: 5px solid #2ab090;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .header-left { display: flex; align-items: center; gap: 1.5rem; }
+    .student-avatar {
+        width: 70px; height: 70px;
+        background: #d1fae5;
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .student-avatar svg { width: 36px; height: 36px; stroke: #2ab090; stroke-width: 2; fill: none; }
+    .student-info h1 { margin: 0 0 0.4rem 0; color: #2c3e50; font-size: 1.8rem; font-weight: 700; }
+    .student-info p { margin: 0; color: #7a8694; font-size: 1rem; }
+    .badge-classe {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.3rem 0.9rem;
+        background: #d1fae5; color: #065f46;
+        border-radius: 20px; font-weight: 600; font-size: 0.88rem; margin-left: 0.5rem;
+    }
+    .badge-classe svg { width: 14px; height: 14px; stroke: #065f46; stroke-width: 2; fill: none; }
+    /* Cloche notifications */
+    .notif-bell {
+        position: relative; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 48px; height: 48px; flex-shrink: 0;
+        background: white; border-radius: 12px;
+        border: 2px solid #e9ecef; transition: all 0.2s; text-decoration: none;
+    }
+    .notif-bell:hover { background: #f0fdf9; border-color: #2ab090; transform: translateY(-2px); }
+    .notif-bell svg { width: 24px; height: 24px; stroke: #495057; stroke-width: 2; fill: none; }
+    .notif-bell:hover svg { stroke: #2ab090; }
+    .badge-count {
+        position: absolute; top: -4px; right: -4px;
+        background: #d94f4f; color: white;
+        font-size: 0.7rem; font-weight: 700;
+        min-width: 18px; height: 18px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        border: 2px solid white; padding: 0 3px;
+    }
+
+    /* ═══ SECTION TITRE ═══ */
+    .section-title {
+        display: flex; align-items: center; gap: 0.8rem;
+        font-size: 1.2rem; font-weight: 700; color: #2c3e50;
+        margin: 0 0 1.5rem 0;
+    }
+    .section-title svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; flex-shrink: 0; }
+
+    /* ═══ GRILLES ═══ */
+    .grid-2-cols {
+        display: grid; grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem; margin-bottom: 1.5rem;
+    }
+    @media (max-width: 992px) { .grid-2-cols { grid-template-columns: 1fr; } }
+
+    .grid-4-cols {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem; margin-bottom: 1.5rem;
+        align-items: start;
+    }
+    @media (max-width: 1200px) { .grid-4-cols { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px)  { .grid-4-cols { grid-template-columns: 1fr; } }
+
+    /* ═══ SECTION PFMP ═══ */
+    .pfmp-container {
+        background: white; border-radius: 16px; padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border-left: 5px solid #6b7fd4;
+    }
+    .pfmp-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(300px,1fr)); gap: 1.2rem; }
+    .pfmp-card {
+        background: #f8f9fa; border-radius: 12px; padding: 1.5rem;
+        border-left: 4px solid #6b7fd4; transition: all 0.2s;
+    }
+    .pfmp-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .pfmp-card.en-cours { background: #d1fae5; border-left-color: #2ab090; }
+    .pfmp-card h3 { margin: 0 0 0.5rem 0; color: #2c3e50; font-size: 1.1rem; font-weight: 700; }
+    .pfmp-card p { margin: 0 0 1rem 0; color: #6c757d; font-size: 0.9rem; }
+    .pfmp-dates {
+        display: flex; align-items: center; gap: 0.5rem;
+        color: #495057; font-size: 0.9rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .pfmp-dates svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; fill: none; flex-shrink: 0; }
+    .badge-status {
+        padding: 0.25rem 0.75rem; border-radius: 20px;
+        font-size: 0.78rem; font-weight: 700;
+        display: inline-flex; align-items: center; gap: 0.3rem;
+    }
+    .badge-status svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 2; fill: currentColor; }
+    .badge-en-cours { background: #d1fae5; color: #065f46; }
+    .badge-a-venir  { background: #fef3c7; color: #92400e; }
+    .badge-terminee { background: #f3f4f6; color: #6b7280; }
+    .pfmp-dates.date-loin   { background: #d1fae5; color: #065f46; border-radius: 8px; padding: 0.5rem 0.8rem; font-weight: 600; }
+    .pfmp-dates.date-proche { background: #fef3c7; color: #92400e; border-radius: 8px; padding: 0.5rem 0.8rem; font-weight: 600; }
+    .pfmp-dates.date-urgente{ background: #fee2e2; color: #dc2626; border-radius: 8px; padding: 0.5rem 0.8rem; font-weight: 600; }
+
+    /* ═══ SECTION CARDS ═══ */
+    .section-card {
+        background: white; border-radius: 16px; padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .section-card.ateliers   { border-left: 5px solid #e8922a; }
+    .section-card.cours      { border-left: 5px solid #7c5cbf; }
+    .section-card.travaux    { border-left: 5px solid #2ab090; }
+    .section-card.rendus     { border-left: 5px solid #d94f4f; }
+    .section-card.evaluations{ border-left: 5px solid #4a9fc1; }
+    .section-card.modes-op   { border-left: 5px solid #c4608a; margin-top: 1.5rem; }
+
+    .card-header {
+        display: flex; align-items: center; gap: 1rem;
+        margin-bottom: 1.5rem; padding-bottom: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .card-header h2 { margin: 0; color: #2c3e50; font-size: 1.2rem; font-weight: 700; flex: 1; }
+    .card-header svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; flex-shrink: 0; }
+    .card-count {
+        font-size: 1.1rem; font-weight: 700; margin-left: auto;
+        padding: 0.2rem 0.7rem; border-radius: 20px; background: #f0f4f8;
+    }
+    .card-count-badge {
+        background: currentColor; color: white; padding: 0.2rem 0.7rem;
+        border-radius: 20px; font-size: 0.82rem; font-weight: 700;
+        opacity: 0.9;
+    }
+
+    /* ═══ LISTES CLIQUABLES ═══ */
+    .list-item {
+        display: flex; align-items: center; gap: 1rem;
+        padding: 1rem 1.2rem; background: #f8f9fa;
+        border-radius: 10px; text-decoration: none; color: inherit;
+        transition: all 0.2s; margin-bottom: 0.8rem;
+    }
+    .list-item:last-child { margin-bottom: 0; }
+    .list-item:hover { background: #f0f0f0; transform: translateX(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .icon-box {
+        width: 44px; height: 44px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .icon-box.atelier { background: #fef3c7; }
+    .icon-box.atelier svg { stroke: #e8922a; }
+    .icon-box.cours   { background: #f5f3ff; }
+    .icon-box.cours svg   { stroke: #7c5cbf; }
+    .icon-box svg { width: 22px; height: 22px; stroke-width: 2; fill: none; }
+    .list-item-content { flex: 1; min-width: 0; }
+    .list-item-title { font-weight: 600; font-size: 0.98rem; color: #2c3e50; margin-bottom: 0.15rem; }
+    .list-item-subtitle { font-size: 0.85rem; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .list-arrow { color: #adb5bd; flex-shrink: 0; }
+    .list-arrow svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    /* ═══ TRAVAUX ═══ */
+    .travaux-list { display: flex; flex-direction: column; gap: 1rem; max-height: 520px; overflow-y: auto; }
+    .travail-item {
+        background: #f8f9fa; border-radius: 10px; padding: 1.2rem;
+        border-left: 4px solid #2ab090; transition: background 0.2s;
+    }
+    .travail-item.rendu { border-left-color: #d94f4f; }
+    .travail-item h4 { margin: 0 0 0.4rem 0; color: #2c3e50; font-size: 0.98rem; font-weight: 700; }
+    .travail-meta {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem;
+    }
+    .travail-date {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.25rem 0.7rem; background: white; border-radius: 6px;
+        font-size: 0.82rem; font-weight: 600; color: #2ab090;
+    }
+    .travail-date svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .travail-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+    .btn-action {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.45rem 0.9rem; border-radius: 8px;
+        font-size: 0.82rem; font-weight: 600; text-decoration: none;
+        transition: all 0.2s; border: none; cursor: pointer;
+    }
+    .btn-action svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .btn-download { background: #e0f2fe; color: #0369a1; }
+    .btn-download:hover { background: #0369a1; color: white; }
+    .btn-submit { background: #2ab090; color: white; }
+    .btn-submit:hover { background: #229076; box-shadow: 0 4px 10px rgba(42,176,144,0.3); transform: translateY(-1px); }
+
+    /* ═══ RENDUS ═══ */
+    .rendu-status {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.25rem 0.7rem; border-radius: 6px; font-size: 0.82rem; font-weight: 600;
+    }
+    .rendu-status svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .rendu-status.attente { background: #fef3c7; color: #92400e; }
+    .rendu-status.corrige { background: #d1fae5; color: #065f46; }
+    .rendu-note { font-weight: 700; }
+
+    /* ═══ ÉVALUATIONS ═══ */
+    .eval-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+    @media (max-width: 992px) { .eval-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 576px)  { .eval-grid { grid-template-columns: 1fr; } }
+    .eval-card {
+        background: #f8f9fa; border-radius: 12px; padding: 1.2rem;
+        border-left: 4px solid #4a9fc1; display: flex; flex-direction: column; gap: 0.6rem;
+        transition: all 0.2s;
+    }
+    .eval-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .eval-card-title { font-weight: 700; color: #2c3e50; font-size: 0.98rem; line-height: 1.35; }
+    .eval-card-date { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #6c757d; }
+    .eval-card-date svg { width: 14px; height: 14px; stroke: #4a9fc1; stroke-width: 2; fill: none; flex-shrink: 0; }
+    .eval-card-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.3rem; }
+    .note-badge { padding: 0.3rem 0.7rem; border-radius: 6px; font-weight: 700; background: #e0f2fe; color: #0369a1; display: inline-block; }
+    .btn-eval {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.4rem 0.8rem; background: white; color: #4a9fc1;
+        border: 2px solid #4a9fc1; border-radius: 6px;
+        text-decoration: none; font-weight: 600; font-size: 0.82rem; transition: all 0.2s;
+    }
+    .btn-eval:hover { background: #4a9fc1; color: white; }
+    .btn-eval svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    /* ═══ EMPTY STATE ═══ */
+    .empty-state {
+        text-align: center; padding: 2.5rem 2rem;
+        color: #adb5bd; background: #f8f9fa; border-radius: 10px;
+    }
+    .empty-state svg { width: 40px; height: 40px; stroke: #dee2e6; stroke-width: 1.5; fill: none; margin-bottom: 0.8rem; display: block; margin-left: auto; margin-right: auto; }
+    .empty-state p { margin: 0; font-size: 0.9rem; }
+    .empty-state.success { background: #d1fae5; color: #065f46; }
+</style>
+
+<div class="dashboard-container">
+
+    <!-- ═══ 1. HEADER ═══ -->
+    <div class="dashboard-header">
+        <div class="header-left">
+            <div class="student-avatar">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path>
+                </svg>
+            </div>
+            <div class="student-info">
+                <h1>
+                    <svg viewBox="0 0 24 24" stroke="#2ab090" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;stroke-width:2;fill:none;vertical-align:middle;margin-right:0.5rem;">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                        <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path>
+                    </svg>
+                    Tableau de bord
+                </h1>
+                <p>
+                    Bienvenue, <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                    {% if ma_classe %}
+                    <span class="badge-classe">
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        {{ ma_classe.nom }}
+                    </span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <a href="{% url 'core:mes_notifications' %}" class="notif-bell" title="Mes notifications">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            {% if notifications %}
+            <div class="badge-count">{{ notifications.count }}</div>
+            {% endif %}
+        </a>
+    </div>
+
+    <!-- ═══ 2. MES PFMP ═══ -->
+    {% if mes_pfmp %}
+    <div class="pfmp-container">
+        <h2 class="section-title">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Mes PFMP (Périodes de stage)
+        </h2>
+
+        <div class="pfmp-grid">
+            {% now "Y-m-d" as today %}
+            {% for pfmp in mes_pfmp %}
+            <div class="pfmp-card {% if pfmp.date_debut|date:"Y-m-d" <= today and pfmp.date_fin|date:"Y-m-d" >= today %}en-cours{% endif %}"
+                 data-debut="{{ pfmp.date_debut|date:'Y-m-d' }}">
+                <h3>{{ pfmp.titre }}</h3>
+                <div class="pfmp-dates">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Du <strong>{{ pfmp.date_debut|date:"d/m/Y" }}</strong> au <strong>{{ pfmp.date_fin|date:"d/m/Y" }}</strong>
+                    {% if pfmp.date_debut|date:"Y-m-d" <= today and pfmp.date_fin|date:"Y-m-d" >= today %}
+                        <span class="badge-status badge-en-cours">● En cours</span>
+                    {% elif pfmp.date_debut|date:"Y-m-d" > today %}
+                        <span class="badge-status badge-a-venir">À venir</span>
+                    {% else %}
+                        <span class="badge-status badge-terminee">Terminée</span>
+                    {% endif %}
+                </div>
+                {% if pfmp.description %}
+                <p>{{ pfmp.description|truncatewords:15 }}</p>
+                {% endif %}
+                <a href="{% url 'core:pfmp_detail' pfmp.id %}" class="btn-action btn-submit" style="background:#6b7fd4;">
+                    Accéder au dossier complet →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══ 3. ATELIERS — COURS — TRAVAUX — RENDUS ═══ -->
+    <div class="grid-4-cols">
+        
+        <!-- ATELIERS (GAUCHE) -->
+        <div class="section-card ateliers">
+            <div class="card-header">
+                <svg style="stroke:#e8922a;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <h2>Ateliers</h2>
+            </div>
+
+            {% if ateliers %}
+            <div>
+                {% for atelier in ateliers %}
+                <a href="{% url 'core:atelier_detail' atelier.id %}" class="list-item">
+                    <div class="icon-box atelier">
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-title">{{ atelier.titre }}</div>
+                        <div class="list-item-subtitle">{{ atelier.description|truncatewords:10|default:"Cliquez pour voir" }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">Aucun atelier disponible pour le moment</div>
+            {% endif %}
+        </div>
+
+        <!-- COURS (DROITE) -->
+        <div class="section-card cours">
+            <div class="card-header">
+                <svg style="stroke:#7c5cbf;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <h2>Cours</h2>
+            </div>
+
+            {% if themes %}
+            <div>
+                {% for theme in themes %}
+                <a href="{% url 'core:theme_detail' theme.id %}" class="list-item">
+                    <div class="icon-box cours">
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-title">{{ theme.nom }}</div>
+                        <div class="list-item-subtitle">{{ theme.dossiers.count }} chapitre{{ theme.dossiers.count|pluralize }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">Aucun cours disponible pour le moment</div>
+            {% endif %}
+        </div>
+
+        <!-- TRAVAUX À FAIRE -->
+        <div class="section-card travaux">
+            <div class="card-header">
+                <svg style="stroke:#2ab090;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <h2>À faire</h2>
+                <span class="card-count" style="color:#2ab090;">{{ total_a_faire }}</span>
+            </div>
+
+            {% if travaux_a_faire or qcms_actifs %}
+            <div class="travaux-list">
+                {% for travail in travaux_a_faire %}
+                <div class="travail-item">
+                    <h4>{{ travail.titre }}</h4>
+                    <p style="margin:0.5rem 0;color:#6c757d;font-size:0.9rem;">{{ travail.description|truncatewords:20|default:"Aucune description" }}</p>
+                    <div class="travail-meta">
+                        <span class="travail-date">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            {{ travail.date_limite|date:"d/m/Y" }}
+                        </span>
+                        <div class="travail-actions">
+                            {% if travail.fichier_consigne %}
+                            <a href="{{ travail.fichier_consigne.url }}" class="btn-action btn-download" download>
+                                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Télécharger
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'core:rendre_travail' travail.id %}" class="btn-action btn-submit">
+                                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Rendre
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% for item in qcms_actifs %}
+                <div class="travail-item" style="border-left-color:#2ab090;{% if item.session %}opacity:0.75;{% endif %}">
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;">
+                        <span style="display:inline-flex;align-items:center;justify-content:center;
+                                     background:#d1fae5;color:#065f46;border-radius:6px;
+                                     padding:0.2rem 0.55rem;font-size:0.72rem;font-weight:700;
+                                     text-transform:uppercase;letter-spacing:0.05em;">QCM</span>
+                        <h4 style="margin:0;">{{ item.qcm.titre }}</h4>
+                    </div>
+                    <p style="margin:0.3rem 0 0.6rem;color:#6c757d;font-size:0.88rem;">
+                        {{ item.qcm.nb_q }} question{{ item.qcm.nb_q|pluralize }}&nbsp;·&nbsp;Note sur 20
+                        {% if item.session %}
+                        &nbsp;·&nbsp;<strong style="color:#2ab090;">{{ item.session.note_sur_20|floatformat:1 }}/20 obtenu</strong>
+                        {% endif %}
+                    </p>
+                    <div class="travail-meta">
+                        <span class="travail-date" style="background:#d1fae5;color:#065f46;">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Limite : {{ item.qcm.date_limite|date:"d/m/Y" }}
+                        </span>
+                        <div class="travail-actions">
+                            {% if item.session %}
+                            <a href="{% url 'core:qcm_resultats' pk=item.session.id %}"
+                               class="btn-action" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;">
+                                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Voir mes résultats
+                            </a>
+                            {% else %}
+                            <a href="{% url 'core:qcm_passer' pk=item.qcm.id %}"
+                               class="btn-action btn-submit" style="background:#2ab090;border-color:#2ab090;">
+                                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                                Passer le QCM
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state success">
+                <svg viewBox="0 0 24 24" stroke="#065f46" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                Tout est fait ! Bravo.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- MES RENDUS -->
+        <div class="section-card rendus">
+            <div class="card-header">
+                <svg style="stroke:#d94f4f;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <h2>Mes rendus</h2>
+                <span class="card-count" style="color:#d94f4f;">{{ mes_rendus|length|default:0 }}</span>
+            </div>
+
+            {% if mes_rendus %}
+            <div class="travaux-list">
+                {% for rendu in mes_rendus|slice:":5" %}
+                <div class="travail-item rendu">
+                    <h4>{{ rendu.travail.titre }}</h4>
+                    <div class="travail-meta">
+                        <span class="travail-date" style="background:#d4edda;color:#155724;">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            {{ rendu.date_rendu|date:"d/m/Y" }}
+                        </span>
+                        {% if rendu.corrige %}
+                        <span class="rendu-status corrige">
+                         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                             <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                         </svg>
+                         Corrigé
+                         {% if rendu.note and rendu.note != "None" %}
+                         - <span class="rendu-note">{{ rendu.note }}/20</span>
+                         {% endif %}
+                       </span>
+                       {% else %}
+                        <span class="rendu-status attente">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            En attente
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">Aucun travail rendu pour le moment</div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ═══ 5. MES ÉVALUATIONS ═══ -->
+    {% if mes_evaluations %}
+    <div class="section-card evaluations">
+        <div class="card-header">
+            <svg style="stroke:#4a9fc1;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            <h2>Mes Évaluations Validées</h2>
+        </div>
+
+        <div class="eval-grid">
+            {% for eval in mes_evaluations %}
+            <div class="eval-card">
+                <div class="eval-card-title">{{ eval.fiche_contrat.titre_tp }}</div>
+                <div class="eval-card-date">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    {{ eval.fiche_contrat.date_tp|date:"d/m/Y"|default:"—" }}
+                </div>
+                <div class="eval-card-footer">
+                    {% if eval.validee and eval.note_sur_20 %}
+                    <span class="note-badge">{{ eval.note_sur_20|floatformat:1 }}/20</span>
+                    {% else %}
+                    <span style="color:#6c757d;font-size:0.85rem;">Non validée</span>
+                    {% endif %}
+                    {% if eval.validee %}
+                    <a href="{% url 'core:eleve_fiche_complete' eval.id %}" class="btn-eval">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        Voir
+                    </a>
+                    {% else %}
+                    <span style="color:#6c757d;font-size:0.85rem;">En attente</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    document.querySelectorAll('.pfmp-card[data-debut]').forEach(function(card) {
+        var debutStr = card.dataset.debut;
+        if (!debutStr) return;
+        var debut = new Date(debutStr);
+        debut.setHours(0, 0, 0, 0);
+        var diffDays = (debut - today) / (1000 * 60 * 60 * 24);
+        var diffWeeks = diffDays / 7;
+
+        if (diffDays <= 0) return; // en cours ou terminée
+
+        var datesDiv = card.querySelector('.pfmp-dates');
+        if (!datesDiv) return;
+
+        if (diffWeeks > 8) {
+            datesDiv.classList.add('date-loin');
+        } else if (diffWeeks >= 5) {
+            datesDiv.classList.add('date-proche');
+        } else if (diffWeeks < 3) {
+            datesDiv.classList.add('date-urgente');
+        }
+    });
+});
+</script>
+
+{% endblock %}

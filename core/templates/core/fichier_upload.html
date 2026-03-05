@@ -1,0 +1,232 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Ajouter une ressource{% endblock %}
+
+{% block content %}
+
+<style>
+    /* CONTENEUR LARGE */
+    .container-fluid-custom {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    /* BOUTON RETOUR */
+    .btn-back-custom {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; border: 2px solid #20c997; border-radius: 8px;
+        color: #20c997; background: white; font-weight: 600; text-decoration: none;
+        margin-bottom: 1.5rem; transition: all 0.2s ease;
+    }
+    .btn-back-custom:hover { background: #20c997; color: white; transform: translateY(-2px); }
+    .btn-back-custom svg { width: 18px; height: 18px; stroke-width: 2.5; }
+
+    /* FORM CARD LARGE */
+    .form-card {
+        background: white; border-radius: 16px; padding: 2.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;
+        border-top: 6px solid #20c997;
+    }
+
+    /* HEADER */
+    .form-header {
+        text-align: center; margin-bottom: 2.5rem; border-bottom: 2px solid #f8f9fa; padding-bottom: 2rem;
+    }
+    .form-icon {
+        width: 64px; height: 64px; background: #e6fffa; color: #20c997;
+        border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;
+    }
+    .form-icon svg { width: 32px; height: 32px; }
+    .form-header h1 { margin: 0; color: #2c3e50; font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .form-header p { color: #6c757d; font-size: 1.1rem; }
+
+    /* GRILLE */
+    .form-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
+    }
+
+    /* TYPE SELECTOR (LARGE) */
+    .type-selector {
+        display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem;
+        grid-column: 1 / -1; /* Prend toute la largeur */
+    }
+    .type-option input { display: none; }
+    .type-option label {
+        display: flex; flex-direction: column; align-items: center; gap: 0.8rem; padding: 1.5rem;
+        background: white; border: 2px solid #e9ecef; border-radius: 12px; cursor: pointer;
+        text-align: center; transition: all 0.2s;
+    }
+    .type-option label svg { width: 32px; height: 32px; color: #adb5bd; }
+    .type-option label span { font-weight: 600; color: #6c757d; }
+    
+    .type-option input:checked + label {
+        background: #e6fffa; border-color: #20c997; transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(32, 201, 151, 0.15);
+    }
+    .type-option input:checked + label svg { color: #20c997; }
+    .type-option input:checked + label span { color: #20c997; }
+
+    /* CHAMPS */
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { display: block; font-weight: 600; color: #34495e; margin-bottom: 0.5rem; }
+    .required { color: #dc3545; margin-left: 3px; }
+    .form-control {
+        width: 100%; padding: 0.8rem 1rem; border: 2px solid #e9ecef; border-radius: 8px;
+        font-size: 1rem; color: #495057; transition: all 0.2s; box-sizing: border-box;
+    }
+    .form-control:focus { border-color: #20c997; outline: none; box-shadow: 0 0 0 3px rgba(32, 201, 151, 0.1); }
+    textarea.form-control { resize: vertical; min-height: 120px; }
+
+    /* CHAMPS CONDITIONNELS */
+    .conditional-field { display: none; }
+    .conditional-field.active { display: block; animation: fadeIn 0.3s; }
+
+    /* DRAG & DROP ZONE */
+    .upload-zone {
+        border: 2px dashed #e9ecef; border-radius: 12px; padding: 2rem;
+        text-align: center; background: #f8f9fa; margin-top: 0.5rem;
+    }
+    .upload-zone:hover { border-color: #20c997; background: #e6fffa; }
+    
+    /* BOUTON SUBMIT */
+    .form-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 1rem; }
+    .btn-submit {
+        display: inline-flex; align-items: center; justify-content: center; gap: 0.8rem;
+        padding: 1rem 3rem; background: #20c997; color: white;
+        border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .btn-submit:hover { background: #17a589; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 992px) { .form-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="container-fluid-custom">
+
+    <!-- BOUTON RETOUR (Pointe vers le thème parent) -->
+    <a href="{% url 'core:theme_detail' dossier.theme.id %}" class="btn-back-custom">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Retour
+    </a>
+
+    <div class="form-card">
+        <div class="form-header">
+            <div class="form-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+            <h1>Ajouter une ressource</h1>
+            <p>Dans le dossier : <strong>{{ dossier.nom }}</strong></p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- SÉLECTEUR DE TYPE (PLEINE LARGEUR) -->
+            <div class="type-selector">
+                <div class="type-option">
+                    <input type="radio" name="type_contenu" id="tc1" value="fichier" checked>
+                    <label for="tc1">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <span>Fichier</span>
+                    </label>
+                </div>
+                <div class="type-option">
+                    <input type="radio" name="type_contenu" id="tc2" value="lien">
+                    <label for="tc2">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        <span>Lien externe</span>
+                    </label>
+                </div>
+                <div class="type-option">
+                    <input type="radio" name="type_contenu" id="tc3" value="iframe">
+                    <label for="tc3">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+                        <span>Vidéo / Intégration</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- COLONNE GAUCHE -->
+            <div>
+                <div class="form-group">
+                    <label class="form-label">Nom de la ressource <span class="required">*</span></label>
+                    <input type="text" name="nom" class="form-control" placeholder="Ex: Cours chapitre 1" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description (Optionnel)</label>
+                    <textarea name="description" class="form-control" placeholder="Description de la ressource..."></textarea>
+                </div>
+            </div>
+
+            <!-- COLONNE DROITE (CONTENU DYNAMIQUE) -->
+            <div>
+                <!-- 1. FICHIER -->
+                <div id="field-fichier" class="conditional-field active">
+                    <div class="form-group">
+                        <label class="form-label">Fichier à uploader <span class="required">*</span></label>
+                        <div class="upload-zone">
+                            <input type="file" name="fichier" class="form-control">
+                            <small style="color:#6c757d; display:block; margin-top:10px;">PDF, Word, Excel, Images...</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. LIEN -->
+                <div id="field-lien" class="conditional-field">
+                    <div class="form-group">
+                        <label class="form-label">URL du lien <span class="required">*</span></label>
+                        <input type="url" name="lien_externe" class="form-control" placeholder="https://www.exemple.com">
+                    </div>
+                </div>
+
+                <!-- 3. IFRAME -->
+                <div id="field-iframe" class="conditional-field">
+                    <div class="form-group">
+                        <label class="form-label">Code d'intégration (Embed) <span class="required">*</span></label>
+                        <textarea name="code_iframe" class="form-control" rows="6" placeholder="<iframe src='...'></iframe>"></textarea>
+                        <small style="color:#6c757d;">Copiez ici le code fourni par YouTube, Genially, etc.</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Ordre d'affichage</label>
+                    <input type="number" name="ordre" class="form-control" value="0">
+                </div>
+            </div>
+
+            <!-- BOUTON VALIDATION -->
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Ajouter la ressource
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const radios = document.querySelectorAll('input[name="type_contenu"]');
+        
+        radios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Cacher tous les champs
+                document.getElementById('field-fichier').classList.remove('active');
+                document.getElementById('field-lien').classList.remove('active');
+                document.getElementById('field-iframe').classList.remove('active');
+                
+                // Afficher le bon champ
+                if(this.value === 'fichier') document.getElementById('field-fichier').classList.add('active');
+                if(this.value === 'lien') document.getElementById('field-lien').classList.add('active');
+                if(this.value === 'iframe') document.getElementById('field-iframe').classList.add('active');
+            });
+        });
+    });
+</script>
+
+{% endblock %}

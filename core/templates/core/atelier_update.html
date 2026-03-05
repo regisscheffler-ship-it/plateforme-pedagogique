@@ -1,0 +1,267 @@
+{% extends 'core/base.html' %}
+{% block title %}Modifier l'Atelier{% endblock %}
+
+{% block content %}
+<style>
+    .page-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #e8922a;
+    }
+
+    .page-header h1 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.8rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .btn-retour {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.5rem;
+        background: white;
+        color: #e8922a;
+        border: 2px solid #e8922a;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-retour:hover {
+        background: #e8922a;
+        color: white;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2.5rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .form-group label .required {
+        color: #dc3545;
+        margin-left: 3px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #e8922a;
+        box-shadow: 0 0 0 3px rgba(232, 146, 42, 0.1);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 1rem 1.2rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .form-check:hover {
+        border-color: #e8922a;
+        background: #fff9f0;
+    }
+
+    .form-check input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #e8922a;
+    }
+
+    .form-check label {
+        margin: 0;
+        cursor: pointer;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid #e9ecef;
+    }
+
+    .btn-submit {
+        flex: 1;
+        padding: 0.9rem 2rem;
+        background: white;
+        color: #e8922a;
+        border: 2px solid #e8922a;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-submit:hover {
+        background: #e8922a;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(232, 146, 42, 0.3);
+    }
+
+    .btn-cancel {
+        padding: 0.9rem 2rem;
+        background: white;
+        color: #6c757d;
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s;
+    }
+
+    .btn-cancel:hover {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+        color: #495057;
+    }
+
+    .alert-info {
+        background: #fff4e6;
+        border: 1px solid #fcd3a0;
+        border-radius: 10px;
+        padding: 1rem 1.2rem;
+        color: #92440e;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+</style>
+
+<div class="page-container">
+
+    <a href="{% url 'core:gestion_ateliers' %}" class="btn-retour" style="margin-bottom:1rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        Retour
+    </a>
+
+    <div class="page-header">
+        <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            Modifier l'Atelier
+        </h1>
+    </div>
+
+    <div class="form-card">
+
+        <div class="alert-info">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            Vous modifiez l'atelier <strong>{{ atelier.titre }}</strong> — Classe : <strong>{{ atelier.classe.nom }}</strong>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="titre">Titre de l'atelier <span class="required">*</span></label>
+                <input type="text" id="titre" name="titre" class="form-control"
+                       value="{{ atelier.titre }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="classe">Classe <span class="required">*</span></label>
+                <select id="classe" name="classe" class="form-control" required>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if c.id == atelier.classe.id %}selected{% endif %}>
+                        {{ c.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" class="form-control">{{ atelier.description }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="ordre">Ordre d'affichage</label>
+                <input type="number" id="ordre" name="ordre" class="form-control"
+                       value="{{ atelier.ordre }}" min="0">
+            </div>
+
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" id="visible_eleves" name="visible_eleves"
+                           {% if atelier.visible_eleves %}checked{% endif %}>
+                    <label for="visible_eleves">Visible par les élèves</label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'core:gestion_ateliers' %}" class="btn-cancel">Annuler</a>
+                <button type="submit" class="btn-submit">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Enregistrer les modifications
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

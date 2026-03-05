@@ -1,0 +1,203 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Modifier - {{ theme.nom }}{% endblock %}
+
+{% block content %}
+
+<style>
+    .form-container { max-width: 1600px; width: 100%; margin: 0 auto; padding: 2rem; }
+
+    /* BOUTON RETOUR STYLE HARMONISÉ */
+    .btn-back-custom {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; border: 2px solid #7c5cbf; border-radius: 8px;
+        color: #7c5cbf; background: white; font-weight: 600; text-decoration: none;
+        margin-bottom: 1.5rem; transition: all 0.2s ease;
+    }
+    .btn-back-custom:hover { background: #7c5cbf; color: white; transform: translateY(-2px); }
+    .btn-back-custom svg { width: 18px; height: 18px; stroke-width: 2.5; }
+    
+    .form-card {
+        background: white; border-radius: 16px; padding: 3rem;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.06); border: 1px solid #f0f2f5;
+    }
+    
+    .form-header { display: flex; align-items: center; gap: 1.5rem; border-bottom: 2px solid #f8f9fa; padding-bottom: 2rem; margin-bottom: 2.5rem; }
+    .form-header-icon { width: 60px; height: 60px; background: linear-gradient(135deg, #f5f3ff 0%, #e8d8ff 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #7c5cbf; }
+    .form-header h1 { margin: 0; color: #2c3e50; font-size: 2rem; font-weight: 700; }
+    .form-header p { margin: 0; color: #6c757d; font-size: 1rem; }
+    
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1.5rem; }
+    @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } }
+
+    .form-group { margin-bottom: 1.8rem; }
+    .form-group label { display: block; margin-bottom: 0.6rem; font-weight: 600; color: #34495e; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.9rem 1rem; border: 2px solid #e9ecef; border-radius: 10px; font-size: 1rem; transition: all 0.2s; background-color: #fdfdfd; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #7c5cbf; outline: none; background-color: #fff; box-shadow: 0 0 0 4px rgba(124,92,191,0.1); }
+    
+    .checkbox-wrapper { display: flex; align-items: center; gap: 1rem; background: #f8f9fa; padding: 1.2rem; border-radius: 12px; border: 1px solid #e9ecef; cursor: pointer; }
+    .checkbox-wrapper input { width: 22px; height: 22px; accent-color: #7c5cbf; cursor: pointer; }
+    .checkbox-wrapper label { margin: 0; cursor: pointer; font-weight: 600; color: #2c3e50; }
+
+    .quick-add-section { background: #faf8ff; border: 1px solid #d8cff5; border-radius: 12px; padding: 2rem; margin-top: 3rem; }
+    .quick-add-header { display: flex; align-items: center; gap: 0.8rem; cursor: pointer; }
+    .quick-add-content { display: none; margin-top: 2rem; padding-top: 2rem; border-top: 2px dashed #c4b0eb; }
+    
+    .mini-type-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .mini-type-option input { display: none; }
+    .mini-type-option label { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem; background: white; border: 2px solid #cbd5e0; border-radius: 10px; cursor: pointer; font-weight: 600; color: #4a5568; transition: all 0.2s; }
+    .mini-type-option input:checked + label { background: #7c5cbf; color: white; border-color: #7c5cbf; }
+
+    .conditional-field { display: none; background: white; padding: 1.5rem; border-radius: 10px; border: 1px solid #e9ecef; }
+    .conditional-field.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .form-actions { display: flex; gap: 1.2rem; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #f8f9fa; justify-content: flex-end; }
+    .btn { padding: 1rem 2rem; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; text-decoration: none; transition: transform 0.2s; }
+    .btn-primary { background: white; color: #7c5cbf; border: 2px solid #7c5cbf; box-shadow: none; }
+    .btn-primary:hover { background: #7c5cbf; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(124,92,191,0.3); }
+    .btn-secondary { background: white; border: 2px solid #dee2e6; color: #6c757d; }
+    .btn-secondary:hover { background: #f8f9fa; border-color: #adb5bd; }
+</style>
+
+<div class="form-container">
+    
+    <!-- BOUTON RETOUR STYLE "CAPTURE 2" -->
+    <a href="#" class="btn-back-custom btn-back-universal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Retour
+    </a>
+
+    <div class="form-card">
+        <div class="form-header">
+            <div class="form-header-icon">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+            <div>
+                <h1>Modifier le thème</h1>
+                <p>Éditez les informations générales ou ajoutez du contenu rapidement.</p>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nom du thème</label>
+                    <input type="text" name="nom" value="{{ theme.nom }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Classe associée</label>
+                    <select name="classe">
+                        {% for classe in classes %}
+                            <option value="{{ classe.id }}" {% if theme.classe.id == classe.id %}selected{% endif %}>
+                                {{ classe.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Description du thème</label>
+                <textarea name="description" rows="4">{{ theme.description }}</textarea>
+            </div>
+
+            <div class="checkbox-wrapper">
+                <input type="checkbox" name="visible_eleves" id="vis" {% if theme.visible_eleves %}checked{% endif %}>
+                <label for="vis">Rendre ce thème visible aux élèves immédiatement</label>
+            </div>
+
+            {% if dossiers %}
+            <div class="quick-add-section">
+                <div class="quick-add-header">
+                    <input type="checkbox" name="ajouter_ressource" id="ajouter_ressource" style="width:22px; height:22px; accent-color:#7c5cbf; cursor:pointer;">
+                    <label for="ajouter_ressource" style="font-weight:700; color:#3d2d6b; margin:0; cursor:pointer;">
+                        Ajouter une ressource rapide dans ce thème
+                    </label>
+                </div>
+
+                <div class="quick-add-content" id="ressource-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Dossier de destination :</label>
+                            <select name="dossier_cible">
+                                {% for dossier in dossiers %}
+                                    <option value="{{ dossier.id }}">{{ dossier.nom }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom de la ressource :</label>
+                            <input type="text" name="ressource_nom" placeholder="Ex: Plan PDF...">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description (optionnel) :</label>
+                        <input type="text" name="ressource_description" placeholder="Courte description...">
+                    </div>
+
+                    <label style="margin-bottom:0.8rem; display:block; font-weight:600; color:#3d2d6b;">Type de contenu :</label>
+                    <div class="mini-type-selector">
+                        <div class="mini-type-option">
+                            <input type="radio" name="type_ressource" id="t_file" value="fichier" checked>
+                            <label for="t_file">Fichier</label>
+                        </div>
+                        <div class="mini-type-option">
+                            <input type="radio" name="type_ressource" id="t_link" value="lien">
+                            <label for="t_link">Lien Web</label>
+                        </div>
+                        <div class="mini-type-option">
+                            <input type="radio" name="type_ressource" id="t_iframe" value="iframe">
+                            <label for="t_iframe">Iframe / Vidéo</label>
+                        </div>
+                    </div>
+
+                    <div class="conditional-field active" id="f_fichier">
+                        <label style="margin-bottom:0.5rem; display:block;">Fichier à télécharger :</label>
+                        <input type="file" name="ressource_fichier">
+                    </div>
+                    <div class="conditional-field" id="f_lien">
+                        <label style="margin-bottom:0.5rem; display:block;">URL du lien :</label>
+                        <input type="url" name="ressource_lien" placeholder="https://...">
+                    </div>
+                    <div class="conditional-field" id="f_iframe">
+                        <label style="margin-bottom:0.5rem; display:block;">Code d'intégration :</label>
+                        <textarea name="ressource_iframe" rows="3" placeholder='<iframe src="..." ...></iframe>'></textarea>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <a href="{% url 'core:theme_detail' theme.id %}" class="btn btn-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const checkRes = document.getElementById('ajouter_ressource');
+    if(checkRes) {
+        checkRes.addEventListener('change', function() {
+            document.getElementById('ressource-content').style.display = this.checked ? 'block' : 'none';
+        });
+
+        const radios = document.querySelectorAll('input[name="type_ressource"]');
+        radios.forEach(r => {
+            r.addEventListener('change', function() {
+                document.getElementById('f_fichier').className = 'conditional-field';
+                document.getElementById('f_lien').className = 'conditional-field';
+                document.getElementById('f_iframe').className = 'conditional-field';
+                if(this.value === 'fichier') document.getElementById('f_fichier').className += ' active';
+                if(this.value === 'lien') document.getElementById('f_lien').className += ' active';
+                if(this.value === 'iframe') document.getElementById('f_iframe').className += ' active';
+            });
+        });
+    }
+</script>
+
+{% endblock %}

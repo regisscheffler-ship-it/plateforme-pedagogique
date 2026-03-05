@@ -1,0 +1,236 @@
+{% extends 'core/base.html' %}
+{% block title %}Travail à Faire{% endblock %}
+
+{% block content %}
+<style>
+    .page-container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #20c997;
+        border: 2px solid #20c997; border-radius: 8px; text-decoration: none;
+        font-weight: 600; font-size: 0.9rem; transition: all 0.3s ease; margin-bottom: 1.5rem;
+    }
+    .btn-retour:hover { background: #20c997; color: white; transform: translateY(-2px); }
+    .btn-retour svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2.5; fill: none; }
+
+    .page-header {
+        background: white; border-radius: 16px; padding: 2rem;
+        margin-bottom: 2rem; box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #20c997; display: flex; align-items: center; gap: 1rem;
+    }
+    .page-header-icon {
+        width: 56px; height: 56px; background: #f1f5f9;
+        border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .page-header-icon svg { width: 28px; height: 28px; stroke: #20c997; stroke-width: 2; fill: none; }
+    .page-header h1 { margin: 0 0 0.3rem 0; color: #2c3e50; font-size: 1.8rem; font-weight: 700; }
+    .page-header p  { margin: 0; color: #6c757d; }
+
+    /* ── Carte classe ── */
+    .classe-section {
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        margin-bottom: 2rem; overflow: hidden;
+        border-left: 5px solid #20c997;
+    }
+
+    .classe-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 1.5rem 2rem; background: white; border-bottom: 1px solid #f1f5f9;
+        flex-wrap: wrap; gap: 1rem;
+    }
+    .classe-header-left { display: flex; align-items: center; gap: 1rem; }
+    .classe-icon {
+        width: 48px; height: 48px; background: #f1f5f9; color: #20c997;
+        border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    }
+    .classe-icon svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .classe-nom { font-size: 1.3rem; font-weight: 700; color: #2c3e50; margin: 0; }
+    .classe-meta { font-size: 0.9rem; color: #6c757d; margin: 0.2rem 0 0; }
+
+    .btn-creer-travail {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.65rem 1.3rem; background: white; color: #20c997;
+        border: 2px solid #20c997;
+        border-radius: 8px; text-decoration: none; font-weight: 600;
+        font-size: 0.9rem; transition: all 0.3s; flex-shrink: 0;
+    }
+    .btn-creer-travail:hover { background: #20c997; color: white; transform: translateY(-2px); }
+    .btn-creer-travail svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.5; fill: none; }
+
+    /* ── Liste des travaux inline ── */
+    .travaux-liste { padding: 1rem 2rem 1.5rem; }
+
+    .travail-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 1rem 1.2rem; background: #f8f9fa; border-radius: 10px;
+        margin-bottom: 0.75rem; border-left: 3px solid #20c997; gap: 1rem;
+        transition: all 0.2s;
+    }
+    .travail-row:hover { background: #f1f5f9; transform: translateX(4px); }
+    .travail-row:last-child { margin-bottom: 0; }
+
+    .travail-info { flex: 1; min-width: 0; }
+    .travail-titre {
+        font-weight: 700; color: #2c3e50; font-size: 1rem;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .travail-meta-row {
+        font-size: 0.85rem; color: #6c757d; margin-top: 0.25rem;
+        display: flex; gap: 1rem; flex-wrap: wrap;
+    }
+    .retard { color: #dc3545; font-weight: 600; }
+
+    .travail-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+    .btn-voir {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.45rem 0.9rem; background: white; color: #20c997;
+        border: 1px solid #20c997; border-radius: 6px;
+        text-decoration: none; font-weight: 600; font-size: 0.82rem; transition: all 0.2s;
+    }
+    .btn-voir:hover { background: #20c997; color: white; }
+    .btn-voir svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    .btn-del {
+        display: inline-flex; align-items: center;
+        padding: 0.45rem 0.7rem; background: #fee2e2; color: #dc3545;
+        border: 1px solid #fca5a5; border-radius: 6px;
+        font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+        line-height: 1;
+    }
+    .btn-del:hover { background: #dc3545; color: white; border-color: #dc3545; }
+    .btn-del svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+    .empty-travaux {
+        padding: 1.5rem 2rem; color: #94a3b8; font-style: italic; font-size: 0.9rem;
+        text-align: center;
+    }
+
+    .empty-state {
+        text-align: center; padding: 3rem; background: white;
+        border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); color: #6c757d;
+    }
+    .empty-state svg { width: 56px; height: 56px; stroke: #d1d5db; stroke-width: 1.5; fill: none; margin-bottom: 1rem; }
+</style>
+
+<div class="page-container">
+
+    <a href="#" class="btn-retour btn-back-universal">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="page-header">
+        <div class="page-header-icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+        </div>
+        <div>
+            <h1>Travail à Faire</h1>
+            <p>Gérez les devoirs de chaque classe</p>
+        </div>
+    </div>
+
+    {% for item in classes_avec_travaux %}
+    <div class="classe-section">
+
+        <!-- En-tête classe -->
+        <div class="classe-header">
+            <div class="classe-header-left">
+                <div class="classe-icon">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <p class="classe-nom">{{ item.classe.nom }}</p>
+                    <p class="classe-meta">
+                        {{ item.nb_eleves }} élève{{ item.nb_eleves|pluralize }}
+                        &nbsp;·&nbsp;
+                        <strong>{{ item.travaux|length }} travail{{ item.travaux|length|pluralize }}</strong>
+                    </p>
+                </div>
+            </div>
+            <a href="{% url 'core:travail_create' item.classe.id %}" class="btn-creer-travail">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nouveau travail
+            </a>
+        </div>
+
+        <!-- Liste des travaux -->
+        {% if item.travaux %}
+        <div class="travaux-liste">
+            {% for travail in item.travaux %}
+            <div class="travail-row">
+                <div class="travail-info">
+                    <div class="travail-titre">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#20c997" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                        {{ travail.titre }}
+                    </div>
+                    <div class="travail-meta-row">
+                        <span>
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            {{ travail.date_limite|date:"d/m/Y H:i" }}
+                        </span>
+                        <span>
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                            {{ travail.nb_rendus }} rendu(s) / {{ travail.nb_eleves_classe }}
+                        </span>
+                        {% if travail.est_en_retard %}<span class="retard">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            Dépassé
+                        </span>{% endif %}
+                    </div>
+                </div>
+                <div class="travail-actions">
+                    <a href="{% url 'core:travail_detail' travail.id %}" class="btn-voir">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Voir
+                    </a>
+                    <form method="post" action="{% url 'core:travail_delete' travail.id %}"
+                          style="display:inline;"
+                          onsubmit="return confirm('Supprimer « {{ travail.titre|escapejs }} » ?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-del">
+                            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-travaux">Aucun travail pour cette classe — cliquez sur « Nouveau travail » pour commencer.</div>
+        {% endif %}
+
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        </svg>
+        <p style="font-size:1.1rem;font-weight:600;margin:0 0 0.5rem;">Aucune classe disponible</p>
+        <p style="font-size:0.9rem;margin:0;">Créez d'abord une classe dans Gestion des classes.</p>
+    </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

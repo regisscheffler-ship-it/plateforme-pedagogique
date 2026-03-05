@@ -1,0 +1,272 @@
+{% extends 'core/base.html' %}
+{% block title %}Créer un QCM – {{ theme.titre }}{% endblock %}
+
+{% block content %}
+<style>
+    :root { --qcm: #2ab090; --qcm-light: #f0fdf9; --qcm-border: #a7f3d0; }
+    .page-container { max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .page-header {
+        background: white; border-radius: 12px; padding: 1.5rem 2rem;
+        margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-left: 5px solid var(--qcm);
+        display: flex; align-items: center; gap: 1rem;
+    }
+    .page-header svg { width: 32px; height: 32px; stroke: var(--qcm); stroke-width: 2; fill: none; }
+    .page-header h1 { margin: 0; font-size: 1.6rem; color: #2c3e50; font-weight: 700; }
+    .page-header .subtitle { font-size: 0.9rem; color: #868e96; margin-top: 3px; }
+
+    .form-card {
+        background: white; border-radius: 12px; padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .section-title {
+        font-size: 1rem; font-weight: 700; color: #2c3e50;
+        border-bottom: 2px solid #f1f3f5; padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-title svg { width: 18px; height: 18px; stroke: var(--qcm); fill: none; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label {
+        display: block; font-weight: 600; font-size: 0.92rem;
+        color: #495057; margin-bottom: 0.4rem;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 0.75rem 0.9rem; border: 1.5px solid #dee2e6;
+        border-radius: 8px; font-size: 0.95rem; box-sizing: border-box;
+        transition: border-color 0.2s; font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        outline: none; border-color: var(--qcm);
+        box-shadow: 0 0 0 3px rgba(42,176,144,0.1);
+    }
+    .form-group small { display: block; margin-top: 4px; font-size: 0.8rem; color: #868e96; }
+    .toggle-row {
+        display: flex; align-items: center; gap: 0.6rem;
+        cursor: pointer; margin-bottom: 1rem;
+    }
+    .toggle-row input { width: 16px; height: 16px; accent-color: var(--qcm); cursor: pointer; }
+    .toggle-row label { font-weight: 600; color: #374151; cursor: pointer; margin: 0; }
+
+    /* Zone IA */
+    .ia-zone {
+        background: var(--qcm-light); border: 1.5px dashed var(--qcm);
+        border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .ia-badge {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        background: var(--qcm); color: white; padding: 4px 12px;
+        border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    .ia-or {
+        text-align: center; color: #64748b; font-size: 0.85rem;
+        font-weight: 600; margin: 1rem 0; position: relative;
+    }
+    .ia-or::before, .ia-or::after {
+        content: ''; position: absolute; top: 50%;
+        width: 42%; height: 1px; background: #e2e8f0;
+    }
+    .ia-or::before { left: 0; }
+    .ia-or::after { right: 0; }
+
+    /* Boutons */
+    .form-actions {
+        display: flex; justify-content: flex-end; gap: 1rem;
+        padding-top: 1.5rem; border-top: 1px solid #dee2e6; margin-top: 1rem;
+    }
+    .btn {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600;
+        font-size: 0.95rem; cursor: pointer; border: none; text-decoration: none;
+        transition: all 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-cancel { background: white; color: #6c757d; border: 2px solid #dee2e6; }
+    .btn-cancel:hover { background: #f8f9fa; }
+    .btn-submit { background: var(--qcm); color: white; }
+    .btn-submit:hover { background: #20a07c; box-shadow: 0 4px 12px rgba(42,176,144,0.35); }
+    .btn svg { width: 16px; height: 16px; }
+</style>
+
+<div class="page-container">
+
+    <a href="{% url 'core:theme_detail' theme.id %}" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:var(--qcm);
+              border:2px solid var(--qcm);border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- En-tête -->
+    <div class="page-header">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+        <div>
+            <h1>Créer un QCM</h1>
+            <div class="subtitle">Thème : {{ theme.titre }}</div>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="form-card">
+        {% csrf_token %}
+
+        <!-- Paramètres -->
+        <div class="section-title">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"></path>
+            </svg>
+            Paramètres du QCM
+        </div>
+
+        <div class="form-group">
+            <label for="titre">Titre du QCM *</label>
+            <input type="text" id="titre" name="titre" required placeholder="ex : Maçonnerie — Chapitre 3">
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="classe">Classe *</label>
+                <select id="classe" name="classe" required>
+                    <option value="">— Sélectionner —</option>
+                    {% for classe in classes %}
+                    <option value="{{ classe.id }}">{{ classe.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="date_limite">Date et heure limite *</label>
+                <input type="datetime-local" id="date_limite" name="date_limite" required>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="nb_questions">Nombre de questions IA</label>
+                <select id="nb_questions" name="nb_questions">
+                    <option value="5">5 questions</option>
+                    <option value="10" selected>10 questions</option>
+                    <option value="15">15 questions</option>
+                    <option value="20">20 questions</option>
+                </select>
+                <small>Utilisé uniquement si un texte ou PDF est fourni ci-dessous.</small>
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;padding-top:1.8rem;">
+                <div class="toggle-row">
+                    <input type="checkbox" id="melange_questions" name="melange_questions" checked>
+                    <label for="melange_questions">Mélanger l'ordre des questions</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zone IA -->
+        <div class="ia-zone">
+            <div class="ia-badge">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                Génération IA — Gemini
+            </div>
+            <p style="font-size:0.85rem;color:#374151;margin:0 0 1rem;">
+                Choisissez une source pour générer automatiquement les questions.
+                <strong>Facultatif</strong> — vous pourrez ajouter des questions manuellement ensuite.
+            </p>
+
+            <!-- Onglets source -->
+            <input type="hidden" name="source_type" id="source_type" value="texte">
+            <div style="display:flex;gap:0.5rem;margin-bottom:1.2rem;flex-wrap:wrap;">
+                <button type="button" class="source-tab active" data-source="texte"
+                        onclick="setSource('texte')">✏️ Texte libre</button>
+                <button type="button" class="source-tab" data-source="pdf"
+                        onclick="setSource('pdf')">📄 PDF</button>
+                {% if fiches_revision %}
+                <button type="button" class="source-tab" data-source="fiches"
+                        onclick="setSource('fiches')">🗂️ Fiches de révision</button>
+                {% endif %}
+            </div>
+
+            <!-- Panneau Texte -->
+            <div id="panel-texte" class="source-panel">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="texte_source">Texte de cours (copier-coller)</label>
+                    <textarea id="texte_source" name="texte_source" rows="6"
+                        placeholder="Collez ici le contenu du cours à partir duquel générer les questions..."></textarea>
+                    <small>Le texte sera tronqué à 8 000 caractères.</small>
+                </div>
+            </div>
+
+            <!-- Panneau PDF -->
+            <div id="panel-pdf" class="source-panel" style="display:none;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="pdf_source">📄 Fichier PDF source</label>
+                    <input type="file" id="pdf_source" name="pdf_source" accept=".pdf">
+                    <small>Le texte sera extrait automatiquement.</small>
+                </div>
+            </div>
+
+            <!-- Panneau Fiches de révision -->
+            {% if fiches_revision %}
+            <div id="panel-fiches" class="source-panel" style="display:none;">
+                <p style="font-size:0.85rem;color:#065f46;background:#d1fae5;
+                          border:1px solid #6ee7b7;border-radius:8px;padding:0.7rem 1rem;margin:0 0 1rem;">
+                    🗂️ Gemini va transformer les cartes sélectionnées en QCM en ajoutant 3 fausses réponses par carte.
+                </p>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="fiche_id">Fiche de révision source</label>
+                    <select id="fiche_id" name="fiche_id">
+                        <option value="">— Sélectionner une fiche —</option>
+                        {% for fiche in fiches_revision %}
+                        <option value="{{ fiche.id }}">
+                            {{ fiche.titre }} ({{ fiche.nb_cartes }} carte{{ fiche.nb_cartes|pluralize }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small>Le nombre de cartes converties est limité par le paramètre "Nb questions IA" ci-dessus.</small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <style>
+        .source-tab {
+            padding: 0.5rem 1rem; border-radius: 20px; font-size:0.85rem;
+            font-weight: 600; cursor: pointer; border: 2px solid var(--qcm);
+            background: white; color: var(--qcm); transition: all 0.2s;
+        }
+        .source-tab.active { background: var(--qcm); color: white; }
+        .source-tab:hover:not(.active) { background: var(--qcm-light); }
+        </style>
+        <script>
+        function setSource(src) {
+            document.getElementById('source_type').value = src;
+            document.querySelectorAll('.source-tab').forEach(t =>
+                t.classList.toggle('active', t.dataset.source === src));
+            document.querySelectorAll('.source-panel').forEach(p => p.style.display = 'none');
+            const panel = document.getElementById('panel-' + src);
+            if (panel) panel.style.display = '';
+        }
+        </script>
+
+        <div class="form-actions">
+            <a href="{% url 'core:theme_detail' theme.id %}" class="btn btn-cancel">Annuler</a>
+            <button type="submit" class="btn btn-submit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                Créer le QCM
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

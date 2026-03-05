@@ -1,0 +1,168 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ qcm.titre }}{% endblock %}
+{% block content %}
+<style>
+    :root { --qcm: #2ab090; }
+    .page-container { max-width: 760px; margin: 0 auto; padding: 2rem 1rem; }
+
+    .qcm-header {
+        background: white;
+        color: #1e293b; border-radius: 12px; padding: 1.5rem 2rem;
+        margin-bottom: 2rem; text-align: left;
+        border-left: 5px solid #2ab090;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .qcm-header h1 { margin: 0 0 0.4rem; font-size: 1.4rem; color: #1e293b; }
+    .qcm-meta { font-size: 0.88rem; color: #6b7280; }
+
+    .q-card {
+        background: white; border-radius: 14px; padding: 1.8rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07); margin-bottom: 1.5rem;
+        border-left: 4px solid var(--qcm);
+    }
+    .q-numero {
+        font-size: 0.78rem; font-weight: 700; color: var(--qcm);
+        text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem;
+    }
+    .q-enonce {
+        font-size: 1.05rem; font-weight: 600; color: #2c3e50;
+        margin-bottom: 1.2rem; line-height: 1.5;
+    }
+    .q-image { text-align: center; margin-bottom: 1.2rem; }
+    .q-image img { max-width: 100%; max-height: 220px; border-radius: 10px; object-fit: contain; }
+
+    .choix-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .choix-label {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 0.75rem 1rem; border: 2px solid #e9ecef; border-radius: 10px;
+        cursor: pointer; transition: all 0.18s; font-size: 0.95rem; color: #495057;
+    }
+    .choix-label:hover { border-color: var(--qcm); background: #f0fdf9; }
+    .choix-label:has(input:checked) {
+        border-color: var(--qcm); background: #ccfbf1; color: #065f46; font-weight: 600;
+    }
+    .choix-label input[type=radio] { accent-color: var(--qcm); width: 18px; height: 18px; flex-shrink: 0; }
+    .lettre-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; border-radius: 50%; background: #e9ecef;
+        font-weight: 700; font-size: 0.82rem; flex-shrink: 0;
+    }
+    .choix-label:has(input:checked) .lettre-badge { background: var(--qcm); color: white; }
+
+    .progress-bar-wrap {
+        background: #e9ecef; border-radius: 100px; height: 8px;
+        margin-bottom: 2rem; overflow: hidden;
+    }
+    .progress-bar-fill { height: 100%; background: var(--qcm); border-radius: 100px; transition: width 0.3s; }
+
+    .btn-submit {
+        display: flex; align-items: center; justify-content: center; gap: 0.7rem;
+        width: 100%; padding: 1rem; background: var(--qcm); color: white;
+        border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 700;
+        cursor: pointer; transition: all 0.2s; margin-top: 1rem;
+    }
+    .btn-submit:hover { background: #229076; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(42,176,144,0.4); }
+    .btn-submit:disabled { background: #adb5bd; cursor: not-allowed; transform: none; }
+
+    #compteur-reponses {
+        text-align: center; font-size: 0.9rem; color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    @media (max-width: 600px) { .page-container { padding: 1rem 0.5rem; } }
+</style>
+
+<div class="page-container">
+
+    <a href="{% url 'core:dashboard_eleve' %}"
+       style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
+              background:white;color:#2ab090;border:2px solid #2ab090;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.88rem;margin-bottom:1.5rem;transition:all 0.2s;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="qcm-header">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#2ab090"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+             style="margin-right:0.6rem;vertical-align:middle;">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+        <h1 style="display:inline;vertical-align:middle;">{{ qcm.titre }}</h1>
+        <p class="qcm-meta">{{ nb_questions }} question{{ nb_questions|pluralize }} &nbsp;&middot;&nbsp; Note sur 20 &nbsp;&middot;&nbsp; Limite : {{ qcm.date_limite|date:"d/m/Y \à H\hi" }}</p>
+    </div>
+
+    <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+    </div>
+
+    <form method="post" id="qcm-form" onsubmit="return validerForm()" data-total="{{ nb_questions }}">
+        {% csrf_token %}
+
+        {% for item in questions_data %}
+        <div class="q-card" data-qid="{{ item.q.id }}">
+            <div class="q-numero">Question {{ forloop.counter }} / {{ nb_questions }}</div>
+            <div class="q-enonce">{{ item.q.enonce }}</div>
+            {% if item.q.image_url %}
+            <div class="q-image">
+                <img src="{{ item.q.image_url }}" alt="Illustration">
+            </div>
+            {% endif %}
+            <div class="choix-list">
+                {% for choice in item.choices %}
+                <label class="choix-label">
+                    <input type="radio" name="q_{{ item.q.id }}" value="{{ choice.0 }}" onchange="majProgression()">
+                    <span class="lettre-badge">{{ choice.0 }}</span>
+                    {{ choice.1 }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div id="compteur-reponses">0 / {{ nb_questions }} question{{ nb_questions|pluralize }} répondue{{ nb_questions|pluralize }}</div>
+        <button type="submit" class="btn-submit" id="btn-submit">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Valider mes réponses
+        </button>
+    </form>
+
+</div>
+
+<script>
+const TOTAL = parseInt(document.getElementById('qcm-form').dataset.total, 10);
+
+function majProgression() {
+    const repondues = new Set(
+        Array.from(document.querySelectorAll('#qcm-form input[type=radio]:checked'))
+            .map(i => i.name)
+    ).size;
+    const pct = Math.round((repondues / TOTAL) * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('compteur-reponses').textContent =
+        repondues + ' / ' + TOTAL + ' question' + (repondues > 1 ? 's' : '') + ' répondue' + (repondues > 1 ? 's' : '');
+}
+
+function validerForm() {
+    const repondues = new Set(
+        Array.from(document.querySelectorAll('#qcm-form input[type=radio]:checked'))
+            .map(i => i.name)
+    ).size;
+    if (repondues < TOTAL) {
+        const manquantes = TOTAL - repondues;
+        return confirm(
+            manquantes + ' question' + (manquantes > 1 ? 's' : '') +
+            ' sans réponse. Voulez-vous quand même valider ?'
+        );
+    }
+    return true;
+}
+</script>
+
+{% endblock %}

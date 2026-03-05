@@ -1,0 +1,143 @@
+{% extends 'core/base.html' %}
+{% block title %}Mon contrat - {{ fiche_contrat.titre_tp }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-container {
+        max-width: 1400px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #4a9fc1;
+    }
+
+    .header-card h1 { color: #2c3e50; margin: 0 0 0.5rem 0; font-size: 1.8rem; }
+    .header-card p  { color: #6c757d; margin: 0.3rem 0; }
+
+    .content-box {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    .content-box h3 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #bae6f5;
+        padding-bottom: 0.5rem;
+    }
+
+    .competences-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .competences-list li {
+        padding: 0.8rem;
+        background: #f0f9ff;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        border-left: 4px solid #4a9fc1;
+    }
+</style>
+
+<div class="page-container">
+    <a href="javascript:history.back()" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.7rem 1.5rem;background:white;color:#4a9fc1;
+              border:2px solid #4a9fc1;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="header-card">
+        <h1>{{ fiche_contrat.titre_tp }}</h1>
+        <p><strong>Élève :</strong> {{ eleve.user.get_full_name }}</p>
+        <p><strong>Classe :</strong> {{ fiche_contrat.classe.nom }}</p>
+        <p><strong>Date :</strong> {{ fiche_contrat.date_tp|date:"d/m/Y"|default:"Non définie" }}</p>
+    </div>
+
+    <div class="content-box">
+        <h3>Compétences visées</h3>
+
+<!-- NOUVEAU CODE -->
+<ul class="competences-list">
+    {% for ligne in fiche_contrat.savoirs_uniques %}
+        <li>{{ ligne }}</li>
+    {% endfor %}
+</ul>
+    </div>
+
+    {% if fiche_contrat.contexte %}
+    <div class="content-box">
+        <h3>Contexte professionnel</h3>
+        <p>{{ fiche_contrat.contexte|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if fiche_contrat.observation_environnement %}
+    <div class="content-box">
+        <h3>Observation de l'environnement de travail</h3>
+        <p>{{ fiche_contrat.observation_environnement|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if fiche_contrat.problematique %}
+    <div class="content-box">
+        <h3>Problématique</h3>
+        <p>{{ fiche_contrat.problematique|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if fiche_contrat.savoirs_associes %}
+    <div class="content-box">
+        <h3>Connaissances</h3>
+        <ul class="competences-list">
+            {% for ligne in fiche_contrat.savoirs_associes.splitlines %}
+                {% if ligne %}
+                    <li>{{ ligne }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if fiche_contrat.materiels %}
+    <div class="content-box">
+        <h3>Matériels à disposition</h3>
+        <p>{{ fiche_contrat.materiels|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if fiche_contrat.consigne %}
+    <div class="content-box">
+        <h3>Consigne</h3>
+        <p>{{ fiche_contrat.consigne|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if fiche_contrat.risques_epi %}
+    <div class="content-box">
+        <h3>Risques et EPI</h3>
+        <p>{{ fiche_contrat.risques_epi|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,55 @@
+{% if donnees %}
+<div style="overflow-x:auto;">
+<table class="conn-table" style="min-width:650px;">
+    <thead>
+        <tr>
+            <th style="min-width:200px;">Origine</th>
+            <th style="text-align:center;">Total sortis</th>
+            <th style="text-align:center;color:#10b981;">✅ Diplômés</th>
+            <th style="text-align:center;color:#f59e0b;">⭐ Avec mention</th>
+            <th style="text-align:center;color:#e74c3c;">⚠️ Décrocheurs</th>
+            <th style="text-align:center;color:#6366f1;">📈 Taux réussite</th>
+            <th style="text-align:center;color:#f59e0b;">🏅 Taux mention</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for row in donnees %}
+        <tr>
+            <td><strong>{{ row.label }}</strong></td>
+            <td style="text-align:center;font-weight:600;">{{ row.total }}</td>
+            <td style="text-align:center;">
+                {% if row.diplomes %}
+                <span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:8px;font-size:0.82rem;font-weight:600;">{{ row.diplomes }}</span>
+                {% else %}<span style="color:#cbd5e1;">0</span>{% endif %}
+            </td>
+            <td style="text-align:center;">
+                {% if row.mention %}
+                <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:8px;font-size:0.82rem;font-weight:600;">{{ row.mention }}</span>
+                {% else %}<span style="color:#cbd5e1;">0</span>{% endif %}
+            </td>
+            <td style="text-align:center;">
+                {% if row.decrocheurs %}
+                <span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:8px;font-size:0.82rem;font-weight:600;">{{ row.decrocheurs }}</span>
+                {% else %}<span style="color:#d1fae5;font-size:0.82rem;font-weight:600;">0</span>{% endif %}
+            </td>
+            <td style="text-align:center;">
+                <div style="display:flex;align-items:center;gap:0.4rem;justify-content:center;">
+                    <div style="flex:1;max-width:70px;background:#e2e8f0;border-radius:4px;height:8px;overflow:hidden;">
+                        <div style="width:{{ row.taux_reussite }}%;height:100%;border-radius:4px;background:{{ row.barre_color }};"></div>
+                    </div>
+                    <span style="font-size:0.82rem;font-weight:700;color:{{ row.texte_color }};">{{ row.taux_reussite }}%</span>
+                </div>
+            </td>
+            <td style="text-align:center;">
+                {% if row.diplomes %}
+                <span style="font-size:0.82rem;font-weight:600;color:#d97706;">{{ row.taux_mention }}%</span>
+                {% else %}<span style="color:#cbd5e1;">—</span>{% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div style="text-align:center;padding:2rem;color:#94a3b8;">Aucune donnée (profils d'origine non encore renseignés).</div>
+{% endif %}

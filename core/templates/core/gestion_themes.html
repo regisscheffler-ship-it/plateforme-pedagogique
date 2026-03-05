@@ -1,0 +1,391 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Gestion des thèmes{% endblock %}
+
+{% block content %}
+
+<style>
+    /* ========================================
+       GESTION THÈMES — Violet #7c5cbf
+       ======================================== */
+
+    .themes-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* Header page */
+    .page-header-block {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #7c5cbf;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-header-block h1 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-weight: 700;
+    }
+
+    .page-header-block h1 svg {
+        stroke: #7c5cbf;
+        fill: none;
+        stroke-width: 1.5;
+    }
+
+    /* Bouton créer — outlined violet */
+    .btn-creer-theme {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: white;
+        color: #7c5cbf;
+        border: 2px solid #7c5cbf;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-creer-theme:hover {
+        background: #7c5cbf;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(124,92,191,0.3);
+    }
+
+    /* Filtre */
+    .filtre-section {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        border-left: 4px solid #7c5cbf;
+    }
+
+    .filtre-section label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.95rem;
+    }
+
+    .filtre-section select {
+        width: 100%;
+        padding: 0.8rem;
+        border: 1.5px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+        font-family: inherit;
+    }
+
+    .filtre-section select:focus {
+        outline: none;
+        border-color: #7c5cbf;
+        box-shadow: 0 0 0 3px rgba(124,92,191,0.1);
+    }
+
+    /* Carte thème */
+    .theme-card {
+        background: white;
+        border: 1.5px solid #e9ecef;
+        border-left: 5px solid #7c5cbf;
+        border-radius: 12px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .theme-card:hover {
+        transform: translateX(6px);
+        box-shadow: 0 6px 20px rgba(124,92,191,0.12);
+        border-left-color: #6b4dab;
+    }
+
+    .theme-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .theme-info { flex: 1; }
+
+    .theme-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .theme-header h3 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    .badge-visible {
+        background: #f5f3ff;
+        color: #7c5cbf;
+        padding: 0.25rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid #d8cff5;
+    }
+
+    .badge-masque {
+        background: #fee2e2;
+        color: #d94f4f;
+        padding: 0.25rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid #fca5a5;
+    }
+
+    .theme-meta {
+        color: #7a8694;
+        margin: 0.5rem 0 0 0;
+        font-size: 0.9rem;
+    }
+
+    .theme-description {
+        color: #6c757d;
+        margin: 0.7rem 0 0 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    /* ========== BOUTONS D'ACTION outlined ========== */
+    .theme-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 10;
+    }
+
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        white-space: nowrap;
+        background: white;
+        border: 2px solid currentColor;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Modifier → orange */
+    .btn-modifier { color: #e8922a; }
+    .btn-modifier:hover { background: #e8922a; color: white; box-shadow: 0 4px 12px rgba(232,146,42,0.25); }
+
+    /* Masquer/Afficher → jaune / vert */
+    .btn-masquer  { color: #c9a000; }
+    .btn-masquer:hover  { background: #c9a000; color: white; box-shadow: 0 4px 12px rgba(201,160,0,0.25); }
+
+    .btn-afficher { color: #2ab090; }
+    .btn-afficher:hover { background: #2ab090; color: white; box-shadow: 0 4px 12px rgba(42,176,144,0.25); }
+
+    /* Voir → violet */
+    .btn-voir { color: #7c5cbf; }
+    .btn-voir:hover { background: #7c5cbf; color: white; box-shadow: 0 4px 12px rgba(124,92,191,0.25); }
+
+    /* Supprimer → rouge */
+    .btn-supprimer { color: #d94f4f; }
+    .btn-supprimer:hover { background: #d94f4f; color: white; box-shadow: 0 4px 12px rgba(217,79,79,0.25); }
+
+    /* État vide */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: #faf8ff;
+        border-radius: 12px;
+        border: 2px dashed #d8cff5;
+    }
+
+    .empty-state h3 { color: #2c3e50; margin-bottom: 0.5rem; font-size: 1.5rem; }
+    .empty-state p  { color: #6c757d; font-size: 1rem; margin-bottom: 1.5rem; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .theme-content { flex-direction: column; align-items: flex-start; }
+        .theme-actions { width: 100%; justify-content: flex-start; }
+        .btn-action { flex: 1; justify-content: center; }
+    }
+</style>
+
+<div class="themes-container">
+
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#7c5cbf;
+              border:2px solid #7c5cbf;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- Header : titre + bouton créer -->
+    <div class="page-header-block">
+        <h1>
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            Gestion des thèmes
+        </h1>
+        <a href="{% url 'core:theme_create' %}" class="btn-creer-theme">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </svg>
+            Créer un thème
+        </a>
+    </div>
+
+    <!-- FILTRE PAR CLASSE -->
+    <form method="get" class="filtre-section">
+        <label for="classe">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 0.3rem;">
+                <path d="M12 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM5 4h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 2h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1z"/>
+            </svg>
+            Filtrer par classe
+        </label>
+        <select name="classe" id="classe" onchange="this.form.submit()">
+            <option value="">-- Toutes les classes --</option>
+            {% for classe in classes %}
+                <option value="{{ classe.id }}" {% if classe_selectionnee == classe.id|stringformat:"i" %}selected{% endif %}>
+    {{ classe.nom }}
+</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <!-- LISTE DES THÈMES -->
+    {% if themes %}
+        <div style="display: grid; gap: 1rem;">
+            {% for theme in themes %}
+            <div class="theme-card" 
+     data-url="{% url 'core:theme_detail' theme.id %}" 
+     onclick="window.location.href=this.dataset.url">
+                <div class="theme-content">
+                    <div class="theme-info">
+                        <div class="theme-header">
+                            <h3>{{ theme.nom }}</h3>
+                            {% if theme.visible_eleves %}
+                                <span class="badge-visible">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    Visible élèves
+                                </span>
+                            {% else %}
+                                <span class="badge-masque">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                    Masqué élèves
+                                </span>
+                            {% endif %}
+                        </div>
+                        <p class="theme-meta">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
+                                <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                                <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                            </svg>
+                            {{ theme.classe.nom }} • 
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-left: 0.5rem;">
+                                <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/>
+                            </svg>
+                            {{ theme.dossiers.count }} dossier(s)
+                        </p>
+                        {% if theme.description %}
+                            <p class="theme-description">{{ theme.description }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- BOUTONS D'ACTION -->
+                    <div class="theme-actions" onclick="event.stopPropagation();">
+                        <a href="{% url 'core:theme_update' theme.pk %}" class="btn-action btn-modifier">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            Modifier
+                        </a>
+
+                        <a href="{% url 'core:theme_toggle_visibilite' theme.id %}"
+                           class="btn-action {% if theme.visible_eleves %}btn-masquer{% else %}btn-afficher{% endif %}">
+                            {% if theme.visible_eleves %}
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                Masquer
+                            {% else %}
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                Afficher
+                            {% endif %}
+                        </a>
+
+                        <a href="{% url 'core:theme_detail' theme.id %}" class="btn-action btn-voir">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                            Voir
+                        </a>
+
+                        <a href="{% url 'core:theme_delete' theme.id %}"
+                           class="btn-action btn-supprimer"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce thème ?');">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            Supprimer
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- ÉTAT VIDE -->
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#7c5cbf" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            </div>
+            <h3>Aucun thème créé</h3>
+            <p>Commencez par créer votre premier thème pour organiser vos cours</p>
+            <a href="{% url 'core:theme_create' %}" class="btn-creer-theme">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                </svg>
+                Créer le premier thème
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

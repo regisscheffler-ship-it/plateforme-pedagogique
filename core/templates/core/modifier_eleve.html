@@ -1,0 +1,360 @@
+{% extends 'core/base.html' %}
+{% block title %}Modifier - {{ profil.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<style>
+    /* ═══════════════════════════════════════
+       STYLE HARMONISÉ
+       ═══════════════════════════════════════ */
+    .page-container {
+        max-width: 1600px;
+        margin: 2rem auto;
+        padding: 0 2rem;
+    }
+
+    /* Header & Titres */
+    .page-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-left: 5px solid #2ab090;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .page-header h1 {
+        margin: 0;
+        font-size: 1.75rem;
+        color: #2c3e50;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .page-header svg {
+        width: 32px; height: 32px; stroke: #2ab090; stroke-width: 2; fill: none;
+    }
+
+    /* Formulaire Container */
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    /* Groupes de champs */
+    .form-section-title {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 2px solid #f1f3f5;
+        padding-bottom: 0.5rem;
+    }
+    .form-section-title svg {
+        width: 20px; height: 20px; stroke: #2ab090;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #495057;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 0.8rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+        border-color: #2ab090;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(42,176,144,0.1);
+    }
+
+    /* Zone Mot de passe spécifique */
+    .password-zone {
+        background-color: #fff9db; /* Fond jaune très pâle */
+        border: 1px dashed #fcc419;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+    .password-zone label { color: #e67700; }
+    .password-zone input { border-color: #ffe066; }
+    .password-zone input:focus { border-color: #fcc419; box-shadow: 0 0 0 3px rgba(252, 196, 25, 0.2); }
+
+    /* Info statique */
+    .static-info {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Boutons */
+    .form-actions {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        border: none;
+        font-size: 1rem;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-cancel { background: white; color: #6c757d; border: 2px solid #dee2e6; }
+    .btn-cancel:hover { background: #f8f9fa; border-color: #adb5bd; color: #343a40; }
+    .btn-submit { background: white; color: #2ab090; border: 2px solid #2ab090; }
+    .btn-submit:hover { background: #2ab090; color: white; box-shadow: 0 4px 12px rgba(42,176,144,0.3); }
+    .btn svg { width: 18px; height: 18px; }
+
+</style>
+
+<div class="page-container">
+
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#2ab090;
+              border:2px solid #2ab090;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- En-tête -->
+    <div class="page-header">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        <div>
+            <h1>Modifier l'élève</h1>
+            <div style="font-size: 0.9rem; color: #868e96; font-weight: normal;">
+                {{ profil.user.get_full_name }}
+            </div>
+        </div>
+    </div>
+
+    <form method="post" class="form-card">
+        {% csrf_token %}
+
+        <!-- Info non modifiable -->
+        <div class="static-info">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>Identifiant système : <strong>{{ profil.user.username }}</strong></span>
+        </div>
+
+        <!-- Section Identité -->
+        <div class="form-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Informations générales
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="first_name">Prénom</label>
+                <input type="text" id="first_name" name="first_name" value="{{ profil.user.first_name }}" required>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Nom</label>
+                <input type="text" id="last_name" name="last_name" value="{{ profil.user.last_name }}" required>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="email">Email (Optionnel)</label>
+                <input type="email" id="email" name="email" value="{{ profil.user.email }}" placeholder="etudiant@ecole.fr">
+            </div>
+            <div class="form-group">
+                <label for="classe">Classe</label>
+                <select id="classe" name="classe" required>
+                    {% for classe in classes %}
+                    <option value="{{ classe.id }}" {% if profil.classe.id == classe.id %}selected{% endif %}>
+                        {{ classe.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Section Inscription -->
+        <div class="form-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            Scolarité &amp; Inscription
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="annee_entree">Année scolaire d'entrée</label>
+                <input type="text" id="annee_entree" name="annee_entree"
+                       value="{{ profil.annee_entree|default:'' }}"
+                       placeholder="ex : 2024-2025">
+                <small style="color:#868e96;font-size:0.82rem;margin-top:3px;display:block;">Format : AAAA-AAAA</small>
+            </div>
+            <div class="form-group">
+                <label for="date_inscription">Date d'inscription</label>
+                <input type="date" id="date_inscription" name="date_inscription"
+                       value="{{ profil.user.date_joined|date:'Y-m-d' }}">
+                <small style="color:#868e96;font-size:0.82rem;margin-top:3px;display:block;">Permet d'inscrire à une date antérieure.</small>
+            </div>
+        </div>
+
+        <!-- Section Mot de passe (Zone spéciale) -->
+        <div class="password-zone">
+            <div class="form-section-title" style="color: #e67700; border-bottom-color: #ffe066;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#e67700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Réinitialisation du mot de passe
+            </div>
+            <div class="form-group mb-0">
+                <label for="new_password">Nouveau mot de passe</label>
+                <input type="text" id="new_password" name="new_password" placeholder="Laisser vide pour ne pas changer" autocomplete="off">
+                <small style="color: #e67700; margin-top: 0.5rem; display: block;">
+                    ⚠️ L'élève devra utiliser ce nouveau mot de passe à sa prochaine connexion.
+                </small>
+            </div>
+        </div>
+
+        {% if profil.est_sorti %}
+        <!-- Section post-sortie (uniquement pour élèves sortis) -->
+        <div style="background:#fff8f8;border:1px solid #fecaca;border-radius:10px;padding:1.5rem;margin-top:1.5rem;">
+            <div class="form-section-title" style="color:#e74c3c;border-bottom-color:#fecaca;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"></path></svg>
+                Informations de sortie
+                <a href="{% url 'core:modifier_sortie' profil.id %}"
+                   style="margin-left:auto;font-size:0.8rem;font-weight:600;color:#e74c3c;
+                          border:1.5px solid #e74c3c;padding:3px 10px;border-radius:6px;
+                          text-decoration:none;transition:all 0.2s;"
+                   title="Modifier en détail">Modifier en détail →</a>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="raison_sortie_edit">Situation de sortie</label>
+                    <select name="raison_sortie" id="raison_sortie_edit">
+                        <option value="">— Sélectionner —</option>
+                        <optgroup label="🎓 Diplôme obtenu">
+                            <option value="cap_mention"          {% if profil.raison_sortie == 'cap_mention' %}selected{% endif %}>CAP avec mention</option>
+                            <option value="cap_sans_mention"     {% if profil.raison_sortie == 'cap_sans_mention' %}selected{% endif %}>CAP sans mention</option>
+                            <option value="bac_pro_mention"      {% if profil.raison_sortie == 'bac_pro_mention' %}selected{% endif %}>Bac Pro avec mention</option>
+                            <option value="bac_pro_sans_mention" {% if profil.raison_sortie == 'bac_pro_sans_mention' %}selected{% endif %}>Bac Pro sans mention</option>
+                        </optgroup>
+                        <optgroup label="❌ Échec">
+                            <option value="echec_cap"     {% if profil.raison_sortie == 'echec_cap' %}selected{% endif %}>Échec CAP</option>
+                            <option value="echec_bac_pro" {% if profil.raison_sortie == 'echec_bac_pro' %}selected{% endif %}>Échec Bac Pro</option>
+                        </optgroup>
+                        <optgroup label="📚 Poursuite">
+                            <option value="poursuite_bac_pro" {% if profil.raison_sortie == 'poursuite_bac_pro' %}selected{% endif %}>Bac Pro</option>
+                            <option value="poursuite_bts"     {% if profil.raison_sortie == 'poursuite_bts' %}selected{% endif %}>BTS</option>
+                            <option value="poursuite_autre"   {% if profil.raison_sortie == 'poursuite_autre' %}selected{% endif %}>Autre poursuite</option>
+                        </optgroup>
+                        <optgroup label="🏭 Vie active">
+                            <option value="travail_formation"     {% if profil.raison_sortie == 'travail_formation' %}selected{% endif %}>Travail (formation)</option>
+                            <option value="travail_hors_formation" {% if profil.raison_sortie == 'travail_hors_formation' %}selected{% endif %}>Travail (autre)</option>
+                            <option value="apprentissage"         {% if profil.raison_sortie == 'apprentissage' %}selected{% endif %}>Apprentissage</option>
+                            <option value="sans_emploi"           {% if profil.raison_sortie == 'sans_emploi' %}selected{% endif %}>Sans emploi</option>
+                        </optgroup>
+                        <optgroup label="⚠️ Autre">
+                            <option value="decrocheur"    {% if profil.raison_sortie == 'decrocheur' %}selected{% endif %}>Décrocheur</option>
+                            <option value="exclusion"     {% if profil.raison_sortie == 'exclusion' %}selected{% endif %}>Exclusion</option>
+                            <option value="reorientation_interne" {% if profil.raison_sortie == 'reorientation_interne' %}selected{% endif %}>Réorientation interne</option>
+                            <option value="reorientation_externe" {% if profil.raison_sortie == 'reorientation_externe' %}selected{% endif %}>Réorientation externe</option>
+                            <option value="retour_pays"   {% if profil.raison_sortie == 'retour_pays' %}selected{% endif %}>Retour pays</option>
+                            <option value="deces"         {% if profil.raison_sortie == 'deces' %}selected{% endif %}>Décès</option>
+                            <option value="raison_inconnue" {% if profil.raison_sortie == 'raison_inconnue' %}selected{% endif %}>Raison inconnue</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="annee_scolaire_sortie_edit">Année scolaire de sortie</label>
+                    <input type="text" id="annee_scolaire_sortie_edit" name="annee_scolaire_sortie"
+                           value="{{ profil.annee_scolaire_sortie|default:'' }}"
+                           placeholder="ex : 2025-2026">
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Mention obtenue</label>
+                    <select name="mention_obtenue">
+                        <option value="" {% if not profil.mention_obtenue %}selected{% endif %}>— Sans mention —</option>
+                        <option value="AB" {% if profil.mention_obtenue == 'AB' %}selected{% endif %}>Assez Bien (AB)</option>
+                        <option value="B"  {% if profil.mention_obtenue == 'B'  %}selected{% endif %}>Bien (B)</option>
+                        <option value="TB" {% if profil.mention_obtenue == 'TB' %}selected{% endif %}>Très Bien (TB)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Poursuite d'études</label>
+                    <select name="type_poursuite">
+                        <option value="" {% if not profil.type_poursuite %}selected{% endif %}>— Non / Non renseigné —</option>
+                        <option value="bac_pro" {% if profil.type_poursuite == 'bac_pro' %}selected{% endif %}>Bac Pro (après CAP)</option>
+                        <option value="bts"     {% if profil.type_poursuite == 'bts' %}selected{% endif %}>BTS (après Bac Pro)</option>
+                    </select>
+                </div>
+            </div>
+            {% if profil.etablissement_origine or profil.etablissement_origine_autre or profil.classe_origine %}
+            <div style="font-size:0.85rem;color:#64748b;background:#fff;border:1px solid #fecaca;border-radius:8px;padding:0.7rem 1rem;">
+                📍 <strong>Origine :</strong>
+                {% if profil.etablissement_origine %}{{ profil.etablissement_origine.nom }}{% elif profil.etablissement_origine_autre %}{{ profil.etablissement_origine_autre }}{% endif %}
+                {% if profil.classe_origine %}&nbsp;({{ profil.classe_origine }}){% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Boutons -->
+        <div class="form-actions">
+            <a href="{% url 'core:gestion_eleves' %}" class="btn btn-cancel">
+                Annuler
+            </a>
+            <button type="submit" class="btn btn-submit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Enregistrer les modifications
+            </button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

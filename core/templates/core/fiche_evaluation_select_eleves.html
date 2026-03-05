@@ -1,0 +1,193 @@
+{% extends 'core/base.html' %}
+{% block title %}Sélectionner les élèves — {{ fiche_contrat.nom }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-container { max-width: 1600px; margin: 0 auto; padding: 2rem 2.5rem; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #667eea;
+        border: 2px solid #667eea; border-radius: 8px; text-decoration: none;
+        font-weight: 600; font-size: 0.9rem; transition: all 0.3s; margin-bottom: 1.5rem;
+    }
+    .btn-retour:hover { background: #667eea; color: white; transform: translateY(-2px); }
+
+    .page-header {
+        background: white; border-radius: 16px; padding: 2rem;
+        margin-bottom: 2rem; box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #667eea;
+    }
+    .page-header h1 {
+        display: flex; align-items: center; gap: 0.8rem;
+        color: #2c3e50; font-size: 1.8rem; margin: 0 0 0.5rem 0; font-weight: 700;
+    }
+    .page-header p { color: #6c757d; margin: 0; font-size: 1rem; }
+
+    .form-card {
+        background: white; border-radius: 16px; padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 2rem;
+    }
+    .form-card h2 {
+        color: #2c3e50; font-size: 1.2rem; font-weight: 700;
+        margin: 0 0 1.5rem 0; padding-bottom: 1rem;
+        border-bottom: 2px solid #f8f9fa;
+    }
+
+    .selection-buttons { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .btn-select {
+        padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer;
+        font-weight: 600; font-size: 0.85rem; transition: all 0.3s;
+    }
+    .btn-select-all  { background: #10b981; color: white; }
+    .btn-select-all:hover  { background: #059669; }
+    .btn-deselect-all { background: #ef4444; color: white; }
+    .btn-deselect-all:hover { background: #dc2626; }
+
+    .eleves-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem;
+    }
+    .eleve-card {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 1rem; border: 2px solid #e9ecef; border-radius: 10px;
+        cursor: pointer; transition: all 0.25s; background: white;
+    }
+    .eleve-card:hover { border-color: #667eea; background: #f0f2ff; transform: translateY(-2px); }
+    .eleve-card.checked { border-color: #667eea; background: #eef2ff; }
+    .eleve-card input[type="checkbox"] { width: 18px; height: 18px; accent-color: #667eea; flex-shrink: 0; cursor: pointer; }
+    .eleve-card .eleve-info { flex: 1; }
+    .eleve-card .eleve-name { font-weight: 600; color: #2c3e50; font-size: 0.95rem; }
+
+    .badge-deja {
+        display: inline-block; padding: 0.25rem 0.6rem;
+        background: #fef3c7; color: #92400e; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 600; margin-top: 0.2rem;
+    }
+
+    .empty-state {
+        text-align: center; padding: 3rem; color: #6c757d;
+    }
+    .empty-state svg { width: 48px; height: 48px; stroke: #adb5bd; stroke-width: 1.5; fill: none; margin-bottom: 1rem; }
+
+    .actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    .btn-submit {
+        padding: 0.8rem 2rem; background: #667eea; color: white;
+        border: none; border-radius: 10px; font-size: 1rem;
+        font-weight: 700; cursor: pointer; transition: all 0.3s;
+    }
+    .btn-submit:hover { background: #5a6fd6; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+
+    .counter {
+        padding: 0.5rem 1rem; background: #f8f9fa; border-radius: 8px;
+        font-weight: 700; color: #2c3e50; font-size: 0.9rem;
+    }
+</style>
+
+<div class="page-container">
+    <a href="{% url 'core:evaluation_detail' pk=fiche_contrat.id %}" class="btn-retour">
+        Retour
+    </a>
+
+    <div class="page-header">
+        <h1>
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Sélectionner les élèves
+        </h1>
+        <p>Fiche contrat : <strong>{{ fiche_contrat.nom }}</strong> — Classe : <strong>{{ fiche_contrat.classe }}</strong></p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="padding:0.9rem 1.2rem; border-radius:10px; margin-bottom:1rem;
+                background:{% if 'success' in message.tags %}#d1fae5; color:#065f46; border:1px solid #6ee7b7
+                {% else %}#fee2e2; color:#991b1b; border:1px solid #fca5a5{% endif %}; font-weight:600;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if eleves %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-card">
+            <h2>Élèves de la classe ({{ eleves|length }})</h2>
+
+            <div class="selection-buttons">
+                <button type="button" class="btn-select btn-select-all" onclick="selectAll()">
+                    ✓ Tout sélectionner
+                </button>
+                <button type="button" class="btn-select btn-deselect-all" onclick="deselectAll()">
+                    ✗ Tout désélectionner
+                </button>
+                <span class="counter" id="counter">0 sélectionné(s)</span>
+            </div>
+
+            <div class="eleves-grid" id="elevesGrid">
+                {% for eleve in eleves %}
+                <label class="eleve-card {% if eleve.id in deja_evalues %}checked{% endif %}" id="card-{{ eleve.id }}">
+                    <input
+                        type="checkbox"
+                        name="eleves"
+                        value="{{ eleve.id }}"
+                        {% if eleve.id in deja_evalues %}checked{% endif %}
+                        onchange="syncCard(this)"
+                    >
+                    <div class="eleve-info">
+                        <div class="eleve-name">{{ eleve.user.last_name|upper }} {{ eleve.user.first_name }}</div>
+                        {% if eleve.id in deja_evalues %}
+                            <span class="badge-deja">Déjà évalué</span>
+                        {% endif %}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn-submit">
+                ✅ Créer les fiches d'évaluation
+            </button>
+            <a href="{% url 'core:evaluation_detail' pk=fiche_contrat.id %}" class="btn-retour" style="margin-bottom:0;">
+                Annuler
+            </a>
+        </div>
+    </form>
+
+    {% else %}
+    <div class="form-card">
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <p>Aucun élève actif dans cette classe.</p>
+            <a href="{% url 'core:evaluation_detail' pk=fiche_contrat.id %}" class="btn-retour">Retour</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function syncCard(checkbox) {
+    const card = checkbox.closest('.eleve-card');
+    card.classList.toggle('checked', checkbox.checked);
+    updateCounter();
+}
+function selectAll() {
+    document.querySelectorAll('#elevesGrid input[type="checkbox"]').forEach(cb => {
+        cb.checked = true;
+        cb.closest('.eleve-card').classList.add('checked');
+    });
+    updateCounter();
+}
+function deselectAll() {
+    document.querySelectorAll('#elevesGrid input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.eleve-card').classList.remove('checked');
+    });
+    updateCounter();
+}
+function updateCounter() {
+    const n = document.querySelectorAll('#elevesGrid input[type="checkbox"]:checked').length;
+    document.getElementById('counter').textContent = n + ' sélectionné(s)';
+}
+document.addEventListener('DOMContentLoaded', updateCounter);
+</script>
+{% endblock %}

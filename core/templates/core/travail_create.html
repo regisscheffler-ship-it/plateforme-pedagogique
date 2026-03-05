@@ -1,0 +1,183 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Nouveau Travail - {{ classe.nom }}{% endblock %}
+
+{% block content %}
+
+<style>
+    /* CONTENEUR LARGE (98% pour coller aux bords comme le dashboard) */
+    .container-fluid-custom {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    /* BOUTON RETOUR */
+    .btn-back-custom {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; 
+        border: 2px solid #2ab090;
+        border-radius: 8px; 
+        color: #2ab090; background: white; 
+        font-weight: 600; text-decoration: none;
+        margin-bottom: 1.5rem; transition: all 0.2s ease;
+    }
+    .btn-back-custom:hover { background: #2ab090; color: white; transform: translateY(-2px); }
+    .btn-back-custom svg { width: 18px; height: 18px; stroke-width: 2.5; }
+
+    /* CARTE FORMULAIRE LARGE */
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        width: 100%;
+        box-sizing: border-box;
+        border-top: 6px solid #2ab090;
+    }
+
+    /* EN-TÊTE */
+    .form-header {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .form-icon {
+        width: 56px; height: 56px;
+        background: #e8f8f4; color: #2ab090;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .form-icon svg { width: 28px; height: 28px; }
+
+    .form-title h1 { margin: 0; font-size: 1.6rem; color: #2c3e50; font-weight: 700; }
+    .form-title p { margin: 0.2rem 0 0 0; color: #6c757d; font-size: 1rem; }
+
+    /* GRILLE DU FORMULAIRE (Pour remplir l'écran) */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 COLONNES ÉGALES */
+        gap: 2rem;
+    }
+
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { display: block; font-weight: 600; color: #34495e; margin-bottom: 0.5rem; }
+    .required { color: #dc3545; margin-left: 3px; }
+
+    .form-control {
+        width: 100%; padding: 0.8rem 1rem;
+        border: 2px solid #e9ecef; border-radius: 8px;
+        font-size: 1rem; color: #495057; transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .form-control:focus {
+        border-color: #2ab090; outline: none;
+        box-shadow: 0 0 0 3px rgba(42, 176, 144, 0.15);
+    }
+
+    textarea.form-control { resize: vertical; min-height: 150px; font-family: inherit; }
+
+    /* Zone pleine largeur pour la description */
+    .full-width { grid-column: 1 / -1; }
+
+    /* BOUTON SUBMIT */
+    .form-actions {
+        grid-column: 1 / -1;
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .btn-submit {
+        display: inline-flex; align-items: center; justify-content: center; gap: 0.8rem;
+        padding: 1rem 2.5rem;
+        background: white; color: #2ab090;
+        border: 2px solid #2ab090; border-radius: 10px;
+        font-size: 1.1rem; font-weight: 700;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .btn-submit:hover { background: #2ab090; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(42, 176, 144, 0.3); }
+
+    /* Responsive mobile */
+    @media (max-width: 768px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .form-header { flex-direction: column; text-align: center; }
+        .btn-submit { width: 100%; }
+    }
+
+</style>
+
+<div class="container-fluid-custom">
+
+    <!-- BOUTON RETOUR -->
+    <a href="#" class="btn-back-custom btn-back-universal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Retour
+    </a>
+
+    <div class="form-card">
+        <!-- En-tête de la fiche -->
+        <div class="form-header">
+            <div class="form-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+            <div class="form-title">
+                <h1>Nouveau Travail</h1>
+                <p>Classe cible : <strong>{{ classe.nom }}</strong> ({{ classe.eleves.count }} élèves)</p>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="form-grid">
+            {% csrf_token %}
+
+            <!-- COLONNE GAUCHE -->
+            <div>
+                <div class="form-group">
+                    <label class="form-label">Titre du devoir <span class="required">*</span></label>
+                    <input type="text" name="titre" class="form-control" placeholder="Ex: Devoir sur les fondations" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date limite de rendu <span class="required">*</span></label>
+                    <input type="datetime-local" name="date_limite" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- COLONNE DROITE -->
+            <div>
+                <div class="form-group">
+                    <label class="form-label">Fichier de consigne / Sujet (Optionnel)</label>
+                    <input type="file" name="fichier_consigne" class="form-control" style="padding: 0.65rem;">
+                    <small style="color:#6c757d; display:block; margin-top:5px; font-size:0.85rem;">
+                        <svg style="width:12px; height:12px; display:inline; vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        Formats acceptés : PDF, Word, Images...
+                    </small>
+                </div>
+            </div>
+
+            <!-- PLEINE LARGEUR (BAS) -->
+            <div class="full-width">
+                <div class="form-group">
+                    <label class="form-label">Description / Consignes détaillées</label>
+                    <textarea name="description" class="form-control" placeholder="Expliquez ici ce que les élèves doivent faire..."></textarea>
+                </div>
+            </div>
+
+            <!-- BOUTON VALIDER -->
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    Publier le travail
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}

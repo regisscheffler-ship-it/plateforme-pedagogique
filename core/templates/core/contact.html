@@ -1,0 +1,401 @@
+{% extends 'core/base.html' %}
+{% block title %}Contact{% endblock %}
+
+{% block content %}
+
+<style>
+    /* ═══════════════════════════════════════
+       CONTACT - STYLE HARMONISÉ AVEC BASE.HTML
+       ═══════════════════════════════════════ */
+
+    .contact-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* Header page */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+        color: #2c3e50;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8rem;
+    }
+
+    .page-header h1 svg {
+        width: 36px;
+        height: 36px;
+        stroke: #20c997;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    /* Grille 2x2 responsive */
+    .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 992px) {
+        .contact-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Cartes contact - MÊME STYLE que base.html */
+    .contact-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-left: 5px solid #20c997;
+        transition: all 0.3s ease;
+    }
+
+    .contact-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    .contact-card h2 {
+        margin: 0 0 1.5rem 0;
+        color: #2c3e50;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-weight: 700;
+    }
+
+    .contact-card h2 svg {
+        width: 26px;
+        height: 26px;
+        stroke: #20c997;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .contact-item {
+        margin-bottom: 1rem;
+        padding: 0.8rem 1rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .contact-item:hover {
+        background: #e9ecef;
+    }
+
+    .contact-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .contact-item strong {
+        color: #20c997;
+        display: block;
+        margin-bottom: 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .contact-item a {
+        color: #2c3e50;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+
+    .contact-item a:hover {
+        color: #20c997;
+    }
+
+    /* Carte pleine largeur (carte + transports) */
+    .full-width-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-left: 5px solid #20c997;
+        margin-bottom: 2rem;
+    }
+
+    .full-width-card h2 {
+        margin: 0 0 1.5rem 0;
+        color: #2c3e50;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-weight: 700;
+    }
+
+    .full-width-card h2 svg {
+        width: 26px;
+        height: 26px;
+        stroke: #20c997;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    /* Carte Google Maps */
+    .map-responsive {
+        position: relative;
+        padding-bottom: 40%;
+        height: 0;
+        overflow: hidden;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid #e9ecef;
+    }
+
+    .map-responsive:hover {
+        box-shadow: 0 4px 16px rgba(32, 201, 151, 0.2);
+        border-color: #20c997;
+    }
+
+    .map-responsive iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+
+    .map-hint {
+        margin: 1rem 0 0 0;
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .map-hint svg {
+        width: 18px;
+        height: 18px;
+        stroke: #20c997;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    /* Transports */
+    .transport-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.2rem;
+        padding: 1rem 1.2rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .transport-item:hover {
+        background: #e9ecef;
+        transform: translateX(4px);
+    }
+
+    .transport-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .transport-icon svg {
+        width: 36px;
+        height: 36px;
+        stroke: #20c997;
+        stroke-width: 2;
+        fill: none;
+        flex-shrink: 0;
+    }
+
+    .transport-details strong {
+        color: #2c3e50;
+        display: block;
+        margin-bottom: 0.4rem;
+        font-weight: 700;
+    }
+
+    .transport-details {
+        color: #6c757d;
+    }
+</style>
+
+<div class="contact-container">
+    
+    <!-- HEADER -->
+    <div class="page-header">
+        <h1>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Contact
+        </h1>
+    </div>
+
+    <!-- GRILLE 2x2 : Professeur + Établissement -->
+    <div class="contact-grid">
+        
+        <!-- Professeur référent -->
+        <div class="contact-card">
+            <h2>
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Professeur référent
+            </h2>
+            <div class="contact-item">
+                <strong>Nom</strong>
+                Régis Scheffler
+            </div>
+            <div class="contact-item">
+                <strong>Discipline</strong>
+                Génie Civil - Construction Réalisation d'Ouvrages
+            </div>
+            <div class="contact-item">
+                <strong>Email</strong>
+                <a href="mailto:regis.scheffler@ac-lille.fr">regis.scheffler@ac-lille.fr</a>
+            </div>
+        </div>
+
+        <!-- Établissement -->
+        <div class="contact-card">
+            <h2>
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                Établissement
+            </h2>
+            <div class="contact-item">
+                <strong>Nom</strong>
+                Lycée Professionnel Louis Loucheur
+            </div>
+            <div class="contact-item">
+                <strong>Adresse</strong>
+                8 boulevard de Lyon<br>59100 Roubaix
+            </div>
+            <div class="contact-item">
+                <strong>Téléphone</strong>
+                <a href="tel:0320893760">03 20 89 37 60</a>
+            </div>
+            <div class="contact-item">
+                <strong>Email</strong>
+                <a href="mailto:ce.0590187h@ac-lille.fr">ce.0590187h@ac-lille.fr</a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- CARTE GOOGLE MAPS (pleine largeur) -->
+    <div class="full-width-card">
+        <h2>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            Localisation
+        </h2>
+        <div class="map-responsive" onclick="window.open('https://maps.google.com/?q=Lycée+Louis+Loucheur+Roubaix', '_blank')">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2526.85!2d3.1734686!3d50.6847778!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTDCsDQxJzA1LjIiTiAzwrAxMCcyNC41IkU!5e0!3m2!1sfr!2sfr!4v1" 
+                allowfullscreen="" 
+                loading="lazy">
+            </iframe>
+        </div>
+        <p class="map-hint">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+            Cliquez sur la carte pour ouvrir dans Google Maps
+        </p>
+    </div>
+
+    <!-- TRANSPORTS (pleine largeur) -->
+    <div class="full-width-card">
+        <h2>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="3" width="15" height="13"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+            Comment venir ?
+        </h2>
+        
+        <div class="transport-item">
+            <div class="transport-icon">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="3" width="15" height="13"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg>
+            </div>
+            <div class="transport-details">
+                <strong>Bus</strong>
+                Arrêt <em>Louis Loucheur</em>
+            </div>
+        </div>
+
+        <div class="transport-item">
+            <div class="transport-icon">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+            </div>
+            <div class="transport-details">
+                <strong>Métro Ligne 2</strong>
+                Station <em>Épeule Montesquieu</em> — À 15 minutes à pied (1,2 km)
+            </div>
+        </div>
+
+        <div class="transport-item">
+            <div class="transport-icon">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                    <rect x="9" y="9" width="6" height="6"></rect>
+                    <line x1="9" y1="1" x2="9" y2="4"></line>
+                    <line x1="15" y1="1" x2="15" y2="4"></line>
+                    <line x1="9" y1="20" x2="9" y2="23"></line>
+                    <line x1="15" y1="20" x2="15" y2="23"></line>
+                    <line x1="20" y1="9" x2="23" y2="9"></line>
+                    <line x1="20" y1="14" x2="23" y2="14"></line>
+                    <line x1="1" y1="9" x2="4" y2="9"></line>
+                    <line x1="1" y1="14" x2="4" y2="14"></line>
+                </svg>
+            </div>
+            <div class="transport-details">
+                <strong>Tramway</strong>
+                Arrêt <em>Hôpital Victor Provo</em> — À 8 minutes à pied (650 m)
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

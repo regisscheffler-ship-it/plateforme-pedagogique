@@ -1,0 +1,558 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Nouvel Atelier{% endblock %}
+
+{% block content %}
+<style>
+    .creator-wrap { max-width: 1600px; width: 100%; margin: 0 auto; padding: 1.5rem 2.5rem 4rem; }
+
+    /* BOUTON RETOUR */
+    .btn-back-custom {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; border: 2px solid #e8922a; border-radius: 8px;
+        color: #e8922a; background: white; font-weight: 600; text-decoration: none;
+        margin-bottom: 1.5rem; transition: all 0.2s ease;
+    }
+    .btn-back-custom:hover { background: #e8922a; color: white; transform: translateY(-2px); }
+    .btn-back-custom svg { width: 18px; height: 18px; stroke-width: 2.5; }
+
+    /* STEPPER */
+    .stepper {
+        display: flex; align-items: center; gap: 0; margin-bottom: 2.5rem;
+        background: white; border-radius: 14px; padding: 1.2rem 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f2f5;
+    }
+    .step {
+        display: flex; align-items: center; gap: 0.6rem; flex: 1;
+        position: relative;
+    }
+    .step:not(:last-child)::after {
+        content: ''; position: absolute; right: 0; top: 50%;
+        transform: translateY(-50%); width: 100%; height: 2px;
+        background: #e9ecef; z-index: 0; left: 50%;
+    }
+    .step-num {
+        width: 34px; height: 34px; border-radius: 50%; display: flex;
+        align-items: center; justify-content: center; font-weight: 700;
+        font-size: 0.9rem; flex-shrink: 0; z-index: 1; transition: all 0.3s;
+        background: #e9ecef; color: #adb5bd; border: 2px solid #e9ecef;
+    }
+    .step.active .step-num { background: #e8922a; color: white; border-color: #e8922a; box-shadow: 0 0 0 4px rgba(232,146,42,0.2); }
+    .step.done .step-num { background: #c97a1e; color: white; border-color: #c97a1e; }
+    .step-label { font-size: 0.82rem; font-weight: 600; color: #adb5bd; white-space: nowrap; }
+    .step.active .step-label { color: #e8922a; }
+    .step.done .step-label { color: #c97a1e; }
+
+    /* CARDS */
+    .section-card {
+        background: white; border-radius: 16px; margin-bottom: 1.2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f2f5;
+        overflow: hidden; transition: all 0.3s ease;
+    }
+    .section-card.locked { opacity: 0.5; pointer-events: none; }
+
+    .card-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 1.3rem 1.8rem; background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .card-header.toggleable { cursor: pointer; }
+    .card-header.toggleable:hover { background: #f0fffe; }
+
+    .card-header-left { display: flex; align-items: center; gap: 1rem; }
+    .card-icon {
+        width: 42px; height: 42px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .card-icon.green  { background: #fff4e6; color: #e8922a; }
+    .card-icon.orange { background: #fff7ed; color: #ea580c; }
+    .card-icon.purple { background: #fff4e6; color: #e8922a; }
+    .card-icon svg { width: 22px; height: 22px; stroke-width: 2; }
+
+    .card-title { font-size: 1.05rem; font-weight: 700; color: #2c3e50; margin: 0; }
+    .card-subtitle { font-size: 0.82rem; color: #6c757d; margin: 0; }
+
+    .toggle-check { display: flex; align-items: center; gap: 0.5rem; }
+    .toggle-check input[type=checkbox] { width: 20px; height: 20px; accent-color: #e8922a; cursor: pointer; }
+    .toggle-check label { font-size: 0.88rem; font-weight: 600; color: #495057; cursor: pointer; margin: 0; }
+
+    .card-body { padding: 1.8rem; display: none; }
+    .card-body.always-open { display: block; }
+
+    /* FORM ELEMENTS */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media(max-width:640px){ .form-row { grid-template-columns: 1fr; } }
+
+    .form-group { margin-bottom: 1.4rem; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-group label {
+        display: block; margin-bottom: 0.5rem;
+        font-weight: 600; color: #374151; font-size: 0.9rem;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%; padding: 0.8rem 1rem;
+        border: 2px solid #e5e7eb; border-radius: 10px;
+        font-size: 0.95rem; transition: all 0.2s;
+        background: #fafafa; color: #1f2937;
+        box-sizing: border-box;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        border-color: #e8922a; outline: none;
+        background: white; box-shadow: 0 0 0 3px rgba(232,146,42,0.12);
+    }
+    .form-group textarea { resize: vertical; min-height: 90px; }
+
+    .visibility-toggle {
+        display: flex; align-items: center; gap: 0.8rem;
+        background: #f8f9fa; padding: 1rem 1.2rem;
+        border-radius: 10px; border: 1px solid #e5e7eb;
+    }
+    .visibility-toggle input { width: 20px; height: 20px; accent-color: #e8922a; cursor: pointer; }
+    .visibility-toggle label { margin: 0; font-weight: 600; color: #374151; cursor: pointer; font-size: 0.9rem; }
+
+    /* TYPE SELECTOR */
+    .type-pills { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+    .type-pill input { display: none; }
+    .type-pill label {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.6rem 1.1rem; border-radius: 50px;
+        border: 2px solid #e5e7eb; background: white;
+        font-weight: 600; font-size: 0.88rem; color: #6b7280;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .type-pill label:hover { border-color: #e8922a; color: #e8922a; }
+    .type-pill input:checked + label {
+        background: #e8922a; color: white;
+        border-color: #e8922a; box-shadow: 0 2px 8px rgba(232,146,42,0.3);
+    }
+
+    .content-field { display: none; }
+    .content-field.active { display: block; animation: slideDown 0.25s ease; }
+    @keyframes slideDown { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform: translateY(0); } }
+
+    /* FILE UPLOAD ZONE */
+    .upload-zone {
+        border: 2px dashed #d1d5db; border-radius: 12px;
+        padding: 2rem; text-align: center; cursor: pointer;
+        transition: all 0.2s; background: #fafafa;
+    }
+    .upload-zone:hover { border-color: #e8922a; background: #fff9f0; }
+    .upload-zone svg { width: 36px; height: 36px; color: #9ca3af; margin-bottom: 0.5rem; }
+    .upload-zone p { margin: 0; color: #6b7280; font-size: 0.88rem; }
+    .upload-zone strong { color: #e8922a; }
+    .upload-zone input[type=file] { display: none; }
+    .upload-filename { margin-top: 0.5rem; font-size: 0.85rem; color: #e8922a; font-weight: 600; display: none; }
+
+    /* SUBMIT */
+    .submit-bar {
+        display: flex; justify-content: flex-end; align-items: center;
+        gap: 1rem; margin-top: 1.5rem;
+    }
+    .btn-cancel {
+        padding: 0.85rem 1.6rem; border-radius: 10px;
+        background: white; border: 2px solid #e5e7eb;
+        color: #6b7280; font-weight: 600; text-decoration: none;
+        transition: all 0.2s; cursor: pointer; font-size: 1rem;
+    }
+    .btn-cancel:hover { border-color: #9ca3af; color: #374151; }
+    .btn-submit {
+        display: inline-flex; align-items: center; gap: 0.6rem;
+        padding: 0.85rem 2rem; border-radius: 10px;
+        background: white;
+        color: #e8922a;
+        border: 2px solid #e8922a;
+        font-weight: 700; font-size: 1rem;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .btn-submit:hover { background: #e8922a; color: white; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(232,146,42,0.35); }
+    .btn-submit svg { width: 18px; height: 18px; }
+
+    /* TITRE PAGE */
+    .creation-title { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .creation-title-icon {
+        width: 52px; height: 52px;
+        background: linear-gradient(135deg, #fff7ed, #fed7aa);
+        border-radius: 14px; display: flex; align-items: center; justify-content: center;
+        color: #ea580c;
+    }
+    .creation-title-icon svg { width: 28px; height: 28px; stroke-width: 2; }
+    .creation-title h1 { margin: 0; font-size: 1.7rem; font-weight: 800; color: #1f2937; }
+    .creation-title p  { margin: 0; color: #6b7280; font-size: 0.92rem; }
+
+    .badge-optional {
+        font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem;
+        border-radius: 50px; background: #fef3c7; color: #92400e;
+        text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .badge-required {
+        font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem;
+        border-radius: 50px; background: #fee2e2; color: #991b1b;
+        text-transform: uppercase; letter-spacing: 0.05em;
+    }
+</style>
+
+<div class="creator-wrap">
+
+    <!-- RETOUR -->
+    <a href="{% url 'core:gestion_ateliers' %}" class="btn-back-custom">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- TITRE -->
+    <div class="creation-title">
+        <div class="creation-title-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+            </svg>
+        </div>
+        <div>
+            <h1>Nouvel atelier</h1>
+            <p>Créez un atelier, ajoutez un dossier et une ressource en une seule étape.</p>
+        </div>
+    </div>
+
+    <!-- STEPPER -->
+    <div class="stepper">
+        <div class="step active" id="step1">
+            <div class="step-num">1</div>
+            <span class="step-label">Atelier</span>
+        </div>
+        <div class="step" id="step2">
+            <div class="step-num">2</div>
+            <span class="step-label">Dossier</span>
+        </div>
+        <div class="step" id="step3">
+            <div class="step-num">3</div>
+            <span class="step-label">Ressource</span>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="main-form">
+        {% csrf_token %}
+
+        <!-- ═══════════════════════════════════ -->
+        <!-- ÉTAPE 1 : ATELIER                   -->
+        <!-- ═══════════════════════════════════ -->
+        <div class="section-card">
+            <div class="card-header">
+                <div class="card-header-left">
+                    <div class="card-icon orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="card-title">Informations de l'atelier <span class="badge-required">Requis</span></p>
+                        <p class="card-subtitle">Titre, classe et visibilité</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body always-open">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Titre de l'atelier *</label>
+                        <input type="text" name="titre" placeholder="Ex: Atelier soudure, Câblage..." required autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label>Classe *</label>
+                        <select name="classe" required>
+                            <option value="">— Choisir une classe —</option>
+                            {% for classe in classes %}
+                                <option value="{{ classe.id }}">{{ classe.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description <span class="badge-optional">Optionnel</span></label>
+                    <textarea name="description" placeholder="Décrivez brièvement cet atelier..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Ordre d'affichage</label>
+                        <input type="number" name="ordre" value="0" min="0">
+                    </div>
+                    <div style="display:flex; align-items:flex-end; padding-bottom:0;">
+                        <div class="visibility-toggle" style="width:100%;">
+                            <input type="checkbox" name="visible_eleves" id="vis_atelier" checked>
+                            <label for="vis_atelier">Visible aux élèves</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════ -->
+        <!-- ÉTAPE 2 : DOSSIER                   -->
+        <!-- ═══════════════════════════════════ -->
+        <div class="section-card" id="card-dossier">
+            <div class="card-header toggleable" onclick="toggleCard('dossier')">
+                <div class="card-header-left">
+                    <div class="card-icon green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="card-title">Créer un dossier <span class="badge-optional">Optionnel</span></p>
+                        <p class="card-subtitle">Organisez le contenu de l'atelier</p>
+                    </div>
+                </div>
+                <div class="toggle-check">
+                    <input type="checkbox" name="creer_dossier" id="cb_dossier"
+                           onclick="event.stopPropagation(); handleDossierToggle(this)">
+                    <label for="cb_dossier" onclick="event.stopPropagation()">Activer</label>
+                </div>
+            </div>
+            <div class="card-body" id="body-dossier">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nom du dossier *</label>
+                        <input type="text" name="dossier_nom" id="dossier_nom" placeholder="Ex: Fiches, Consignes, Vidéos...">
+                    </div>
+                    <div class="form-group">
+                        <label>Ordre d'affichage</label>
+                        <input type="number" name="dossier_ordre" value="0" min="0">
+                    </div>
+                </div>
+                <div class="visibility-toggle">
+                    <input type="checkbox" name="dossier_visible" id="vis_dossier" checked>
+                    <label for="vis_dossier">Dossier visible aux élèves</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════ -->
+        <!-- ÉTAPE 3 : RESSOURCE                 -->
+        <!-- ═══════════════════════════════════ -->
+        <div class="section-card locked" id="card-fichier">
+            <div class="card-header toggleable" onclick="toggleCard('fichier')">
+                <div class="card-header-left">
+                    <div class="card-icon purple">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="card-title">Ajouter une ressource <span class="badge-optional">Optionnel</span></p>
+                        <p class="card-subtitle">Fichier PDF, lien web ou vidéo intégrée</p>
+                    </div>
+                </div>
+                <div class="toggle-check">
+                    <input type="checkbox" name="ajouter_fichier" id="cb_fichier"
+                           onclick="event.stopPropagation(); handleFichierToggle(this)">
+                    <label for="cb_fichier" onclick="event.stopPropagation()">Activer</label>
+                </div>
+            </div>
+            <div class="card-body" id="body-fichier">
+
+                <div class="form-group">
+                    <label>Nom de la ressource *</label>
+                    <input type="text" name="fichier_nom" placeholder="Ex: Fiche de sécurité, Tutoriel vidéo...">
+                </div>
+
+                <div class="form-group">
+                    <label>Description <span class="badge-optional">Optionnel</span></label>
+                    <input type="text" name="fichier_description" placeholder="Courte description...">
+                </div>
+
+                <!-- TYPE -->
+                <div class="form-group">
+                    <label>Type de contenu</label>
+                    <div class="type-pills">
+                        <div class="type-pill">
+                            <input type="radio" name="type_fichier" id="tp_pdf" value="fichier" checked>
+                            <label for="tp_pdf">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                Fichier / PDF
+                            </label>
+                        </div>
+                        <div class="type-pill">
+                            <input type="radio" name="type_fichier" id="tp_lien" value="lien">
+                            <label for="tp_lien">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                Lien Web
+                            </label>
+                        </div>
+                        <div class="type-pill">
+                            <input type="radio" name="type_fichier" id="tp_iframe" value="iframe">
+                            <label for="tp_iframe">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="15" rx="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+                                Iframe / Vidéo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHAMP : FICHIER -->
+                <div class="content-field active" id="field-fichier">
+                    <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p><strong>Cliquez pour choisir</strong> ou glissez-déposez un fichier</p>
+                        <p>PDF, Word, Excel, image... (max 50 Mo)</p>
+                        <div class="upload-filename" id="upload-filename"><span id="filename-text"></span></div>
+                        <input type="file" name="fichier_upload" id="file-input" onchange="showFilename(this)">
+                    </div>
+                </div>
+
+                <!-- CHAMP : LIEN -->
+                <div class="content-field" id="field-lien">
+                    <div class="form-group" style="margin:0;">
+                        <label>URL du lien *</label>
+                        <input type="url" name="fichier_lien" placeholder="https://exemple.com/ressource">
+                    </div>
+                </div>
+
+                <!-- CHAMP : IFRAME -->
+                <div class="content-field" id="field-iframe">
+                    <div class="form-group" style="margin:0;">
+                        <label>Code d'intégration *</label>
+                        <textarea name="fichier_iframe" rows="4"
+                            placeholder='<iframe src="https://www.youtube.com/embed/..." width="560" height="315" frameborder="0" allowfullscreen></iframe>'></textarea>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- BOUTONS -->
+        <div class="submit-bar">
+            <a href="{% url 'core:gestion_ateliers' %}" class="btn-cancel">Annuler</a>
+            <button type="submit" class="btn-submit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Créer l'atelier
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    // ── TOGGLE CARDS ──────────────────────────────────────────────
+    function toggleCard(name) {
+        var cb = document.getElementById('cb_' + name);
+        cb.checked = !cb.checked;
+        if (name === 'dossier') handleDossierToggle(cb);
+        if (name === 'fichier') handleFichierToggle(cb);
+    }
+
+    function handleDossierToggle(cb) {
+        var body  = document.getElementById('body-dossier');
+        var cardF = document.getElementById('card-fichier');
+        var cbF   = document.getElementById('cb_fichier');
+
+        body.style.display = cb.checked ? 'block' : 'none';
+        updateStepper();
+
+        if (cb.checked) {
+            cardF.classList.remove('locked');
+        } else {
+            cardF.classList.add('locked');
+            cbF.checked = false;
+            document.getElementById('body-fichier').style.display = 'none';
+        }
+    }
+
+    function handleFichierToggle(cb) {
+        document.getElementById('body-fichier').style.display = cb.checked ? 'block' : 'none';
+        updateStepper();
+    }
+
+    // ── STEPPER ───────────────────────────────────────────────────
+    function updateStepper() {
+        var cbD = document.getElementById('cb_dossier').checked;
+        var cbF = document.getElementById('cb_fichier').checked;
+
+        document.getElementById('step1').className = 'step done';
+        document.getElementById('step2').className = cbD ? 'step done' : 'step active';
+        document.getElementById('step3').className = cbF ? 'step done' : (cbD ? 'step active' : 'step');
+    }
+
+    document.getElementById('step1').className = 'step active';
+
+    // ── TYPE SWITCHER ─────────────────────────────────────────────
+    document.querySelectorAll('input[name="type_fichier"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.content-field').forEach(function(f) {
+                f.classList.remove('active');
+            });
+            var map = { 'fichier': 'field-fichier', 'lien': 'field-lien', 'iframe': 'field-iframe' };
+            var t = document.getElementById(map[this.value]);
+            if (t) t.classList.add('active');
+        });
+    });
+
+    // ── FILE UPLOAD ───────────────────────────────────────────────
+    function showFilename(input) {
+        if (input.files && input.files[0]) {
+            document.getElementById('filename-text').textContent = input.files[0].name;
+            document.getElementById('upload-filename').style.display = 'block';
+        }
+    }
+
+    // ── DRAG & DROP ───────────────────────────────────────────────
+    var zone = document.querySelector('.upload-zone');
+    if (zone) {
+        zone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#e8922a';
+            this.style.background  = '#fff9f0';
+        });
+        zone.addEventListener('dragleave', function() {
+            this.style.borderColor = '#d1d5db';
+            this.style.background  = '#fafafa';
+        });
+        zone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#d1d5db';
+            this.style.background  = '#fafafa';
+            var input = document.getElementById('file-input');
+            input.files = e.dataTransfer.files;
+            showFilename(input);
+        });
+    }
+
+    // ── VALIDATION ────────────────────────────────────────────────
+    document.getElementById('main-form').addEventListener('submit', function(e) {
+        var cbD = document.getElementById('cb_dossier').checked;
+        var cbF = document.getElementById('cb_fichier').checked;
+
+        if (cbD) {
+            var dossierNom = document.getElementById('dossier_nom').value.trim();
+            if (!dossierNom) {
+                e.preventDefault();
+                alert('⚠️ Veuillez saisir un nom pour le dossier.');
+                document.getElementById('dossier_nom').focus();
+                return;
+            }
+        }
+        if (cbF) {
+            var fichierNom = document.querySelector('input[name="fichier_nom"]').value.trim();
+            if (!fichierNom) {
+                e.preventDefault();
+                alert('⚠️ Veuillez saisir un nom pour la ressource.');
+                document.querySelector('input[name="fichier_nom"]').focus();
+                return;
+            }
+        }
+    });
+</script>
+
+{% endblock %}

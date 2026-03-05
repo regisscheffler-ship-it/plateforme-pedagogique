@@ -1,0 +1,126 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<style>
+    .classes-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    .classes-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border-left: 5px solid #4a7fc1;
+    }
+    .classes-header h1 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .classes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+    .action-card {
+        background: white;
+        border-radius: 16px;
+        text-decoration: none;
+        color: inherit;
+        border-left: 5px solid #4a7fc1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    .action-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 32px rgba(74,127,193,0.18);
+        border-left-color: #4a7fc1;
+        color: inherit;
+    }
+    .card-body { padding: 1.5rem; }
+    .card-title { margin: 0; color: #2c3e50; font-size: 1.2rem; font-weight: 700; }
+    .card-subtitle { margin: 0.25rem 0 0 0; color: #7a8694; font-size: 0.9rem; }
+    .card-desc { color: #6c757d; font-size: 0.9rem; margin: 0.8rem 0; line-height: 1.5; }
+    .card-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ecf0f1;
+    }
+    .stat-item { text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: #4a7fc1; }
+    .stat-label { font-size: 0.75rem; color: #95a5a6; letter-spacing: 0.05em; }
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .empty-state h2 { color: #6c757d; margin-bottom: 0.5rem; }
+    .btn-create {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: #4a7fc1;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        margin-top: 1rem;
+    }
+    .btn-create:hover { background: #3a6faf; color: white; transform: translateY(-2px); }
+</style>
+
+<div class="classes-container">
+    <div class="classes-header">
+        <h1>Toutes les classes</h1>
+    </div>
+
+    {% if classes %}
+        <div class="classes-grid">
+            {% for classe in classes %}
+            <a href="{% url 'core:classe_detail' classe.id %}" class="action-card">
+                <div class="card-body">
+                    <h3 class="card-title">{{ classe.nom }}</h3>
+                    <p class="card-subtitle">
+                        {{ classe.niveau }}{% if classe.annee_scolaire %} - {{ classe.annee_scolaire }}{% endif %}
+                    </p>
+                    {% if classe.description %}
+                    <p class="card-desc">{{ classe.description|truncatewords:15 }}</p>
+                    {% endif %}
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">{{ classe.eleves.count }}</div>
+                            <div class="stat-label">ÉLÈVES</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" style="color:#7c5cbf;">{{ classe.themes.count }}</div>
+                            <div class="stat-label">THÈMES</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" style="color:#e8922a;">{{ classe.travaux.count }}</div>
+                            <div class="stat-label">TRAVAUX</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h2>Aucune classe disponible</h2>
+            <p>Créez votre première classe pour commencer.</p>
+            <a href="{% url 'core:gestion_classes' %}" class="btn-create">Créer une classe</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

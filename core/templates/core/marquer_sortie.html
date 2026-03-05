@@ -1,0 +1,266 @@
+{% extends 'core/base.html' %}
+{% block title %}Marquer sorti – {{ profil.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<style>
+    .form-card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 2rem; max-width: 620px; margin: 0 auto;
+        border-top: 4px solid #e74c3c;
+    }
+    .eleve-badge {
+        background: #fef2f2; border: 1px solid #fecaca;
+        border-radius: 10px; padding: 1rem 1.2rem;
+        display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem;
+    }
+    .eleve-avatar {
+        width: 48px; height: 48px; border-radius: 50%;
+        background: #e74c3c; color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; font-weight: 700; flex-shrink: 0;
+    }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label {
+        display: block; font-size: 0.85rem; font-weight: 700;
+        color: #374151; margin-bottom: 6px; text-transform: uppercase;
+    }
+    .form-group select, .form-group textarea, .form-group input[type="text"] {
+        width: 100%; padding: 10px 12px;
+        border: 1.5px solid #e2e8f0; border-radius: 8px;
+        font-size: 0.92rem; font-family: inherit; outline: none;
+        transition: border-color 0.2s; background: white;
+        box-sizing: border-box;
+    }
+    .form-group select:focus,
+    .form-group textarea:focus,
+    .form-group input[type="text"]:focus { border-color: #e74c3c; }
+    .field-hint { font-size: 0.78rem; color: #94a3b8; margin-top: 4px; }
+    .warning-box {
+        background: #fff7ed; border: 1px solid #fed7aa;
+        border-radius: 8px; padding: 10px 14px;
+        font-size: 0.83rem; color: #92400e; margin-bottom: 1.2rem;
+    }
+    .btn-submit {
+        width: 100%; padding: 12px; background: #e74c3c; color: white;
+        border: none; border-radius: 8px; font-size: 1rem;
+        font-weight: 700; cursor: pointer; transition: background 0.2s;
+        display:flex;align-items:center;justify-content:center;gap:0.5rem;
+    }
+    .btn-submit:hover { background: #c0392b; }
+    .btn-submit svg { stroke: white; }
+    .btn-annuler {
+        display: block; text-align: center; margin-top: 12px;
+        color: #94a3b8; text-decoration: none; font-size: 0.85rem;
+    }
+    optgroup { font-style: normal; }
+    /* Champs conditionnels */
+    .cond-section {
+        display: none;
+        background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;
+        padding: 1rem 1.2rem; margin-bottom: 1.2rem; animation: fadeIn .2s ease;
+    }
+    .cond-section.visible { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; } }
+    .cond-section .form-group:last-child { margin-bottom: 0; }
+    .toggle-row {
+        display: flex; align-items: center; gap: 0.6rem;
+        margin-bottom: 0.8rem; cursor: pointer;
+    }
+    .toggle-row input[type=checkbox] { width:16px; height:16px; accent-color:#e74c3c; cursor:pointer; }
+    .toggle-row label { font-size:0.87rem; font-weight:600; color:#374151; cursor:pointer; margin:0; }
+</style>
+
+<div style="max-width: 1600px;margin:0 auto;padding:1rem 2.5rem;">
+    <a href="{% url 'core:gestion_sorties' %}" class="btn-retour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+    <style>
+    .btn-retour {
+        display:inline-flex;align-items:center;gap:6px;
+        padding:8px 16px;background:white;color:#e74c3c;
+        border:2px solid #e74c3c;border-radius:10px;
+        text-decoration:none;font-weight:600;font-size:0.9rem;
+        margin-bottom:1.5rem;transition:all 0.2s;
+    }
+    .btn-retour:hover {
+        background:#e74c3c;color:white;transform:translateY(-2px);
+    }
+    </style>
+
+    <div class="form-card">
+        <h2 style="margin:0 0 0.3rem;color:#1e293b;display:flex;align-items:center;gap:0.5rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Marquer comme sorti
+        </h2>
+        <p style="color:#64748b;font-size:0.9rem;margin-bottom:1.5rem;">
+            Enregistrez la situation de fin de scolarité.
+        </p>
+
+        <!-- Identité élève -->
+        <div class="eleve-badge">
+            <div class="eleve-avatar">
+                {{ profil.user.first_name|first|upper }}{{ profil.user.last_name|first|upper }}
+            </div>
+            <div>
+                <strong style="display:block;color:#1e293b;">
+                    {{ profil.user.last_name|upper }} {{ profil.user.first_name }}
+                </strong>
+                <span style="color:#64748b;font-size:0.85rem;">
+                    {% if profil.classe %}{{ profil.classe.nom }}{% else %}Classe non définie{% endif %}
+                    &nbsp;·&nbsp; {{ profil.user.username }}
+                </span>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            ⚠️ Le compte sera désactivé. L'élève restera dans la base de données pour les statistiques.
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Situation de sortie *</label>
+                <select name="raison_sortie" required>
+                    <option value="" disabled selected>— Sélectionner —</option>
+
+                    <optgroup label="🎓 Diplôme obtenu">
+                        <option value="cap_mention">CAP obtenu avec mention</option>
+                        <option value="cap_sans_mention">CAP obtenu sans mention</option>
+                        <option value="bac_pro_mention">Bac Pro obtenu avec mention</option>
+                        <option value="bac_pro_sans_mention">Bac Pro obtenu sans mention</option>
+                    </optgroup>
+
+                    <optgroup label="❌ Échec">
+                        <option value="echec_cap">Échoué au CAP</option>
+                        <option value="echec_bac_pro">Échoué au Bac Pro</option>
+                    </optgroup>
+
+                    <optgroup label="📚 Poursuite d'études">
+                        <option value="poursuite_bac_pro">Poursuite en Bac Pro</option>
+                        <option value="poursuite_bts">Poursuite en BTS</option>
+                        <option value="poursuite_autre">Autre poursuite d'études</option>
+                    </optgroup>
+
+                    <optgroup label="🏭 Entrée dans la vie active">
+                        <option value="travail_formation">Travaille en lien avec sa formation</option>
+                        <option value="travail_hors_formation">Travaille hors de sa formation</option>
+                        <option value="apprentissage">Apprentissage / Alternance</option>
+                        <option value="sans_emploi">Sans emploi</option>
+                    </optgroup>
+
+                    <optgroup label="🔄 Réorientation">
+                        <option value="reorientation_interne">Réorienté dans l'établissement</option>
+                        <option value="reorientation_externe">Réorienté dans un autre établissement</option>
+                        <option value="retour_pays">Retour dans son pays d'origine</option>
+                    </optgroup>
+
+                    <optgroup label="⚠️ Situation particulière">
+                        <option value="exclusion">Exclu de l'établissement</option>
+                        <option value="decrocheur">Décrocheur (abandon)</option>
+                        <option value="deces">Décès</option>
+                        <option value="raison_inconnue">Raison inconnue</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- BLOC DIPLÔME (mention + poursuite) — affiché si raison cap_* / bac_pro_* -->
+            <div id="bloc-diplome" class="cond-section">
+                <div class="form-group">
+                    <label>Mention obtenue</label>
+                    <select name="mention_obtenue">
+                        <option value="">— Sans mention / Non renseigné —</option>
+                        <option value="AB">Assez Bien (AB)</option>
+                        <option value="B">Bien (B)</option>
+                        <option value="TB">Très Bien (TB)</option>
+                    </select>
+                    <div class="field-hint">Mention exacte figurant sur le diplôme.</div>
+                </div>
+                <div class="toggle-row">
+                    <input type="checkbox" id="chk-poursuite" name="poursuite_etudes">
+                    <label for="chk-poursuite">L'élève poursuit ses études après le diplôme</label>
+                </div>
+                <div id="bloc-type-poursuite" class="cond-section" style="padding:0.7rem;border:none;background:transparent;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Type de poursuite</label>
+                        <select name="type_poursuite">
+                            <option value="">— Sélectionner —</option>
+                            <option value="bac_pro">Bac Pro (après CAP)</option>
+                            <option value="bts">BTS (après Bac Pro)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOC POURSUITE DIRECTE — affiché si raison poursuite_* -->
+            <div id="bloc-poursuite-direct" class="cond-section">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>Type de poursuite</label>
+                    <select name="type_poursuite">
+                        <option value="">— Sélectionner —</option>
+                        <option value="bac_pro">Bac Pro</option>
+                        <option value="bts">BTS</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Année scolaire de sortie *</label>
+                <input type="text" name="annee_scolaire_sortie"
+                    value="{{ annee_defaut }}" required
+                    placeholder="ex : 2025-2026">
+                <div class="field-hint">Modifiez si la sortie est rétroactive (ex : saisie tardive).</div>
+            </div>
+
+            <div class="form-group">
+                <label>Commentaire (optionnel)</label>
+                <textarea name="commentaire_sortie" rows="3"
+                    placeholder="Établissement d'accueil, mention exacte, précisions..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Confirmer la sortie
+            </button>
+            <a href="{% url 'core:gestion_sorties' %}" class="btn-annuler">Annuler</a>
+        </form>
+    </div>
+</div>
+
+<script>
+const DIPLOMES_RAISONS = ['cap_mention','cap_sans_mention','bac_pro_mention','bac_pro_sans_mention','echec_cap','echec_bac_pro'];
+const POURSUITE_RAISONS = ['poursuite_bac_pro','poursuite_bts','poursuite_autre'];
+
+function updateConditionalFields() {
+    const raison = document.querySelector('[name="raison_sortie"]').value;
+    const blocDiplome   = document.getElementById('bloc-diplome');
+    const blocPoursuite = document.getElementById('bloc-poursuite-direct');
+    const isDiplome  = DIPLOMES_RAISONS.includes(raison);
+    const isPoursuite = POURSUITE_RAISONS.includes(raison);
+    blocDiplome.classList.toggle('visible', isDiplome);
+    blocPoursuite.classList.toggle('visible', isPoursuite && !isDiplome);
+}
+
+document.querySelector('[name="raison_sortie"]').addEventListener('change', updateConditionalFields);
+
+// Poursuite checkbox
+document.getElementById('chk-poursuite').addEventListener('change', function () {
+    document.getElementById('bloc-type-poursuite').classList.toggle('visible', this.checked);
+});
+
+// Initialiser à l'affichage
+updateConditionalFields();
+</script>
+{% endblock %}

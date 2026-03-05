@@ -1,0 +1,142 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Modifier la classe{% endblock %}
+
+{% block content %}
+<style>
+    .page-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .form-card h2 {
+        color: #2c3e50;
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+        border-left: 5px solid #4a7fc1;
+        padding-left: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        color: #2c3e50;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.8rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #4a7fc1;
+        box-shadow: 0 0 0 3px rgba(74, 127, 193, 0.1);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-submit {
+        padding: 0.8rem 2rem;
+        background: white;
+        color: #4a7fc1;
+        border: 2px solid #4a7fc1;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-submit:hover {
+        background: #4a7fc1;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(74,127,193,0.3);
+    }
+</style>
+
+<div class="page-container">
+
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#4a7fc1;
+              border:2px solid #4a7fc1;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="form-card">
+        <h2>Modifier la classe</h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="nom">Nom de la classe *</label>
+                <input type="text" id="nom" name="nom" value="{{ classe.nom }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="niveau">Niveau *</label>
+                <select id="niveau" name="niveau" required>
+                    {% for niveau in niveaux %}
+                    <option value="{{ niveau.id }}" {% if classe.niveau.id == niveau.id %}selected{% endif %}>
+                        {{ niveau.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" placeholder="Description de la classe...">{{ classe.description }}</textarea>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn-submit">Modifier</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

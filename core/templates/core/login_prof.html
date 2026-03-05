@@ -1,0 +1,273 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Connexion Professeur - Lycée Louis Loucheur{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    }
+
+    /* --- MOBILE D'ABORD (max-width 500px) --- */
+    .login-container {
+        max-width: 500px;
+        margin: 3rem auto;
+        padding: 0 1rem;
+        transition: max-width 0.3s ease; /* Transition fluide */
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .login-header img {
+        max-width: 100px;
+        margin-bottom: 1.5rem;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+    }
+
+    .login-header h1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        font-size: 2rem;
+        color: #667eea;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .login-header h1 svg {
+        width: 28px;
+        height: 28px;
+        fill: #667eea;
+    }
+
+    .login-header p {
+        font-size: 0.95rem;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    /* Carte de formulaire */
+    .login-card {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 16px;
+        padding: 2.5rem 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    /* Groupes de champs */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        background: #f0f2ff;
+    }
+
+    .form-group input::placeholder {
+        color: #adb5bd;
+    }
+
+    /* Bouton de connexion BLEU */
+    .btn-connexion {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-connexion:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-connexion svg {
+        width: 20px;
+        height: 20px;
+        fill: white;
+    }
+
+    /* Lien retour */
+    .retour-link {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .retour-link a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .retour-link a:hover {
+        color: #764ba2;
+        gap: 0.8rem;
+    }
+
+    .retour-link svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+    }
+
+    /* --- C'EST ICI QUE CA CHANGE POUR LE PC --- */
+    @media (min-width: 992px) {
+        .login-container {
+            max-width: 900px; /* BEAUCOUP PLUS LARGE */
+            margin: 5rem auto;
+        }
+        
+        .login-card {
+            padding: 4rem 5rem; /* Plus d'espace intérieur */
+        }
+
+        .login-header img {
+            max-width: 150px; /* Logo plus grand */
+        }
+        
+        .login-header h1 {
+            font-size: 2.8rem; /* Titre plus gros */
+            margin-bottom: 1rem;
+        }
+        
+        .login-header h1 svg {
+            width: 38px;
+            height: 38px;
+        }
+        
+        .login-header p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group label {
+            font-size: 1.15rem;
+        }
+
+        .form-group input {
+            padding: 1.2rem 1.5rem; /* Champs plus grands */
+            font-size: 1.2rem;
+            border-radius: 10px;
+        }
+
+        .btn-connexion {
+            padding: 1.3rem; /* Bouton plus imposant */
+            font-size: 1.3rem;
+            border-radius: 10px;
+        }
+        
+        .btn-connexion svg {
+            width: 26px;
+            height: 26px;
+        }
+    }
+</style>
+
+<!-- En-tête -->
+<div class="login-container">
+    <div class="login-header">
+        <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg" 
+             alt="Logo Lycée Louis Loucheur">
+        
+        <h1>
+            <svg viewBox="0 0 24 24">
+                <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+            </svg>
+            Espace Professeur
+        </h1>
+        <p>Connectez-vous pour accéder à votre tableau de bord</p>
+    </div>
+
+    <!-- Carte Formulaire -->
+    <div class="login-card">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- Identifiant -->
+            <div class="form-group">
+                <label for="username">Identifiant</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    placeholder="Votre identifiant" 
+                    required
+                    autocomplete="username"
+                >
+            </div>
+
+            <!-- Mot de passe -->
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Votre mot de passe" 
+                    required
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <!-- Bouton -->
+            <button type="submit" class="btn-connexion">
+                <svg viewBox="0 0 24 24">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+                </svg>
+                Se connecter
+            </button>
+        </form>
+    </div>
+
+    <!-- Retour -->
+    <div class="retour-link">
+        <a href="{% url 'core:home' %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Retour
+        </a>
+    </div>
+</div>
+
+{% endblock %}

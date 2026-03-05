@@ -1,0 +1,179 @@
+{% extends 'core/base.html' %}
+{% block title %}Créer un mode opératoire{% endblock %}
+
+{% block content %}
+<style>
+    .page-container { max-width: 800px; width: 100%; margin: 0 auto; padding: 2rem; }
+
+    .btn-back {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; border: 2px solid #e8922a; border-radius: 8px;
+        color: #e8922a; background: white; font-weight: 600; text-decoration: none;
+        margin-bottom: 1.5rem; transition: all 0.2s; font-size: 0.9rem;
+    }
+    .btn-back:hover { background: #e8922a; color: white; transform: translateY(-2px); }
+
+    .page-header {
+        background: white; border-radius: 16px; padding: 1.8rem 2rem;
+        margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        border-left: 6px solid #e8922a;
+    }
+    .page-header h1 { font-size: 1.6rem; font-weight: 700; color: #2c3e50; margin: 0 0 0.3rem; }
+    .page-header p { color: #6c757d; margin: 0; font-size: 0.93rem; }
+
+    .card {
+        background: white; border-radius: 14px; padding: 1.8rem 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+    }
+    .card h2 {
+        font-size: 1.1rem; font-weight: 700; color: #34495e;
+        display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.2rem;
+    }
+    .card h2 svg { width: 20px; height: 20px; stroke: #e8922a; }
+
+    .form-group { margin-bottom: 1.2rem; }
+    label { display: block; font-weight: 600; color: #34495e; margin-bottom: 0.4rem; font-size: 0.92rem; }
+    input[type="text"], textarea, input[type="file"] {
+        width: 100%; padding: 0.7rem 0.9rem;
+        border: 2px solid #e9ecef; border-radius: 10px;
+        font-size: 0.92rem; color: #2c3e50;
+        transition: border-color 0.2s; box-sizing: border-box;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: #e8922a; outline: none; }
+    textarea { resize: vertical; min-height: 120px; }
+
+    .separator {
+        text-align: center; color: #adb5bd; font-size: 0.88rem; font-weight: 600;
+        margin: 1rem 0; position: relative;
+    }
+    .separator::before, .separator::after {
+        content: ''; position: absolute; top: 50%; width: 42%; height: 1px;
+        background: #e9ecef;
+    }
+    .separator::before { left: 0; }
+    .separator::after { right: 0; }
+
+    .btn-row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 1.5rem; }
+    .btn-primary {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.75rem 1.5rem; border-radius: 10px;
+        font-size: 0.92rem; font-weight: 600; cursor: pointer;
+        border: none; transition: all 0.2s;
+        background: #e8922a; color: white;
+    }
+    .btn-primary:hover { background: #cf7d20; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(232,146,42,0.3); }
+    .btn-secondary {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.75rem 1.5rem; border-radius: 10px;
+        font-size: 0.92rem; font-weight: 600; cursor: pointer;
+        border: 2px solid #6c757d; background: white; color: #6c757d;
+        transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: #6c757d; color: white; transform: translateY(-2px); }
+
+    .alert { padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .alert-error   { background: #fee2e2; color: #b91c1c; }
+    .alert-success { background: #d1fae5; color: #065f46; }
+    .alert-warning { background: #fef3c7; color: #92400e; }
+
+    .ia-section { background: #fff8f0; border: 2px dashed #f5c08a; border-radius: 12px; padding: 1.4rem 1.6rem; }
+    .ia-section h3 {
+        font-size: 1rem; font-weight: 700; color: #cf7d20;
+        margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .badge-ia {
+        background: #e8922a; color: white; font-size: 0.72rem; font-weight: 700;
+        padding: 0.2rem 0.5rem; border-radius: 5px; letter-spacing: 0.5px;
+    }
+</style>
+
+<div class="page-container">
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#e8922a;
+              border:2px solid #e8922a;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="page-header">
+        <h1 style="display:flex;align-items:center;gap:0.6rem;">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#e8922a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Nouveau mode opératoire
+        </h1>
+        <p>
+            {% if theme %}Thème : <strong>{{ theme.nom }}</strong>
+            {% elif atelier %}Atelier : <strong>{{ atelier.titre }}</strong>{% endif %}
+        </p>
+    </div>
+
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% else %}alert-warning{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Infos de base -->
+        <div class="card">
+            <h2>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Informations générales
+            </h2>
+            <div class="form-group">
+                <label for="titre">Titre du mode opératoire *</label>
+                <input type="text" id="titre" name="titre" placeholder="Ex : Pose d'un carrelage mural" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description (optionnel)</label>
+                <textarea id="description" name="description" placeholder="Objectif du mode opératoire, contexte..."></textarea>
+            </div>
+        </div>
+
+        <!-- Zone IA -->
+        <div class="card">
+            <h2>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Génération par l'IA <span class="badge-ia">GEMINI</span>
+            </h2>
+            <p style="font-size:0.88rem;color:#6c757d;margin-bottom:1rem;">Fournissez un texte source ou un PDF — l'IA générera automatiquement les phases du mode opératoire. Laissez vide pour une saisie manuelle.</p>
+
+            <div class="ia-section">
+                <h3>
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Texte source
+                </h3>
+                <div class="form-group">
+                    <label for="texte_source">Coller votre texte ici</label>
+                    <textarea id="texte_source" name="texte_source" rows="6" placeholder="Collez ici le texte décrivant l'opération, le cours, les consignes..."></textarea>
+                </div>
+                <div class="separator">OU</div>
+                <div class="form-group">
+                    <label for="pdf_source">Importer un PDF</label>
+                    <input type="file" id="pdf_source" name="pdf_source" accept=".pdf">
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button type="submit" class="btn-primary" name="action" value="generer">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Générer avec l'IA
+                </button>
+                <button type="submit" class="btn-secondary" name="action" value="vide">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    Créer vide (saisie manuelle)
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,349 @@
+{% extends 'core/base.html' %}
+{% block title %}Travaux à corriger{% endblock %}
+{% block content %}
+
+<style>
+    /* ========================================
+       TRAVAUX À CORRIGER — Rouge #e74c3c
+       ======================================== */
+
+    .page-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* ─── EN-TÊTE ─────────────────────────────── */
+    .page-header-block {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #e74c3c;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-header-block h1 {
+        margin: 0 0 0.25rem;
+        color: #2c3e50;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-weight: 700;
+    }
+
+    .page-header-block h1 svg {
+        stroke: #e74c3c;
+        fill: none;
+        stroke-width: 1.5;
+    }
+
+    .page-header-block p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.95rem;
+    }
+
+    .count-badge {
+        background: #e74c3c;
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+
+    .btn-retour {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.5rem;
+        background: white;
+        color: #e74c3c;
+        border: 2px solid #e74c3c;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+        flex-shrink: 0;
+    }
+
+    .btn-retour:hover {
+        background: #e74c3c;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* ─── LISTE ─────────────────────────────── */
+    .rendus-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* ─── CARTE RENDU ────────────────────────── */
+    .rendu-card {
+        background: white;
+        border: 1.5px solid #e9ecef;
+        border-left: 5px solid #e74c3c;
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .rendu-card:hover {
+        transform: translateX(6px);
+        box-shadow: 0 6px 20px rgba(231,76,60,0.12);
+        border-left-color: #c0392b;
+    }
+
+    .rendu-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .rendu-info { flex: 1; }
+
+    .rendu-header-row {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .rendu-header-row h3 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .tag-eleve {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.75rem;
+        background: #fef2f2;
+        color: #c0392b;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid #fca5a5;
+    }
+
+    .tag-classe {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.75rem;
+        background: #f8f9fa;
+        color: #495057;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid #dee2e6;
+    }
+
+    .rendu-meta {
+        display: flex;
+        gap: 1.2rem;
+        font-size: 0.88rem;
+        color: #7a8694;
+        flex-wrap: wrap;
+        margin-top: 0.25rem;
+    }
+
+    .rendu-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .rendu-commentaire {
+        margin-top: 0.6rem;
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    /* ─── ACTIONS ─────────────────────────────── */
+    .rendu-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+    }
+
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        white-space: nowrap;
+        background: white;
+        border: 2px solid currentColor;
+    }
+
+    .btn-action:hover { transform: translateY(-2px); }
+
+    .btn-telecharger  { color: #059669; }
+    .btn-telecharger:hover { background: #059669; color: white; box-shadow: 0 4px 12px rgba(5,150,105,0.25); }
+
+    .btn-corriger     { color: #007bff; }
+    .btn-corriger:hover { background: #007bff; color: white; box-shadow: 0 4px 12px rgba(0,123,255,0.25); }
+
+    .btn-marquer      { color: #e74c3c; }
+    .btn-marquer:hover  { background: #e74c3c; color: white; box-shadow: 0 4px 12px rgba(231,76,60,0.25); }
+
+    .btn-disabled {
+        color: #adb5bd;
+        border-color: #dee2e6;
+        cursor: not-allowed;
+        background: #f8f9fa;
+    }
+    .btn-disabled:hover { transform: none; box-shadow: none; }
+
+    .form-inline { display: contents; }
+
+    /* ─── ÉTAT VIDE ──────────────────────────── */
+    .empty-state {
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 12px;
+        padding: 3.5rem;
+        text-align: center;
+    }
+
+    .empty-state svg {
+        width: 56px;
+        height: 56px;
+        stroke: #adb5bd;
+        fill: none;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 { color: #6c757d; margin: 0 0 0.4rem; }
+    .empty-state p  { color: #adb5bd; margin: 0; font-size: 0.95rem; }
+
+    @media (max-width: 768px) {
+        .page-container { padding: 1rem; }
+        .rendu-content { flex-direction: column; align-items: flex-start; }
+        .rendu-actions { width: 100%; }
+    }
+</style>
+
+<div class="page-container">
+
+    <!-- En-tête -->
+    <div class="page-header-block">
+        <div>
+            <h1>
+                <svg width="32" height="32" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                    <rect x="9" y="3" width="6" height="4" rx="1"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+                Travaux à corriger
+            </h1>
+            <p>{{ rendus|length }} en attente de correction</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:1rem; flex-shrink:0;">
+            <span class="count-badge">{{ rendus|length }}</span>
+            <a href="{% url 'core:dashboard_professeur' %}" class="btn-retour">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Liste des rendus -->
+    {% if rendus %}
+    <div class="rendus-list">
+        {% for rendu in rendus %}
+        <div class="rendu-card">
+            <div class="rendu-content">
+                <div class="rendu-info">
+                    <div class="rendu-header-row">
+                        <h3>{{ rendu.travail.titre }}</h3>
+                        <span class="tag-eleve">
+                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            {{ rendu.eleve.user.get_full_name }}
+                        </span>
+                        <span class="tag-classe">
+                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            {{ rendu.eleve.classe.nom }}
+                        </span>
+                    </div>
+                    <div class="rendu-meta">
+                        <div class="rendu-meta-item">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            Rendu le {{ rendu.date_rendu|date:"d/m/Y à H:i" }}
+                        </div>
+                    </div>
+                    {% if rendu.commentaire %}
+                    <div class="rendu-commentaire">« {{ rendu.commentaire }} »</div>
+                    {% endif %}
+                </div>
+
+                <div class="rendu-actions">
+                    {% if rendu.fichier_rendu %}
+                        <a href="{{ rendu.fichier_rendu.url }}" class="btn-action btn-telecharger" download>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Télécharger
+                        </a>
+                    {% else %}
+                        <span class="btn-action btn-disabled">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            Aucun fichier
+                        </span>
+                    {% endif %}
+
+                    <a href="{% url 'core:corriger_rendu' rendu.id %}" class="btn-action btn-corriger">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Corriger
+                    </a>
+
+                    <form method="post" action="{% url 'core:marquer_corrige' rendu.id %}" class="form-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-action btn-marquer">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Marquer corrigé
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <svg stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <h3>Aucun travail à corriger</h3>
+        <p>Tous les travaux sont à jour !</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,182 @@
+/* ═══════════════════════════════════════════════════════════
+   CHARTE GRAPHIQUE LYCÉE LOUIS LOUCHEUR
+   À inclure dans base.html : <link rel="stylesheet" href="{% static 'css/charte.css' %}">
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+    /* ────────────────────────────────────────
+       COULEURS PRINCIPALES (BTP / CONSTRUCTION)
+       ──────────────────────────────────────── */
+    
+    /* Primaire - Vert menthe moderne (actions principales) */
+    --primary:       #20c997;
+    --primary-hover: #1aa179;
+    --primary-light: #e8f8f3;
+    
+    /* Secondaire - Bleu professionnel (informations) */
+    --secondary:       #3b82f6;
+    --secondary-hover: #2563eb;
+    --secondary-light: #dbeafe;
+    
+    /* Accent - Orange construction (alertes importantes) */
+    --accent:       #fd7e14;
+    --accent-hover: #e67700;
+    --accent-light: #fff3e0;
+    
+    /* ────────────────────────────────────────
+       COULEURS SÉMANTIQUES
+       ──────────────────────────────────────── */
+    
+    --success:       #10b981; /* Succès, validations */
+    --success-light: #dcfce7;
+    --success-dark:  #166534;
+    
+    --warning:       #f59e0b; /* Avertissements */
+    --warning-light: #fef9c3;
+    --warning-dark:  #92400e;
+    
+    --danger:        #e74c3c; /* Erreurs, suppressions */
+    --danger-light:  #fee2e2;
+    --danger-dark:   #dc2626;
+    
+    --info:          #667eea; /* Informations, notifications */
+    --info-light:    #e0e7ff;
+    --info-dark:     #4c51bf;
+    
+    /* ────────────────────────────────────────
+       COULEURS NEUTRES
+       ──────────────────────────────────────── */
+    
+    --gray-50:  #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+    --gray-900: #0f172a;
+    
+    --white: #ffffff;
+    --black: #000000;
+    
+    /* ────────────────────────────────────────
+       TEXTE
+       ──────────────────────────────────────── */
+    
+    --text-primary:   var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-muted:     var(--gray-400);
+    
+    /* ────────────────────────────────────────
+       OMBRES & BORDURES
+       ──────────────────────────────────────── */
+    
+    --shadow-sm:  0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow:     0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.12);
+    
+    --border-radius-sm: 6px;
+    --border-radius:    10px;
+    --border-radius-lg: 16px;
+    
+    --border-color: var(--gray-200);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CLASSES UTILITAIRES (à utiliser dans vos templates)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ────── Boutons ────── */
+.btn-primary {
+    background: var(--primary) !important;
+    color: white !important;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    transition: all 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-primary:hover {
+    background: var(--primary-hover) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
+}
+
+.btn-secondary {
+    background: var(--secondary) !important;
+    color: white !important;
+}
+.btn-secondary:hover {
+    background: var(--secondary-hover) !important;
+}
+
+.btn-danger {
+    background: var(--danger) !important;
+    color: white !important;
+}
+
+.btn-success {
+    background: var(--success) !important;
+    color: white !important;
+}
+
+/* ────── Cartes ────── */
+.card {
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+/* ────── Badges ────── */
+.badge-success {
+    background: var(--success-light);
+    color: var(--success-dark);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.badge-warning {
+    background: var(--warning-light);
+    color: var(--warning-dark);
+}
+
+.badge-danger {
+    background: var(--danger-light);
+    color: var(--danger-dark);
+}
+
+.badge-info {
+    background: var(--info-light);
+    color: var(--info-dark);
+}
+
+/* ────── Couleurs de texte ────── */
+.text-primary   { color: var(--primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-muted     { color: var(--text-muted) !important; }
+.text-danger    { color: var(--danger) !important; }
+.text-success   { color: var(--success) !important; }
+
+/* ────── Backgrounds ────── */
+.bg-primary-light { background: var(--primary-light) !important; }
+.bg-gray-50       { background: var(--gray-50) !important; }
+
+/* ═══════════════════════════════════════════════════════════
+   EXEMPLE D'UTILISATION DANS VOS TEMPLATES
+   ═══════════════════════════════════════════════════════════
+   
+   <button class="btn-primary">Action principale</button>
+   <div class="card">Contenu de la carte</div>
+   <span class="badge-success">Validé</span>
+   <p class="text-secondary">Texte secondaire</p>
+   
+   ═══════════════════════════════════════════════════════════ */

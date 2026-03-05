@@ -1,0 +1,211 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Contrat - {{ fiche_contrat.titre_tp }}</title>
+    <style>
+        @page { size: A4; margin: 0; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+        body { font-family: Arial, sans-serif; background: #555; margin: 0; }
+
+        /* Feuille = exactement 1 page A4 */
+        .sheet {
+            background: white;
+            width: 210mm;
+            height: 297mm;
+            margin: 20px auto;
+            padding: 6mm 8mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow: hidden;
+        }
+
+        @media print {
+            body { background: none; margin: 0; }
+            .sheet { margin: 0; box-shadow: none; page-break-after: always; height: 297mm; }
+            .no-print { display: none !important; }
+        }
+
+        /* --- BARRE D'ACTIONS --- */
+        .action-bar {
+            background: white; padding: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;
+            display: flex; justify-content: center; gap: 15px;
+            border-bottom: 4px solid #3b82f6; margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 15px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+            text-decoration: none; color: white;
+        }
+        .btn-back    { background: #f3f4f6; color: #333; border: 1px solid #ccc; }
+        .btn-print   { background: #3b82f6; }
+        .btn-validate{ background: #10b981; }
+        .status-badge { background: #d1fae5; color: #065f46; padding: 8px 12px; border-radius: 20px; font-weight: bold; border: 1px solid #10b981; }
+
+        /* --- EN-TÊTE --- */
+        .header-container { display: flex; gap: 15px; margin-bottom: 5px; align-items: flex-start; flex-shrink: 0; }
+        .logo-box { width: 58px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .logo-img { width: 100%; height: auto; object-fit: contain; }
+        .header-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .title-box { border: 2px solid #000; background: #f0f0f0; text-align: center; font-weight: bold; font-size: 13px; padding: 4px 8px; text-transform: uppercase; }
+        .types-box { display: flex; justify-content: center; gap: 15px; border: 1px solid #ccc; background: #f9f9f9; padding: 4px; border-radius: 4px; }
+        .check-item { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 600; }
+        .check-box { width: 14px; height: 14px; border: 2px solid #555; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+        .check-box.checked { background: #10b981; border-color: #10b981; color: white; }
+        .info-split { display: flex; gap: 6px; }
+        .info-eleve-box { width: 42%; border: 2px solid #000; padding: 4px 6px; font-size: 10px; line-height: 1.5; }
+        .context-box { flex: 1; border: 2px solid #f59e0b; padding: 4px 6px; font-size: 10px; }
+
+        /* --- BLOCS (bordures colorées) --- */
+        .bloc {
+            border: 2px solid #f59e0b;
+            border-radius: 4px;
+            padding: 4px 7px;
+            font-size: 10px;
+            line-height: 1.45;
+        }
+        .bloc strong {
+            display: block; font-size: 10px; font-weight: bold; margin-bottom: 1px;
+        }
+        .bloc-jaune { border-color: #f59e0b; }
+        .bloc-bleu  { border-color: #3b82f6; }
+        .bloc-vert  { border-color: #22c55e; }
+        .bloc-rouge { border-color: #ef4444; }
+        .bloc-noir  { border-color: #000; }
+
+        /* Blocs qui s'étirent pour remplir l'espace disponible */
+        .bloc-grow { flex: 1; min-height: 0; }
+
+        /* Grille 2 colonnes qui prend tout l'espace restant */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            flex: 1.4;        /* plus de poids = prend plus de place */
+            min-height: 0;
+        }
+
+        /* Compétences visées */
+        .comp-item { font-size: 10px; padding: 1px 0; }
+    </style>
+</head>
+<body>
+
+<!-- BARRE D'ACTIONS -->
+<div class="no-print action-bar">
+    <a href="{% url 'core:evaluation_detail' fiche_contrat.id %}" class="btn btn-back">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        Retour
+    </a>
+    <button onclick="window.print()" class="btn btn-print">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Imprimer ({{ eleves|length }} fiche(s))
+    </button>
+    {% if fiche_contrat.contrat_valide %}
+        <div class="status-badge">✅ Contrat Validé</div>
+    {% else %}
+        <form method="post" action="{% url 'core:valider_contrat' fiche_contrat.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-validate"
+                    onclick="return confirm('Valider ce contrat ?')">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path></svg>
+                Valider le contrat
+            </button>
+        </form>
+    {% endif %}
+</div>
+
+<!-- UNE FICHE PAR ÉLÈVE -->
+{% for eleve in eleves %}
+<div class="sheet">
+
+    <!-- EN-TÊTE -->
+    <div class="header-container">
+        <div class="logo-box">
+            <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg"
+                 class="logo-img" alt="Logo">
+        </div>
+        <div class="header-content">
+            <div class="title-box">{{ fiche_contrat.titre_tp }}</div>
+            <div class="types-box">
+                <div class="check-item"><div class="check-box {% if fiche_contrat.type_evaluation == 'formative' %}checked{% endif %}">{% if fiche_contrat.type_evaluation == 'formative' %}✓{% endif %}</div> Formative</div>
+                <div class="check-item"><div class="check-box {% if fiche_contrat.type_evaluation == 'sommative' %}checked{% endif %}">{% if fiche_contrat.type_evaluation == 'sommative' %}✓{% endif %}</div> Sommative</div>
+                <div class="check-item"><div class="check-box {% if fiche_contrat.type_evaluation == 'certificative' %}checked{% endif %}">{% if fiche_contrat.type_evaluation == 'certificative' %}✓{% endif %}</div> Certificative</div>
+            </div>
+            <div class="info-split">
+                <div class="info-eleve-box">
+                    <strong>Nom :</strong> {{ eleve.user.last_name|upper }}<br>
+                    <strong>Prénom :</strong> {{ eleve.user.first_name }}<br>
+                    <strong>Classe :</strong> {{ fiche_contrat.classe.nom }}<br>
+                    <strong>Date :</strong> {{ fiche_contrat.date_tp|date:"d/m/Y"|default:"__/__/____" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPÉTENCES VISÉES (jaune) — hauteur auto -->
+    <div class="bloc bloc-jaune" style="flex-shrink:0;">
+        <strong>Compétences visées:</strong>
+        {% for cp in competences_vises %}
+        <div class="comp-item">{{ cp.code }} {{ cp.nom }}</div>
+        {% empty %}
+        <div class="comp-item" style="color:#999; font-style:italic;">-</div>
+        {% endfor %}
+    </div>
+
+    <!-- DESCRIPTION DE LA SITUATION PROFESSIONNELLE — s'étire -->
+    <div class="bloc bloc-jaune bloc-grow">
+        <strong>Description de la situation professionnelle :</strong>
+        {{ fiche_contrat.contexte|default:""|linebreaksbr }}
+    </div>
+
+    <!-- OBSERVATION ENVIRONNEMENT — s'étire -->
+    <div class="bloc bloc-jaune bloc-grow">
+        <strong>Observation de son environnement de travail :</strong>
+        {{ fiche_contrat.observation_environnement|default:""|linebreaksbr }}
+    </div>
+
+    <!-- PROBLÉMATIQUE — légèrement plus petit -->
+    <div class="bloc bloc-jaune" style="flex:0.7; min-height:0;">
+        <strong>Problèmatique :</strong>
+        {{ fiche_contrat.problematique|default:""|linebreaksbr }}
+    </div>
+
+    <!-- CONNAISSANCES & MATÉRIELS (2 colonnes) — prend la place restante -->
+    <div class="grid-2">
+        <div class="bloc bloc-bleu">
+            <strong>Pour cela, je dois connaître :</strong>
+            {% for ligne in savoirs_dedupliques %}
+                <div>- {{ ligne }}</div>
+            {% empty %}
+                <div style="color:#999;font-style:italic;">-</div>
+            {% endfor %}
+        </div>
+        <div class="bloc bloc-noir">
+            <strong>Je disposerais :</strong>
+            {{ fiche_contrat.materiels|default:""|linebreaksbr }}
+        </div>
+    </div>
+
+    <!-- CONSIGNE & RISQUES EPI (2 colonnes) — prend la place restante -->
+    <div class="grid-2">
+        <div class="bloc bloc-vert">
+            <strong>Consigne :</strong>
+            {{ fiche_contrat.consigne|default:""|linebreaksbr }}
+        </div>
+        <div class="bloc bloc-rouge">
+            <strong>Identifier les risques et déduire les EPI :</strong>
+            {{ fiche_contrat.risques_epi|default:""|linebreaksbr }}
+        </div>
+    </div>
+
+</div>
+{% endfor %}
+
+</body>
+</html>

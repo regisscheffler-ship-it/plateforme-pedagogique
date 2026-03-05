@@ -1,0 +1,168 @@
+{% extends 'core/base.html' %}
+{% block title %}Créer un dossier - {{ pfmp.titre }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .btn-retour {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-retour:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2.5rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #667eea;
+    }
+
+    .form-card h1 {
+        color: #2c3e50;
+        font-size: 2rem;
+        margin: 0 0 2rem 0;
+        font-weight: 700;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.9rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-group textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        padding: 0.9rem 2rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: none;
+        text-decoration: none;
+    }
+
+    .btn-save {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-save:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+    }
+
+    .btn-cancel {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-cancel:hover {
+        background: #545b62;
+    }
+</style>
+
+<div class="page-container">
+    <a href="{% url 'core:pfmp_detail' pfmp.id %}" class="btn-retour">
+        Retour
+    </a>
+
+    <div class="form-card">
+        <h1>📁 Créer un dossier dans {{ pfmp.titre }}</h1>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Nom du dossier *</label>
+                <input type="text" name="nom" required placeholder="Ex: Ressources, Conventions, Documents...">
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" placeholder="Description optionnelle du dossier"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Ordre d'affichage</label>
+                <input type="number" name="ordre" value="0" min="0">
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" name="visible_eleves" id="visible_eleves" checked>
+                    <label for="visible_eleves">Visible par les élèves</label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-save">✅ Créer le dossier</button>
+                <a href="{% url 'core:pfmp_detail' pfmp.id %}" class="btn btn-cancel">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

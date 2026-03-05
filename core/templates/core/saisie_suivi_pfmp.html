@@ -1,0 +1,134 @@
+{% extends "core/base.html" %}
+{% block content %}
+<style>
+:root { --pfmp: #6b7fd4; --pfmp-light: #eef0fb; }
+.page-container { max-width:1100px; width:100%; margin:0 auto; padding:2rem; }
+.btn-retour {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px; border-radius:8px; font-size:0.85rem; font-weight:500;
+    background:var(--pfmp-light); color:var(--pfmp); border:1px solid var(--pfmp);
+    text-decoration:none; margin-bottom:1.5rem;
+}
+.page-header { display:flex; align-items:center; gap:1rem; margin-bottom:1.8rem; }
+.page-header-icon {
+    width:48px; height:48px; border-radius:12px;
+    background:var(--pfmp-light); color:var(--pfmp);
+    display:flex; align-items:center; justify-content:center;
+}
+.page-header h1 { font-size:1.5rem; font-weight:700; color:#1f2d3d; margin:0; }
+.page-header p { font-size:0.88rem; color:#64748b; margin:0; }
+
+.pfmp-info {
+    background:var(--pfmp-light); border:1px solid var(--pfmp);
+    border-radius:10px; padding:1rem 1.4rem; margin-bottom:1.5rem;
+    display:flex; gap:2rem; flex-wrap:wrap; font-size:0.9rem;
+}
+.pfmp-info strong { color:var(--pfmp); }
+
+.suivi-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+.suivi-table th {
+    background:#1f2d3d; color:#fff; padding:10px 12px;
+    text-align:left; font-size:0.8rem; font-weight:600;
+}
+.suivi-table th:first-child { border-radius:6px 0 0 0; }
+.suivi-table th:last-child  { border-radius:0 6px 0 0; }
+.suivi-table td { padding:8px 10px; border-bottom:1px solid #e2e8f0; vertical-align:middle; }
+.suivi-table tr:hover td { background:#f8fafc; }
+.suivi-table input[type=number] {
+    width:64px; padding:5px 8px; border:1px solid #cbd5e1;
+    border-radius:6px; font-size:0.88rem; text-align:center;
+}
+.suivi-table input[type=number]:focus { outline:none; border-color:var(--pfmp); }
+.suivi-table textarea {
+    width:160px; padding:5px 8px; border:1px solid #cbd5e1;
+    border-radius:6px; font-size:0.82rem; resize:vertical; min-height:36px;
+}
+.col-num { width:80px; text-align:center; }
+.badge-absent { display:inline-block; padding:2px 8px; border-radius:8px; font-size:0.75rem; font-weight:600; }
+.badge-just   { background:#fef9c3; color:#92400e; }
+.badge-injust { background:#fee2e2; color:#b91c1c; }
+
+.btn-save {
+    display:inline-flex; align-items:center; gap:7px;
+    background:white; color:var(--pfmp); border:2px solid var(--pfmp);
+    padding:11px 24px; border-radius:8px; font-size:0.95rem; font-weight:600;
+    cursor:pointer; margin-top:1.5rem; transition:all 0.2s;
+}
+.btn-save:hover { background:var(--pfmp); color:white; transform:translateY(-2px); box-shadow:0 4px 12px rgba(107,127,212,0.3); }
+</style>
+
+<div class="page-container">
+    <a href="{% url 'core:gestion_pfmp' %}" class="btn-retour">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+        </svg>
+        Retour
+    </a>
+
+    <div class="page-header">
+        <div class="page-header-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div>
+            <h1>Suivi de présence PFMP</h1>
+            <p>{{ pfmp.titre }} — {{ pfmp.classe.nom }}</p>
+        </div>
+    </div>
+
+    <div class="pfmp-info">
+        <div><strong>Classe :</strong> {{ pfmp.classe.nom }}</div>
+        {% if pfmp.date_debut %}<div><strong>Du :</strong> {{ pfmp.date_debut|date:"d/m/Y" }}</div>{% endif %}
+        {% if pfmp.date_fin   %}<div><strong>Au :</strong> {{ pfmp.date_fin|date:"d/m/Y" }}</div>{% endif %}
+        <div><strong>Élèves :</strong> {{ eleves_avec_suivi|length }}</div>
+    </div>
+
+    {% if eleves_avec_suivi %}
+    <form method="post">
+        {% csrf_token %}
+        <table class="suivi-table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th class="col-num">Jours effectués</th>
+                    <th class="col-num">Absences justifiées</th>
+                    <th class="col-num">Absences injustifiées</th>
+                    <th>Commentaire</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in eleves_avec_suivi %}
+                {% with e=item.profil s=item.suivi %}
+                <tr>
+                    <td><strong>{{ e.user.last_name|upper }}</strong></td>
+                    <td>{{ e.user.first_name }}</td>
+                    <td class="col-num">
+                        <input type="number" name="effectues_{{ e.id }}" min="0"
+                            value="{{ s.nb_jours_effectues|default:0 }}" required>
+                    </td>
+                    <td class="col-num">
+                        <input type="number" name="justifies_{{ e.id }}" min="0"
+                            value="{{ s.nb_jours_manques_justifies|default:0 }}">
+                    </td>
+                    <td class="col-num">
+                        <input type="number" name="injustifies_{{ e.id }}" min="0"
+                            value="{{ s.nb_jours_manques_injustifies|default:0 }}">
+                    </td>
+                    <td>
+                        <textarea name="commentaire_{{ e.id }}" placeholder="Commentaire…">{{ s.commentaire|default:"" }}</textarea>
+                    </td>
+                </tr>
+                {% endwith %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn-save">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Enregistrer le suivi
+        </button>
+    </form>
+    {% else %}
+        <div style="text-align:center;padding:3rem;color:#94a3b8;">Aucun élève actif dans la classe {{ pfmp.classe.nom }}.</div>
+    {% endif %}
+</div>
+{% endblock %}

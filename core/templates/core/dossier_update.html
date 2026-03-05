@@ -1,0 +1,57 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 1600px; width: 100%; margin: 0 auto; padding: 2rem;">
+    <h2>✏️ Modifier le dossier</h2>
+    <p style="color: #6c757d; margin-bottom: 2rem;">Thème : <strong>{{ dossier.theme.nom }}</strong></p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 1.5rem;">
+            <label for="nom" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1rem;">
+                📁 Nom du dossier <span style="color: #dc3545;">*</span>
+            </label>
+            <input type="text" id="nom" name="nom" value="{{ dossier.nom }}" required 
+                   placeholder="Ex: Vocabulaire, Exercices, Documents..."
+                   style="width: 100%; padding: 0.8rem; border: 1px solid #e9ecef; border-radius: 8px; font-size: 1rem;">
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label for="description" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1rem;">
+                📝 Description
+            </label>
+            <textarea id="description" name="description" rows="4" 
+                      placeholder="Description du contenu de ce dossier..."
+                      style="width: 100%; padding: 0.8rem; border: 1px solid #e9ecef; border-radius: 8px; font-size: 1rem;">{{ dossier.description }}</textarea>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label for="ordre" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1rem;">
+                🔢 Ordre d'affichage
+            </label>
+            <input type="number" id="ordre" name="ordre" value="{{ dossier.ordre }}" min="0"
+                   style="width: 150px; padding: 0.8rem; border: 1px solid #e9ecef; border-radius: 8px; font-size: 1rem;">
+            <small style="display: block; color: #6c757d; margin-top: 0.3rem;">Plus le nombre est petit, plus le dossier apparaît en premier</small>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.8rem; cursor: pointer;">
+                <input type="checkbox" id="visible_eleves" name="visible_eleves" {% if dossier.visible_eleves %}checked{% endif %}
+                       style="width: 20px; height: 20px; cursor: pointer;">
+                <span style="font-weight: 500; font-size: 1rem;">👁️ Visible aux élèves</span>
+            </label>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" class="btn" style="background: #20c997; color: white; border: 1px solid #20c997; padding: 0.8rem 1.5rem; font-size: 1rem;">
+                💾 Enregistrer les modifications
+            </button>
+            <a href="{% url 'core:theme_detail' dossier.theme.id %}" 
+               class="btn btn-secondary" style="padding: 0.8rem 1.5rem; font-size: 1rem;">
+                ❌ Annuler
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

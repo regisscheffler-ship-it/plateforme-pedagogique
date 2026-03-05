@@ -1,0 +1,428 @@
+{% extends 'core/base.html' %}
+{% block title %}Nouvelle PFMP{% endblock %}
+
+{% block content %}
+<style>
+    .page-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .btn-retour {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.3rem;
+        background: white;
+        color: #6b7fd4;
+        border: 2px solid #6b7fd4;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-retour:hover {
+        background: #6b7fd4;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .form-container {
+        background: white;
+        border-radius: 16px;
+        padding: 2.5rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-top: 5px solid #6b7fd4;
+    }
+
+    .form-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .form-header-icon {
+        width: 60px;
+        height: 60px;
+        background: #eef2ff;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-header-icon svg {
+        width: 32px;
+        height: 32px;
+        stroke: #6b7fd4;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .form-header-text h1 {
+        margin: 0 0 0.3rem 0;
+        color: #2c3e50;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .form-header-text p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.95rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 60% 40%;
+        gap: 2rem;
+    }
+
+    @media (max-width: 1200px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 0.95rem;
+    }
+
+    .form-group label .required {
+        color: #dc3545;
+        margin-left: 0.2rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.9rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #6b7fd4;
+        box-shadow: 0 0 0 3px rgba(107,127,212,0.1);
+    }
+
+    .form-group textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    /* Style Sélection Type (Fichier/Lien/Vidéo) */
+    .type-selector {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+    }
+
+    .type-btn {
+        padding: 0.8rem;
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        color: #6c757d;
+    }
+
+    .type-btn:hover {
+        border-color: #6b7fd4;
+        background: #f8f9fa;
+    }
+
+    .type-btn.active {
+        border-color: #6b7fd4;
+        background: #eef2ff;
+        color: #6b7fd4;
+    }
+
+    .type-fields {
+        display: none;
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .type-fields.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Section optionnelle (Dossier) */
+    .option-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 4px solid #6c757d;
+    }
+    
+    .option-card.active {
+        border-left-color: #6b7fd4;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 1rem;
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .checkbox-wrapper input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .btn-save {
+        background: white;
+        color: #6b7fd4;
+        border: 2px solid #6b7fd4;
+        padding: 1rem 2.5rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .btn-save:hover {
+        background: #6b7fd4;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(107,127,212,0.3);
+    }
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid #e9ecef;
+    }
+</style>
+
+<div class="page-container">
+    <a href="#" class="btn-retour btn-back-universal">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        Retour
+    </a>
+
+    <div class="form-container">
+        <div class="form-header">
+            <div class="form-header-icon">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </div>
+            <div class="form-header-text">
+                <h1>Nouvelle PFMP</h1>
+                <p>Configurez une nouvelle période et joignez le sujet ou la convention</p>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="pfmpForm">
+            {% csrf_token %}
+
+            <div class="form-grid">
+                <!-- COLONNE GAUCHE : INFOS PRINCIPALES -->
+                <div class="form-section">
+                    <div class="form-group">
+                        <label>Titre de la PFMP <span class="required">*</span></label>
+                        <input type="text" name="titre" required placeholder="Ex: PFMP Entreprise XYZ - Mars 2026">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Classe concernée <span class="required">*</span></label>
+                        <select name="classe" required>
+                            <option value="">-- Sélectionner une classe --</option>
+                            {% for classe in classes %}
+                            <option value="{{ classe.id }}">{{ classe.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date de début (Optionnel)</label>
+                            <input type="date" name="date_debut">
+                        </div>
+                        <div class="form-group">
+                            <label>Date de fin (Optionnel)</label>
+                            <input type="date" name="date_fin">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description / Consignes</label>
+                        <textarea name="description" placeholder="Objectifs, entreprise d'accueil, compétences visées..."></textarea>
+                    </div>
+
+                    <div style="background:#f0f2ff; border:2px dashed #6b7fd4; padding:1.5rem; border-radius:12px; margin-top:1rem;">
+                        <h3 style="margin-top:0; color:#3730a3; font-size:1.1rem; display:flex; gap:0.5rem; align-items:center;">
+                            <svg width="20" height="20" fill="none" stroke="#6b7fd4" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                            Document Principal (Sujet, Convention...)
+                        </h3>
+                        
+                        <!-- Sélecteur de Type -->
+                        <div class="type-selector">
+                            <div class="type-btn active" onclick="selectType('fichier')">
+                                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                                Fichier
+                            </div>
+                            <div class="type-btn" onclick="selectType('lien')">
+                                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                Lien
+                            </div>
+                            <div class="type-btn" onclick="selectType('iframe')">
+                                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                                Vidéo/Iframe
+                            </div>
+                        </div>
+
+                        <!-- Champ caché pour le type -->
+                        <input type="hidden" name="type_contenu" id="type_contenu" value="fichier">
+
+                        <!-- Champs dynamiques -->
+                        <div class="type-fields active" id="field-fichier">
+                            <label style="display:block; margin-bottom:0.5rem;">Sélectionner un fichier (PDF, Word, Image...)</label>
+                            <input type="file" name="fichier">
+                        </div>
+
+                        <div class="type-fields" id="field-lien">
+                            <label style="display:block; margin-bottom:0.5rem;">URL du lien externe</label>
+                            <input type="url" name="lien_externe" placeholder="https://www.education.gouv.fr/...">
+                        </div>
+
+                        <div class="type-fields" id="field-iframe">
+                            <label style="display:block; margin-bottom:0.5rem;">Code d'intégration (iframe)</label>
+                            <textarea name="code_iframe" rows="3" placeholder='<iframe src="https://www.youtube.com/..." ...></iframe>'></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLONNE DROITE : OPTIONS & DOSSIER -->
+                <div class="form-section">
+                    <div class="option-card active">
+                        <h3 style="margin-top:0; color:#2c3e50;">Configuration</h3>
+                        
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label>Ordre d'affichage</label>
+                            <input type="number" name="ordre" value="0" min="0">
+                        </div>
+                    </div>
+
+                    <!-- Option Création Dossier -->
+                    <div class="option-card">
+                        <div style="display:flex; align-items:center; gap:0.8rem; margin-bottom:1rem;">
+                            <input type="checkbox" name="creer_dossier" id="creer_dossier" style="width:20px; height:20px; cursor:pointer;">
+                            <label for="creer_dossier" style="margin:0; cursor:pointer; font-weight:700;">Créer un premier dossier ?</label>
+                        </div>
+                        
+                        <div id="dossier-options" style="display:none; padding-top:1rem; border-top:1px solid #dee2e6;">
+                            <div class="form-group">
+                                <label>Nom du dossier</label>
+                                <input type="text" name="dossier_nom" placeholder="Ex: Ressources complémentaires">
+                            </div>
+                            <p style="font-size:0.85rem; color:#6c757d; margin-top:0.5rem;">
+                                ℹ️ Vous pourrez ajouter d'autres dossiers plus tard.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Enregistrer la PFMP
+                </button>
+                <a href="#" class="btn-cancel btn-back-universal" style="padding:1rem 2rem; border-radius:8px; font-weight:600; text-decoration:none; color:#6c757d; border:1px solid #dee2e6; margin-left:auto;">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Script pour les onglets Fichier/Lien/Iframe
+    function selectType(type) {
+        // MAJ Boutons
+        document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        // MAJ Input caché
+        document.getElementById('type_contenu').value = type;
+
+        // MAJ Affichage des champs
+        document.querySelectorAll('.type-fields').forEach(field => field.classList.remove('active'));
+        document.getElementById('field-' + type).classList.add('active');
+    }
+
+    // Script pour afficher/masquer les options de dossier
+    const checkboxDossier = document.getElementById('creer_dossier');
+    const divDossier = document.getElementById('dossier-options');
+    
+    checkboxDossier.addEventListener('change', function() {
+        divDossier.style.display = this.checked ? 'block' : 'none';
+    });
+</script>
+{% endblock %}

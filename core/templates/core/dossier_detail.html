@@ -1,0 +1,945 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ dossier.nom }} - {{ dossier.theme.nom }}{% endblock %}
+
+{% block content %}
+
+<style>
+    /* ========================================
+       DOSSIER DETAIL - STYLES COMPLETS
+       ======================================== */
+    
+    .dossier-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* BREADCRUMB */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        color: #6c757d;
+        flex-wrap: wrap;
+    }
+
+    .breadcrumb a {
+        color: #7c5cbf;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .breadcrumb a:hover {
+        color: #5e3f9e;
+        text-decoration: underline;
+    }
+
+    .breadcrumb svg {
+        width: 16px;
+        height: 16px;
+        stroke: #adb5bd;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    /* HEADER DU DOSSIER */
+    .dossier-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid {{ dossier.theme.couleur|default:'#20c997' }};
+    }
+
+    .dossier-header-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .dossier-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, {{ dossier.theme.couleur|default:'#20c997' }} 0%, {{ dossier.theme.couleur|default:'#17a589' }}dd 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 8px 20px {{ dossier.theme.couleur|default:'#20c997' }}40;
+    }
+
+    .dossier-icon svg {
+        width: 35px;
+        height: 35px;
+        stroke: white;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .dossier-info {
+        flex: 1;
+    }
+
+    .dossier-info h1 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .dossier-info p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .dossier-meta {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .meta-item svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .visibility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .visibility-badge.visible {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .visibility-badge.hidden {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    /* ACTIONS HEADER */
+    .dossier-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .btn-primary {
+        background: white;
+        color: #7c5cbf;
+        border: 2px solid #7c5cbf;
+    }
+
+    .btn-primary:hover {
+        background: #7c5cbf;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(124, 92, 191, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    .btn-warning {
+        background: #fd7e14;
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: #e55a00;
+    }
+
+    .btn-outline {
+        background: transparent;
+        border: 2px solid #dee2e6;
+        color: #6c757d;
+    }
+
+    .btn-outline:hover {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+    }
+
+    /* SECTION TITRE */
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        color: #2c3e50;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .section-title svg {
+        width: 24px;
+        height: 24px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .section-count {
+        background: #e9ecef;
+        color: #495057;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* ========================================
+       LISTE DES FICHIERS
+       ======================================== */
+    .fichiers-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .fichier-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+
+    .fichier-card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        transform: translateX(5px);
+    }
+
+    .fichier-card.type-fichier {
+        border-left-color: #007bff;
+    }
+
+    .fichier-card.type-lien {
+        border-left-color: #28a745;
+    }
+
+    .fichier-card.type-iframe {
+        border-left-color: #6f42c1;
+    }
+
+    .fichier-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .fichier-card.type-fichier .fichier-icon {
+        background: #e7f3ff;
+        color: #007bff;
+    }
+
+    .fichier-card.type-lien .fichier-icon {
+        background: #d4edda;
+        color: #28a745;
+    }
+
+    .fichier-card.type-iframe .fichier-icon {
+        background: #e8e0f3;
+        color: #6f42c1;
+    }
+
+    .fichier-icon svg {
+        width: 26px;
+        height: 26px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .fichier-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .fichier-info h4 {
+        margin: 0 0 0.25rem 0;
+        color: #2c3e50;
+        font-size: 1.05rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .fichier-info p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .fichier-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 0.4rem;
+    }
+
+    .fichier-type-badge.fichier {
+        background: #e7f3ff;
+        color: #007bff;
+    }
+
+    .fichier-type-badge.lien {
+        background: #d4edda;
+        color: #28a745;
+    }
+
+    .fichier-type-badge.iframe {
+        background: #e8e0f3;
+        color: #6f42c1;
+    }
+
+    .fichier-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-view {
+        background: #e7f3ff;
+        color: #007bff;
+    }
+
+    .btn-view:hover {
+        background: #007bff;
+        color: white;
+    }
+
+    .btn-view.lien {
+        background: #d4edda;
+        color: #28a745;
+    }
+
+    .btn-view.lien:hover {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-view.iframe {
+        background: #e8e0f3;
+        color: #6f42c1;
+    }
+
+    .btn-view.iframe:hover {
+        background: #6f42c1;
+        color: white;
+    }
+
+    .btn-edit {
+        background: #fff3e0;
+        color: #fd7e14;
+    }
+
+    .btn-edit:hover {
+        background: #fd7e14;
+        color: white;
+    }
+
+    .btn-delete {
+        background: #f8d7da;
+        color: #dc3545;
+    }
+
+    .btn-delete:hover {
+        background: #dc3545;
+        color: white;
+    }
+
+    /* ========================================
+       CONTAINER IFRAME
+       ======================================== */
+    .iframe-wrapper {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid #e9ecef;
+    }
+
+    .iframe-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: #e9ecef;
+    }
+
+    .iframe-header span {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+
+    .iframe-close {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 0.3rem 0.8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: background 0.3s ease;
+    }
+
+    .iframe-close:hover {
+        background: #5a6268;
+    }
+
+    .iframe-content {
+        padding: 1rem;
+    }
+
+    .iframe-content iframe {
+        width: 100%;
+        min-height: 450px;
+        border: none;
+        border-radius: 8px;
+    }
+
+    /* ========================================
+       ÉTAT VIDE
+       ======================================== */
+    .empty-state {
+        background: white;
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        background: #f8f9fa;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+
+    .empty-state-icon svg {
+        width: 40px;
+        height: 40px;
+        stroke: #adb5bd;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .empty-state h3 {
+        color: #6c757d;
+        font-size: 1.2rem;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .empty-state p {
+        color: #adb5bd;
+        font-size: 0.95rem;
+        margin: 0 0 1.5rem 0;
+    }
+
+    /* ========================================
+       TRAVAUX LIÉS (optionnel)
+       ======================================== */
+    .travaux-section {
+        margin-top: 2.5rem;
+    }
+
+    .travail-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #fd7e14;
+    }
+
+    .travail-icon {
+        width: 50px;
+        height: 50px;
+        background: #fff3e0;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .travail-info {
+        flex: 1;
+    }
+
+    .travail-info h4 {
+        margin: 0 0 0.25rem 0;
+        color: #2c3e50;
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+
+    .travail-info p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+
+    .travail-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.8rem;
+        background: #fff3e0;
+        color: #fd7e14;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* ========================================
+       RESPONSIVE
+       ======================================== */
+    @media (max-width: 768px) {
+        .dossier-header-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .dossier-meta {
+            justify-content: center;
+        }
+
+        .dossier-actions {
+            justify-content: center;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .fichier-card {
+            flex-direction: column;
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .fichier-info h4 {
+            white-space: normal;
+        }
+
+        .fichier-actions {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .section-header {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="dossier-container">
+
+    <!-- BOUTON RETOUR -->
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#7c5cbf;
+              border:2px solid #7c5cbf;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- BREADCRUMB -->
+    <div class="breadcrumb">
+        <a href="{% url 'core:home' %}">Accueil</a>
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+        <a href="{% url 'core:classe_detail' dossier.theme.classe.id %}">{{ dossier.theme.classe.nom }}</a>
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+        <a href="{% url 'core:theme_detail' dossier.theme.id %}">{{ dossier.theme.nom }}</a>
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+        <span>{{ dossier.nom }}</span>
+    </div>
+
+    <!-- HEADER DU DOSSIER -->
+    <div class="dossier-header">
+        <div class="dossier-header-content">
+            <div class="dossier-icon">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </div>
+            
+            <div class="dossier-info">
+                <h1>{{ dossier.nom }}</h1>
+                {% if dossier.description %}
+                <p>{{ dossier.description }}</p>
+                {% endif %}
+                
+                <div class="dossier-meta">
+                    <div class="meta-item">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        {{ fichiers.count }} ressource{{ fichiers.count|pluralize }}
+                    </div>
+                    
+                    {% if request.user.profil.est_prof %}
+                    <span class="visibility-badge {% if dossier.visible_eleves %}visible{% else %}hidden{% endif %}">
+                        {% if dossier.visible_eleves %}
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            Visible aux élèves
+                        {% else %}
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                            Masqué aux élèves
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if request.user.profil.est_prof %}
+            <div class="dossier-actions">
+                <a href="{% url 'core:fichier_upload' dossier.id %}" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Ajouter une ressource
+                </a>
+                
+                <a href="{% url 'core:dossier_update' dossier.id %}" class="btn btn-warning">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Modifier
+                </a>
+                
+                <a href="{% url 'core:dossier_toggle_visibilite' dossier.id %}" class="btn btn-outline">
+                    {% if dossier.visible_eleves %}
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        Masquer
+                    {% else %}
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        Rendre visible
+                    {% endif %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- LISTE DES RESSOURCES -->
+    <div class="section-header">
+        <h2 class="section-title">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Ressources
+            <span class="section-count">{{ fichiers.count }}</span>
+        </h2>
+    </div>
+
+    {% if fichiers %}
+    <div class="fichiers-list">
+        {% for fichier in fichiers %}
+        <div class="fichier-card type-{% if fichier.type_contenu %}{{ fichier.type_contenu }}{% else %}fichier{% endif %}">
+            
+            <!-- Icône selon le type -->
+            <div class="fichier-icon">
+                {% if fichier.type_contenu == 'lien' %}
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                {% elif fichier.type_contenu == 'iframe' %}
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                {% else %}
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                {% endif %}
+            </div>
+            
+            <!-- Informations -->
+            <div class="fichier-info">
+                <h4>{{ fichier.nom }}</h4>
+                {% if fichier.description %}
+                <p>{{ fichier.description }}</p>
+                {% endif %}
+                
+                <!-- Badge de type -->
+                <span class="fichier-type-badge {% if fichier.type_contenu %}{{ fichier.type_contenu }}{% else %}fichier{% endif %}">
+                    {% if fichier.type_contenu == 'lien' %}
+                        Lien externe
+                    {% elif fichier.type_contenu == 'iframe' %}
+                        Intégration
+                    {% else %}
+                        Fichier
+                    {% endif %}
+                </span>
+            </div>
+            
+            <!-- Actions -->
+            <div class="fichier-actions">
+                {% if fichier.type_contenu == 'fichier' or not fichier.type_contenu %}
+                    {% if fichier.fichier %}
+                    <a href="{{ fichier.fichier.url }}" class="btn-action btn-view" target="_blank">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Télécharger
+                    </a>
+                    {% endif %}
+                {% elif fichier.type_contenu == 'lien' %}
+                    {% if fichier.lien_externe %}
+                    <a href="{{ fichier.lien_externe }}" class="btn-action btn-view lien" target="_blank">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        Ouvrir le lien
+                    </a>
+                    {% endif %}
+                {% elif fichier.type_contenu == 'iframe' %}
+                    {% if fichier.code_iframe %}
+                    <button class="btn-action btn-view iframe" onclick="toggleIframe({{ fichier.id }})">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                        Afficher
+                    </button>
+                    {% endif %}
+                {% endif %}
+                
+                {% if request.user.profil.est_prof %}
+                <a href="{% url 'core:fichier_update' fichier.id %}" class="btn-action btn-edit">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    Modifier
+                </a>
+                <a href="{% url 'core:fichier_delete' fichier.id %}" class="btn-action btn-delete"
+                   onclick="return confirm('\u00cates-vous s\u00fbr de vouloir supprimer cette ressource ?');"> 
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
+                    Supprimer
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Container iframe (caché par défaut) -->
+        {% if fichier.type_contenu == 'iframe' and fichier.code_iframe %}
+        <div class="iframe-wrapper" id="iframe-{{ fichier.id }}" style="display: none;">
+            <div class="iframe-header">
+                <span>{{ fichier.nom }}</span>
+                <button class="iframe-close" onclick="toggleIframe({{ fichier.id }})">
+                    ✕ Fermer
+                </button>
+            </div>
+            <div class="iframe-content">
+                {{ fichier.code_iframe|safe }}
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <!-- État vide -->
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+        </div>
+        <h3>Aucune ressource dans ce dossier</h3>
+        <p>Ce dossier est vide pour le moment.</p>
+        
+        {% if request.user.profil.est_prof %}
+        <a href="{% url 'core:fichier_upload' dossier.id %}" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Ajouter une ressource
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- TRAVAUX LIÉS (optionnel) -->
+    {% if travaux %}
+    <div class="travaux-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Travaux à rendre
+                <span class="section-count">{{ travaux.count }}</span>
+            </h2>
+        </div>
+
+        {% for travail in travaux %}
+        <div class="travail-card">
+            <div class="travail-icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fd7e14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            </div>
+            <div class="travail-info">
+                <h4>{{ travail.titre }}</h4>
+                <p>{{ travail.description|truncatewords:20|default:"Aucune description" }}</p>
+            </div>
+            <span class="travail-date">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                {{ travail.date_limite|date:"d/m/Y" }}
+            </span>
+            <a href="{% url 'core:travail_detail' travail.id %}" class="btn btn-warning">
+                Voir le détail
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- BOUTON RETOUR supprimé - remplacé par btn-back-universal en haut de page -->
+
+</div>
+
+<script>
+    // Toggle pour afficher/masquer les iframes
+    function toggleIframe(id) {
+        const container = document.getElementById('iframe-' + id);
+        if (container) {
+            if (container.style.display === 'none' || container.style.display === '') {
+                // Fermer tous les autres iframes ouverts
+                document.querySelectorAll('.iframe-wrapper').forEach(wrapper => {
+                    wrapper.style.display = 'none';
+                });
+                // Ouvrir celui-ci
+                container.style.display = 'block';
+                // Scroll vers l'iframe
+                container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                container.style.display = 'none';
+            }
+        }
+    }
+
+    // Confirmation avant suppression
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cette ressource ?')) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+
+{% endblock %}

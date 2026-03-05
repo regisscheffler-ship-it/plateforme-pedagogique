@@ -1,0 +1,646 @@
+{% extends 'core/base.html' %}
+{% block title %}Éditer QCM – {{ qcm.titre }}{% endblock %}
+
+{% block content %}
+<style>
+    :root { --qcm: #4a9fc1; --qcm-light: #f0f8ff; --qcm-border: #bfdbfe; }
+    .page-container { max-width: 1600px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+    /* Header */
+    .page-header {
+        background: white; border-radius: 12px; padding: 1.5rem 2rem;
+        margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-left: 5px solid var(--qcm);
+        display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    }
+    .page-header svg { width: 30px; height: 30px; stroke: var(--qcm); stroke-width: 2; fill: none; }
+    .page-header h1 { margin: 0; font-size: 1.5rem; color: #2c3e50; font-weight: 700; }
+    .page-header .meta { font-size: 0.85rem; color: #868e96; margin-top: 3px; }
+    .header-actions { margin-left: auto; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+    /* Status badge */
+    .status-badge {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+    }
+    .badge-actif    { background: #d1fae5; color: #059669; }
+    .badge-inactif  { background: #fee2e2; color: #dc2626; }
+
+    /* Boutons */
+    .btn {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.65rem 1.2rem; border-radius: 8px; font-weight: 600;
+        font-size: 0.88rem; cursor: pointer; border: none; text-decoration: none;
+        transition: all 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-green   { background: var(--qcm); color: white; }
+    .btn-green:hover { background: #3a8fb5; }
+    .btn-outline { background: white; color: var(--qcm); border: 2px solid var(--qcm); }
+    .btn-outline:hover { background: var(--qcm-light); }
+    .btn-red     { background: white; color: #dc2626; border: 2px solid #fca5a5; }
+    .btn-red:hover { background: #fef2f2; }
+    .btn-gray    { background: white; color: #6c757d; border: 2px solid #dee2e6; }
+    .btn svg     { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+    /* Alerte */
+    .alert {
+        padding: 1rem 1.2rem; border-radius: 10px; margin-bottom: 1.5rem;
+        font-size: 0.9rem; display: flex; align-items: flex-start; gap: 0.6rem;
+    }
+    .alert-warning { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
+    .alert-info    { background: var(--qcm-light); border: 1px solid var(--qcm-border); color: #065f46; }
+
+    /* Liste questions */
+    .questions-list { margin-bottom: 2rem; }
+    .question-card {
+        background: white; border-radius: 10px; border: 1px solid #e9ecef;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04); margin-bottom: 0.8rem;
+        overflow: hidden; transition: box-shadow 0.2s;
+    }
+    .question-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .question-header {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 0.9rem 1.2rem; border-bottom: 1px solid #f0f2f5;
+    }
+    .q-number {
+        width: 28px; height: 28px; border-radius: 50%; background: var(--qcm);
+        color: white; font-weight: 700; font-size: 0.82rem;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .q-enonce { flex: 1; font-weight: 600; font-size: 0.93rem; color: #2c3e50; }
+    .bonne-rep-badge {
+        background: #d1fae5; color: #059669; padding: 3px 10px;
+        border-radius: 12px; font-size: 0.78rem; font-weight: 700; flex-shrink: 0;
+    }
+    .question-choices {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 0.4rem; padding: 0.8rem 1.2rem;
+    }
+    @media (max-width: 600px) { .question-choices { grid-template-columns: 1fr; } }
+    .choice {
+        padding: 0.45rem 0.75rem; border-radius: 6px; font-size: 0.85rem;
+        border: 1px solid #e9ecef; background: #f8f9fa; color: #495057;
+    }
+    .choice.correct { background: #d1fae5; border-color: #6ee7b7; color: #065f46; font-weight: 600; }
+    .choice-label { font-weight: 700; margin-right: 6px; }
+    .question-footer {
+        padding: 0.5rem 1.2rem; border-top: 1px solid #f0f2f5;
+        display: flex; justify-content: flex-end;
+    }
+    .btn-del-q {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        font-size: 0.8rem; font-weight: 600; color: #ef4444;
+        background: none; border: none; cursor: pointer; padding: 4px 8px;
+        border-radius: 6px; transition: background 0.2s;
+    }
+    .btn-del-q:hover { background: #fee2e2; }
+    .btn-edit-q {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        font-size: 0.8rem; font-weight: 600; color: var(--qcm);
+        background: none; border: none; cursor: pointer; padding: 4px 8px;
+        border-radius: 6px; transition: background 0.2s; margin-right: 0.5rem;
+    }
+    .btn-edit-q:hover { background: #dbeafe; }
+    /* Modal édition question */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+        z-index: 9999; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+        background: white; border-radius: 16px; padding: 2rem;
+        width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        animation: modalIn 0.2s ease;
+    }
+    @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-title {
+        font-size: 1.1rem; font-weight: 700; color: #2c3e50;
+        margin: 0 0 1.5rem; display: flex; align-items: center; gap: 0.5rem;
+        border-bottom: 2px solid var(--qcm); padding-bottom: 0.75rem;
+    }
+
+    /* Formulaire ajout question */
+    .add-question-card {
+        background: white; border-radius: 12px; padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 3px solid var(--qcm);
+    }
+    .add-question-card h3 {
+        margin: 0 0 1.5rem; font-size: 1.05rem; color: #2c3e50;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .add-question-card h3 svg { width: 18px; height: 18px; stroke: var(--qcm); fill: none; }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label { display: block; font-weight: 600; font-size: 0.88rem; color: #495057; margin-bottom: 0.4rem; }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 0.7rem 0.85rem; border: 1.5px solid #dee2e6;
+        border-radius: 8px; font-size: 0.92rem; box-sizing: border-box;
+        transition: border-color 0.2s; font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        outline: none; border-color: var(--qcm);
+        box-shadow: 0 0 0 3px rgba(74,159,193,0.1);
+    }
+    .choix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .choix-grid { grid-template-columns: 1fr; } }
+    .section-title-small {
+        font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.05em; color: #6c757d; margin-bottom: 0.6rem;
+    }
+    /* Panneau paramètres */
+    .params-panel {
+        background: white; border-radius: 12px; padding: 1.5rem 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06); border-left: 4px solid #f59e0b;
+        margin-bottom: 2rem;
+    }
+    .params-panel h3 {
+        font-size: 0.95rem; font-weight: 700; color: #92400e;
+        display: flex; align-items: center; gap: 0.5rem;
+        margin: 0 0 1.2rem; cursor: pointer; user-select: none;
+    }
+    .params-panel h3 svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .params-body { display: none; }
+    .params-body.open { display: block; }
+    .params-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    @media (max-width: 700px) { .params-grid { grid-template-columns: 1fr; } }
+    /* Messages flash */
+    .msg-error   { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+    .msg-success { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+    /* Bouton retour charte */
+    .btn-back-charter {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: var(--qcm);
+        border: 2px solid var(--qcm); border-radius: 8px;
+        text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        transition: all 0.2s; margin-bottom: 1.5rem;
+    }
+    .btn-back-charter:hover { background: var(--qcm); color: white; transform: translateY(-2px); }
+</style>
+
+<div class="page-container">
+
+    <a href="{% url 'core:evaluations_home' %}" class="btn-back-charter">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour Évaluation
+    </a>
+
+    <!-- En-tête -->
+    <div class="page-header">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+        <div>
+            <h1>{{ qcm.titre }}</h1>
+            <div class="meta">
+                {{ qcm.classe.nom }} &nbsp;·&nbsp;
+                Limite : {{ qcm.date_limite|date:"d/m/Y H:i" }} &nbsp;·&nbsp;
+                {{ questions.count }} question{{ questions.count|pluralize }}
+                &nbsp;·&nbsp;
+                {% if qcm.actif %}
+                <span class="status-badge badge-actif">● Actif</span>
+                {% else %}
+                <span class="status-badge badge-inactif">● Inactif</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="header-actions">
+            {% if peut_activer %}
+            <form method="post" action="{% url 'core:qcm_toggle_actif' qcm.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn {% if qcm.actif %}btn-outline{% else %}btn-green{% endif %}">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        {% if qcm.actif %}
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                        {% else %}
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        {% endif %}
+                    </svg>
+                    {% if qcm.actif %}Désactiver{% else %}Activer{% endif %}
+                </button>
+            </form>
+            {% endif %}
+            <a href="{% url 'core:qcm_resultats_prof' qcm.id %}"
+               class="btn" style="background:white;color:#4a9fc1;border:2px solid #4a9fc1;display:inline-flex;align-items:center;gap:0.5rem;">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Résultats classe
+            </a>
+            <form method="post" action="{% url 'core:qcm_archiver' qcm.id %}" style="display:inline;"
+                  onsubmit="return confirm('Archiver ce QCM\u00a0? Il sera désactivé et les élèves notifiés.')">
+                {% csrf_token %}
+                <button type="submit" class="btn" style="background:white;color:#64748b;border:2px solid #94a3b8;display:inline-flex;align-items:center;gap:0.5rem;">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                        <rect x="1" y="3" width="22" height="5"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                    Archiver
+                </button>
+            </form>
+            <form method="post" action="{% url 'core:qcm_delete' qcm.id %}" style="display:inline;"
+                  onsubmit="return confirm('Supprimer ce QCM et toutes ses questions ?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-red">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14H6L5 6"></path>
+                        <path d="M10 11v6M14 11v6"></path>
+                    </svg>
+                    Supprimer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alertes -->
+    {% if not peut_activer %}
+    <div class="alert alert-warning">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        Ce QCM n'est pas encore activable — il faut au moins <strong>3 questions</strong>.
+        Actuellement : <strong>{{ questions.count }} question{{ questions.count|pluralize }}</strong>.
+    </div>
+    {% elif not qcm.actif %}
+    <div class="alert alert-info">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        Le QCM est prêt ({{ questions.count }} questions) mais <strong>pas encore activé</strong> — les élèves ne le voient pas.
+    </div>
+    {% endif %}
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div class="{% if 'error' in msg.tags %}msg-error{% else %}msg-success{% endif %}"
+         style="padding:0.8rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.9rem;">
+        {{ msg }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Panneau paramètres -->
+    <div class="params-panel">
+        <h3 onclick="toggleParams()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            ⚙️ Paramètres du QCM — cliquer pour modifier
+        </h3>
+        <div class="params-body" id="params-body">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_meta">
+                <div class="params-grid">
+                    <div class="form-group">
+                        <label>Titre du QCM</label>
+                        <input type="text" name="titre" value="{{ qcm.titre }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Classe assignée</label>
+                        <select name="classe_id">
+                            <option value="">— Choisir une classe —</option>
+                            {% for c in classes %}
+                            <option value="{{ c.id }}" {% if c.id == qcm.classe_id %}selected{% endif %}>{{ c.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date limite</label>
+                        <input type="datetime-local" name="date_limite"
+                               value="{{ qcm.date_limite|date:'Y-m-d' }}T{{ qcm.date_limite|date:'H:i' }}">
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;">
+                    <button type="submit" class="btn btn-green">
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Enregistrer les paramètres
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Liste des questions -->
+    <h2 style="font-size:1.1rem;color:#2c3e50;margin-bottom:1rem;font-weight:700;">
+        Questions ({{ questions.count }})
+    </h2>
+
+    {% if questions %}
+    <div class="questions-list">
+        {% for q in questions %}
+        <div class="question-card">
+            <div class="question-header">
+                <div class="q-number">{{ forloop.counter }}</div>
+                <div class="q-enonce">{{ q.enonce }}</div>
+                <span class="bonne-rep-badge">✓ {{ q.bonne_reponse }}</span>
+            </div>
+            {% if q.image_url %}
+            <div style="margin:0.5rem 1rem 0;text-align:center;">
+                <img src="{{ q.image_url }}" alt="Illustration question"
+                     style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #e9ecef;object-fit:contain;">
+            </div>
+            {% endif %}
+            <div class="question-choices">
+                <div class="choice {% if q.bonne_reponse == 'A' %}correct{% endif %}">
+                    <span class="choice-label">A.</span>{{ q.choix_a }}
+                </div>
+                <div class="choice {% if q.bonne_reponse == 'B' %}correct{% endif %}">
+                    <span class="choice-label">B.</span>{{ q.choix_b }}
+                </div>
+                {% if q.choix_c %}
+                <div class="choice {% if q.bonne_reponse == 'C' %}correct{% endif %}">
+                    <span class="choice-label">C.</span>{{ q.choix_c }}
+                </div>
+                {% endif %}
+                {% if q.choix_d %}
+                <div class="choice {% if q.bonne_reponse == 'D' %}correct{% endif %}">
+                    <span class="choice-label">D.</span>{{ q.choix_d }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="question-footer">
+                <!-- Bouton Régénérer IA -->
+                <form method="post" action="{% url 'core:question_regenerer' q.id %}"
+                      onsubmit="return confirm('Régénérer cette question via l\'IA ? L\'ancienne sera perdue.');"
+                      style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-edit-q" style="color:#7c3aed;"
+                            title="Générer une nouvelle question sur le même thème">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Régénérer
+                    </button>
+                </form>
+                <!-- Bouton Modifier -->
+                <button type="button" class="btn-edit-q"
+                        data-id="{{ q.id }}"
+                        data-enonce="{{ q.enonce|escapejs }}"
+                        data-choix-a="{{ q.choix_a|escapejs }}"
+                        data-choix-b="{{ q.choix_b|escapejs }}"
+                        data-choix-c="{{ q.choix_c|escapejs }}"
+                        data-choix-d="{{ q.choix_d|escapejs }}"
+                        data-bonne="{{ q.bonne_reponse }}"
+                        data-image="{{ q.image_url|escapejs }}"
+                        onclick="ouvrirModalEdition(this)">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Modifier
+                </button>
+                <!-- Bouton Supprimer -->
+                <form method="post" action="{% url 'core:question_delete' q.id %}"
+                      onsubmit="return confirm('Supprimer cette question ?')" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-del-q">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6l-1 14H6L5 6"></path>
+                        </svg>
+                        Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="background:white;border-radius:12px;border:1px solid #e9ecef;
+                padding:2.5rem 2rem;text-align:center;color:#adb5bd;margin-bottom:2rem;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#dee2e6" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round"
+             style="width:48px;height:48px;margin:0 auto 1rem;display:block;">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+        <p style="margin:0;font-size:0.9rem;">Aucune question pour l'instant. Ajoutez-en ci-dessous.</p>
+    </div>
+    {% endif %}
+
+    <!-- Ajouter une question manuellement -->
+    <div class="add-question-card">
+        <h3>
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            Ajouter une question manuellement
+        </h3>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_question">
+
+            <div class="form-group">
+                <label>Énoncé de la question *</label>
+                <textarea name="enonce" rows="3" required
+                    placeholder="Ex : Quelle est la résistance caractéristique du béton C25/30 ?"></textarea>
+            </div>
+
+            <div class="section-title-small">Choix (A et B obligatoires, C et D optionnels)</div>
+            <div class="choix-grid">
+                <div class="form-group">
+                    <label>Choix A *</label>
+                    <input type="text" name="choix_a" required placeholder="Premier choix">
+                </div>
+                <div class="form-group">
+                    <label>Choix B *</label>
+                    <input type="text" name="choix_b" required placeholder="Deuxième choix">
+                </div>
+                <div class="form-group">
+                    <label>Choix C</label>
+                    <input type="text" name="choix_c" placeholder="Troisième choix (optionnel)">
+                </div>
+                <div class="form-group">
+                    <label>Choix D</label>
+                    <input type="text" name="choix_d" placeholder="Quatrième choix (optionnel)">
+                </div>
+            </div>
+
+            <div class="form-group" style="max-width:200px;">
+                <label>Bonne réponse *</label>
+                <select name="bonne_reponse" required>
+                    <option value="">— Sélectionner —</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;gap:1rem;padding-top:1rem;border-top:1px solid #dee2e6;margin-top:0.5rem;">
+                <button type="submit" class="btn btn-green">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Ajouter la question
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<!-- ===== MODAL ÉDITION QUESTION ===== -->
+<div id="modal-edition" class="modal-overlay" onclick="fermerModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-title">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--qcm)"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Modifier la question
+        </div>
+        <form id="form-edition" method="post" action="">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Énoncé *</label>
+                <textarea id="me-enonce" name="enonce" rows="3" required></textarea>
+            </div>
+            <div style="margin-bottom:1rem;">
+                <div style="font-size:0.82rem;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.05em;color:#6c757d;margin-bottom:0.6rem;">Choix</div>
+                <div class="choix-grid">
+                    <div class="form-group">
+                        <label>A *</label>
+                        <input type="text" id="me-choix-a" name="choix_a" required>
+                    </div>
+                    <div class="form-group">
+                        <label>B *</label>
+                        <input type="text" id="me-choix-b" name="choix_b" required>
+                    </div>
+                    <div class="form-group">
+                        <label>C</label>
+                        <input type="text" id="me-choix-c" name="choix_c">
+                    </div>
+                    <div class="form-group">
+                        <label>D</label>
+                        <input type="text" id="me-choix-d" name="choix_d">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group" style="max-width:200px;">
+                <label>Bonne réponse *</label>
+                <select id="me-bonne" name="bonne_reponse" required>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:0.5rem;">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--qcm)"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    URL d'image (optionnel)
+                </label>
+                <input type="url" id="me-image" name="image_url"
+                       placeholder="https://exemple.com/image.jpg">
+                <div id="me-preview" style="margin-top:0.5rem;display:none;">
+                    <img id="me-preview-img" src="" alt=""
+                         style="max-width:100%;max-height:180px;border-radius:8px;
+                                border:1px solid #dee2e6;object-fit:contain;">
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:1rem;
+                        padding-top:1rem;border-top:1px solid #dee2e6;">
+                <button type="button" onclick="fermerModal()" 
+                        style="padding:0.6rem 1.2rem;background:#f1f3f5;border:none;
+                               border-radius:8px;font-weight:600;cursor:pointer;">Annuler</button>
+                <button type="submit"
+                        style="padding:0.6rem 1.4rem;background:var(--qcm);color:white;
+                               border:none;border-radius:8px;font-weight:600;cursor:pointer;
+                               display:inline-flex;align-items:center;gap:0.5rem;">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleParams() {
+    const body = document.getElementById('params-body');
+    body.classList.toggle('open');
+}
+
+function ouvrirModalEdition(btn) {
+    const id      = btn.dataset.id;
+    const enonce  = btn.dataset.enonce;
+    const choixA  = btn.dataset.choixA;
+    const choixB  = btn.dataset.choixB;
+    const choixC  = btn.dataset.choixC || '';
+    const choixD  = btn.dataset.choixD || '';
+    const bonne   = btn.dataset.bonne;
+    const image   = btn.dataset.image || '';
+
+    document.getElementById('form-edition').action = '/questions/' + id + '/editer/';
+    document.getElementById('me-enonce').value  = enonce;
+    document.getElementById('me-choix-a').value = choixA;
+    document.getElementById('me-choix-b').value = choixB;
+    document.getElementById('me-choix-c').value = choixC;
+    document.getElementById('me-choix-d').value = choixD;
+    document.getElementById('me-bonne').value   = bonne;
+    document.getElementById('me-image').value   = image;
+    afficherPreview(image);
+    document.getElementById('modal-edition').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function fermerModal(e) {
+    if (e && e.target !== document.getElementById('modal-edition')) return;
+    document.getElementById('modal-edition').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('me-image').addEventListener('input', function() {
+    afficherPreview(this.value);
+});
+
+function afficherPreview(url) {
+    const preview = document.getElementById('me-preview');
+    const img     = document.getElementById('me-preview-img');
+    if (url && url.startsWith('http')) {
+        img.src = url;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+</script>
+
+{% endblock %}
+

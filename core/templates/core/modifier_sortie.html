@@ -1,0 +1,274 @@
+{% extends 'core/base.html' %}
+{% block title %}Modifier la sortie – {{ profil.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<style>
+    :root { --red: #e74c3c; --red-light: #fef2f2; --red-border: #fecaca; }
+    .page-container { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .form-card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 2rem; border-top: 4px solid var(--red);
+    }
+    .eleve-badge {
+        background: var(--red-light); border: 1px solid var(--red-border);
+        border-radius: 10px; padding: 1rem 1.2rem;
+        display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem;
+    }
+    .eleve-avatar {
+        width: 48px; height: 48px; border-radius: 50%;
+        background: var(--red); color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; font-weight: 700; flex-shrink: 0;
+    }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label {
+        display: block; font-size: 0.85rem; font-weight: 700;
+        color: #374151; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .form-group select, .form-group textarea, .form-group input[type="text"] {
+        width: 100%; padding: 10px 12px;
+        border: 1.5px solid #e2e8f0; border-radius: 8px;
+        font-size: 0.92rem; font-family: inherit; outline: none;
+        transition: border-color 0.2s; background: white; box-sizing: border-box;
+    }
+    .form-group select:focus,
+    .form-group textarea:focus,
+    .form-group input[type="text"]:focus { border-color: var(--red); }
+    .field-hint { font-size: 0.78rem; color: #94a3b8; margin-top: 4px; }
+    .section-sep {
+        border: none; border-top: 2px solid #f1f5f9;
+        margin: 1.5rem 0; display: flex; align-items: center; gap: 0.5rem;
+        font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;
+    }
+    .section-sep::before { content: ''; flex: 1; border-top: 2px solid #f1f5f9; }
+    .cond-section {
+        display: none; background: #f8fafc; border-radius: 10px;
+        border: 1px solid #e2e8f0; padding: 1rem 1.2rem; margin-bottom: 1.2rem;
+        animation: fadeIn .2s ease;
+    }
+    .cond-section.visible { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; } }
+    .toggle-row {
+        display: flex; align-items: center; gap: 0.6rem;
+        margin-bottom: 0.8rem; cursor: pointer;
+    }
+    .toggle-row input[type=checkbox] { width:16px; height:16px; accent-color:var(--red); cursor:pointer; }
+    .toggle-row label { font-size:0.87rem; font-weight:600; color:#374151; cursor:pointer; margin:0; }
+    .btn-row { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+    .btn-submit {
+        flex: 1; padding: 12px; background: var(--red); color: white;
+        border: none; border-radius: 8px; font-size: 1rem;
+        font-weight: 700; cursor: pointer; transition: background 0.2s;
+        display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .btn-submit:hover { background: #c0392b; }
+    .btn-annuler {
+        display: inline-flex; align-items: center; justify-content: center; gap:0.4rem;
+        padding: 12px 20px; border: 2px solid var(--red); color: var(--red);
+        background: white; border-radius: 8px; font-weight: 600; font-size: 1rem;
+        text-decoration: none; transition: all 0.2s; cursor: pointer;
+    }
+    .btn-annuler:hover { background: var(--red-light); }
+    .btn-retour-top {
+        display:inline-flex; align-items:center; gap:6px;
+        padding:8px 16px; background:white; color:var(--red);
+        border:2px solid var(--red); border-radius:10px;
+        text-decoration:none; font-weight:600; font-size:0.9rem;
+        margin-bottom:1.5rem; transition:all 0.2s;
+    }
+    .btn-retour-top:hover { background:var(--red); color:white; transform:translateY(-2px); }
+    optgroup { font-style: normal; }
+</style>
+
+<div class="page-container">
+    <a href="{% url 'core:gestion_sorties' %}" class="btn-retour-top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="form-card">
+        <h2 style="margin:0 0 0.3rem;color:#1e293b;display:flex;align-items:center;gap:0.5rem;font-size:1.3rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;stroke:var(--red)">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Modifier les informations de sortie
+        </h2>
+        <p style="color:#64748b;font-size:0.88rem;margin-bottom:1.5rem;">
+            Complétez ou corrigez les informations enregistrées lors de la sortie.
+        </p>
+
+        <!-- Identité -->
+        <div class="eleve-badge">
+            <div class="eleve-avatar">
+                {{ profil.user.first_name|first|upper }}{{ profil.user.last_name|first|upper }}
+            </div>
+            <div>
+                <strong style="display:block;color:#1e293b;">
+                    {{ profil.user.last_name|upper }} {{ profil.user.first_name }}
+                </strong>
+                <span style="color:#64748b;font-size:0.85rem;">
+                    {% if profil.classe %}{{ profil.classe.nom }}{% else %}Ancienne classe non définie{% endif %}
+                    &nbsp;·&nbsp;
+                    Sorti{% if profil.date_sortie %} le {{ profil.date_sortie|date:"d/m/Y" }}{% endif %}
+                    {% if profil.annee_scolaire_sortie %}&nbsp;·&nbsp; {{ profil.annee_scolaire_sortie }}{% endif %}
+                </span>
+                {% if profil.etablissement_origine %}
+                <span style="color:#94a3b8;font-size:0.8rem;display:block;margin-top:2px;">
+                    Origine&nbsp;: {{ profil.etablissement_origine.nom }}
+                    {% if profil.classe_origine %}({{ profil.classe_origine }}){% endif %}
+                </span>
+                {% elif profil.etablissement_origine_autre %}
+                <span style="color:#94a3b8;font-size:0.8rem;display:block;margin-top:2px;">
+                    Origine&nbsp;: {{ profil.etablissement_origine_autre }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Situation de sortie -->
+            <div class="form-group">
+                <label>Situation de sortie *</label>
+                <select name="raison_sortie" required>
+                    <option value="" disabled {% if not profil.raison_sortie %}selected{% endif %}>— Sélectionner —</option>
+                    <optgroup label="🎓 Diplôme obtenu">
+                        <option value="cap_mention"         {% if profil.raison_sortie == 'cap_mention' %}selected{% endif %}>CAP obtenu avec mention</option>
+                        <option value="cap_sans_mention"    {% if profil.raison_sortie == 'cap_sans_mention' %}selected{% endif %}>CAP obtenu sans mention</option>
+                        <option value="bac_pro_mention"     {% if profil.raison_sortie == 'bac_pro_mention' %}selected{% endif %}>Bac Pro obtenu avec mention</option>
+                        <option value="bac_pro_sans_mention" {% if profil.raison_sortie == 'bac_pro_sans_mention' %}selected{% endif %}>Bac Pro obtenu sans mention</option>
+                    </optgroup>
+                    <optgroup label="❌ Échec">
+                        <option value="echec_cap"     {% if profil.raison_sortie == 'echec_cap' %}selected{% endif %}>Échoué au CAP</option>
+                        <option value="echec_bac_pro" {% if profil.raison_sortie == 'echec_bac_pro' %}selected{% endif %}>Échoué au Bac Pro</option>
+                    </optgroup>
+                    <optgroup label="📚 Poursuite d'études">
+                        <option value="poursuite_bac_pro" {% if profil.raison_sortie == 'poursuite_bac_pro' %}selected{% endif %}>Poursuite en Bac Pro</option>
+                        <option value="poursuite_bts"     {% if profil.raison_sortie == 'poursuite_bts' %}selected{% endif %}>Poursuite en BTS</option>
+                        <option value="poursuite_autre"   {% if profil.raison_sortie == 'poursuite_autre' %}selected{% endif %}>Autre poursuite d'études</option>
+                    </optgroup>
+                    <optgroup label="🏭 Entrée dans la vie active">
+                        <option value="travail_formation"      {% if profil.raison_sortie == 'travail_formation' %}selected{% endif %}>Travaille en lien avec sa formation</option>
+                        <option value="travail_hors_formation"  {% if profil.raison_sortie == 'travail_hors_formation' %}selected{% endif %}>Travaille hors de sa formation</option>
+                        <option value="apprentissage"          {% if profil.raison_sortie == 'apprentissage' %}selected{% endif %}>Apprentissage / Alternance</option>
+                        <option value="sans_emploi"            {% if profil.raison_sortie == 'sans_emploi' %}selected{% endif %}>Sans emploi</option>
+                    </optgroup>
+                    <optgroup label="🔄 Réorientation">
+                        <option value="reorientation_interne" {% if profil.raison_sortie == 'reorientation_interne' %}selected{% endif %}>Réorienté dans l'établissement</option>
+                        <option value="reorientation_externe" {% if profil.raison_sortie == 'reorientation_externe' %}selected{% endif %}>Réorienté dans un autre établissement</option>
+                        <option value="retour_pays"           {% if profil.raison_sortie == 'retour_pays' %}selected{% endif %}>Retour dans son pays d'origine</option>
+                    </optgroup>
+                    <optgroup label="⚠️ Situation particulière">
+                        <option value="exclusion"     {% if profil.raison_sortie == 'exclusion' %}selected{% endif %}>Exclu de l'établissement</option>
+                        <option value="decrocheur"    {% if profil.raison_sortie == 'decrocheur' %}selected{% endif %}>Décrocheur (abandon)</option>
+                        <option value="deces"         {% if profil.raison_sortie == 'deces' %}selected{% endif %}>Décès</option>
+                        <option value="raison_inconnue" {% if profil.raison_sortie == 'raison_inconnue' %}selected{% endif %}>Raison inconnue</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- Bloc diplôme -->
+            <div id="bloc-diplome" class="cond-section">
+                <div class="form-group">
+                    <label>Mention obtenue</label>
+                    <select name="mention_obtenue">
+                        <option value=""   {% if not profil.mention_obtenue %}selected{% endif %}>— Sans mention / Non renseigné —</option>
+                        <option value="AB" {% if profil.mention_obtenue == 'AB' %}selected{% endif %}>Assez Bien (AB)</option>
+                        <option value="B"  {% if profil.mention_obtenue == 'B' %}selected{% endif %}>Bien (B)</option>
+                        <option value="TB" {% if profil.mention_obtenue == 'TB' %}selected{% endif %}>Très Bien (TB)</option>
+                    </select>
+                </div>
+                <div class="toggle-row">
+                    <input type="checkbox" id="chk-poursuite" name="poursuite_etudes"
+                        {% if profil.poursuite_etudes %}checked{% endif %}>
+                    <label for="chk-poursuite">L'élève poursuit ses études après le diplôme</label>
+                </div>
+                <div id="bloc-type-pours" class="cond-section" style="padding:0.7rem;border:none;background:transparent;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Type de poursuite</label>
+                        <select name="type_poursuite">
+                            <option value="">— Sélectionner —</option>
+                            <option value="bac_pro" {% if profil.type_poursuite == 'bac_pro' %}selected{% endif %}>Bac Pro (après CAP)</option>
+                            <option value="bts"     {% if profil.type_poursuite == 'bts' %}selected{% endif %}>BTS (après Bac Pro)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bloc poursuite directe -->
+            <div id="bloc-poursuite-direct" class="cond-section">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>Type de poursuite</label>
+                    <select name="type_poursuite">
+                        <option value="">— Sélectionner —</option>
+                        <option value="bac_pro" {% if profil.type_poursuite == 'bac_pro' %}selected{% endif %}>Bac Pro</option>
+                        <option value="bts"     {% if profil.type_poursuite == 'bts' %}selected{% endif %}>BTS</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Année scolaire -->
+            <div class="form-group">
+                <label>Année scolaire de sortie *</label>
+                <input type="text" name="annee_scolaire_sortie"
+                    value="{{ profil.annee_scolaire_sortie|default:annee_defaut }}"
+                    placeholder="ex : 2025-2026">
+                <div class="field-hint">Format : AAAA-AAAA</div>
+            </div>
+
+            <!-- Commentaire -->
+            <div class="form-group">
+                <label>Commentaire / Précisions (optionnel)</label>
+                <textarea name="commentaire_sortie" rows="3"
+                    placeholder="Établissement d'accueil, mention exacte, situation particulière...">{{ profil.commentaire_sortie|default:'' }}</textarea>
+            </div>
+
+            <!-- Données Django pour le JS -->
+            <input type="hidden" id="init-poursuite" value="{{ profil.poursuite_etudes|yesno:'true,false' }}">
+
+            <div class="btn-row">
+                <a href="{% url 'core:gestion_sorties' %}" class="btn-annuler">Annuler</a>
+                <button type="submit" class="btn-submit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Enregistrer les modifications
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const DIPLOMES_RAISONS  = ['cap_mention','cap_sans_mention','bac_pro_mention','bac_pro_sans_mention','echec_cap','echec_bac_pro'];
+const POURSUITE_RAISONS = ['poursuite_bac_pro','poursuite_bts','poursuite_autre'];
+
+function updateConditional() {
+    const raison = document.querySelector('[name="raison_sortie"]').value;
+    const isDiplome  = DIPLOMES_RAISONS.includes(raison);
+    const isPoursuite= POURSUITE_RAISONS.includes(raison);
+    document.getElementById('bloc-diplome').classList.toggle('visible', isDiplome);
+    document.getElementById('bloc-poursuite-direct').classList.toggle('visible', isPoursuite && !isDiplome);
+}
+
+document.querySelector('[name="raison_sortie"]').addEventListener('change', updateConditional);
+document.getElementById('chk-poursuite').addEventListener('change', function() {
+    document.getElementById('bloc-type-pours').classList.toggle('visible', this.checked);
+});
+updateConditional();
+// Restore poursuite subtoggle state
+if (document.getElementById('init-poursuite').value === 'true') {
+    document.getElementById('bloc-type-pours').classList.add('visible');
+}
+</script>
+{% endblock %}

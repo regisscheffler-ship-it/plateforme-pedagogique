@@ -1,0 +1,222 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Espace Élève - Lycée Louis Loucheur{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    }
+
+    .eleve-header {
+        text-align: center;
+        margin: 3rem auto 2rem;
+        max-width: 1600px;
+    }
+
+    .eleve-header img {
+        max-width: 120px;
+        margin-bottom: 1.5rem;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+    }
+
+    .eleve-header h1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8rem;
+        font-size: 2.2rem;
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+    }
+
+    .eleve-header h1 svg {
+        width: 36px;
+        height: 36px;
+        fill: #20c997;
+    }
+
+    .eleve-header p {
+        font-size: 1rem;
+        color: #6c757d;
+    }
+
+    /* CARTES HARMONISÉES AVEC LE SITE */
+    .choix-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+        max-width: 1600px;
+        margin: 3rem auto;
+        padding: 0 2.5rem;
+    }
+
+    .choix-card {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        text-align: center;
+        text-decoration: none;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .choix-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+    }
+
+    /* Couleurs spécifiques */
+    .choix-card.connexion {
+        border-color: #20c997;
+    }
+
+    .choix-card.connexion:hover {
+        border-color: #1aa179;
+        background: #f0fdf8;
+    }
+
+    .choix-card.connexion .icon-wrapper {
+        background: linear-gradient(135deg, #20c997 0%, #1aa179 100%);
+    }
+
+    .choix-card.inscription {
+        border-color: #667eea;
+    }
+
+    .choix-card.inscription:hover {
+        border-color: #5568d3;
+        background: #f0f2ff;
+    }
+
+    .choix-card.inscription .icon-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Icône circulaire */
+    .icon-wrapper {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .icon-wrapper svg {
+        width: 40px;
+        height: 40px;
+        fill: white;
+    }
+
+    .choix-card h2 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .choix-card.connexion h2 {
+        color: #20c997;
+    }
+
+    .choix-card.inscription h2 {
+        color: #667eea;
+    }
+
+    .choix-card p {
+        color: #6c757d;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Lien retour */
+    .retour-link {
+        text-align: center;
+        margin: 2rem auto;
+    }
+
+    .retour-link a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+    }
+
+    .retour-link a:hover {
+        color: #764ba2;
+        gap: 0.8rem;
+    }
+
+    .retour-link svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+    }
+</style>
+
+<!-- En-tête -->
+<div class="eleve-header">
+    <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg" 
+         alt="Logo Lycée Louis Loucheur">
+    
+    <h1>
+        <svg viewBox="0 0 24 24">
+            <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+            <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+            <path d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
+        </svg>
+        Espace Élève
+    </h1>
+    <p>Choisissez une option pour accéder à vos cours</p>
+</div>
+
+<!-- Choix Connexion / Inscription -->
+<div class="choix-container">
+    
+    <!-- Carte Connexion (VERT) -->
+    <a href="{% url 'core:login_eleve' %}" class="choix-card connexion">
+        <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+            </svg>
+        </div>
+        <h2>Je me connecte</h2>
+        <p>J'ai déjà un compte</p>
+    </a>
+
+    <!-- Carte Inscription (BLEU) -->
+    <a href="{% url 'core:inscription_eleve' %}" class="choix-card inscription">
+        <div class="icon-wrapper">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+        </div>
+        <h2>Je m'inscris</h2>
+        <p>Première visite ? Créez votre compte</p>
+    </a>
+
+</div>
+
+<!-- Lien retour -->
+<div class="retour-link">
+    <a href="{% url 'core:home' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Retour
+    </a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,270 @@
+﻿{% extends 'core/base.html' %}
+
+{% block title %}Modes opératoires{% endblock %}
+
+{% block content %}
+
+<style>
+    /* ========================================
+       MODES OPÉRATOIRES — Orange #e8922a
+       ======================================== */
+
+    .mo-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header-block {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #e8922a;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-header-block h1 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-weight: 700;
+    }
+
+    .page-header-block h1 svg { stroke: #e8922a; fill: none; stroke-width: 1.5; }
+
+    .stats-bar {
+        background: #fff8f0;
+        border-left: 4px solid #e8922a;
+        border-radius: 10px;
+        padding: 0.85rem 1.2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        font-size: 0.9rem;
+        color: #92400e;
+        font-weight: 600;
+    }
+
+    .mo-card {
+        background: white;
+        border: 1.5px solid #e9ecef;
+        border-left: 5px solid #e8922a;
+        border-radius: 12px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .mo-card:hover {
+        transform: translateX(6px);
+        box-shadow: 0 6px 20px rgba(232,146,42,0.12);
+        border-left-color: #cf7d20;
+    }
+
+    .mo-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .mo-info { flex: 1; }
+
+    .mo-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .mo-header h3 { margin: 0; color: #2c3e50; font-size: 1.2rem; font-weight: 700; }
+
+    .badge-phases {
+        background: #fff3e0; color: #e8922a;
+        padding: 0.25rem 0.8rem; border-radius: 20px;
+        font-size: 0.82rem; font-weight: 600; border: 1px solid #f5c08a;
+    }
+
+    .badge-theme {
+        background: #f0f4ff; color: #3b5bdb;
+        padding: 0.2rem 0.6rem; border-radius: 12px;
+        font-size: 0.78rem; font-weight: 600; border: 1px solid #c5d0fa;
+    }
+
+    .badge-atelier {
+        background: #f0fdf4; color: #27ae60;
+        padding: 0.2rem 0.6rem; border-radius: 12px;
+        font-size: 0.78rem; font-weight: 600; border: 1px solid #a9dfbf;
+    }
+
+    .mo-meta { color: #7a8694; margin: 0.4rem 0 0 0; font-size: 0.88rem; }
+    .mo-description { color: #6c757d; margin: 0.6rem 0 0 0; font-size: 0.9rem; line-height: 1.5; }
+
+    .mo-actions {
+        display: flex; gap: 0.5rem; flex-wrap: wrap;
+        position: relative; z-index: 10;
+    }
+
+    .btn-action {
+        padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none;
+        font-weight: 600; font-size: 0.85rem; transition: all 0.3s ease;
+        cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+        white-space: nowrap; background: white; border: 2px solid currentColor;
+    }
+
+    .btn-action:hover { transform: translateY(-2px); }
+
+    .btn-editer      { color: #e8922a; }
+    .btn-editer:hover    { background: #e8922a; color: white; box-shadow: 0 4px 12px rgba(232,146,42,0.25); }
+    .btn-voir-theme  { color: #3b5bdb; }
+    .btn-voir-theme:hover  { background: #3b5bdb; color: white; }
+    .btn-voir-atelier{ color: #27ae60; }
+    .btn-voir-atelier:hover{ background: #27ae60; color: white; }
+    .btn-supprimer   { color: #d94f4f; }
+    .btn-supprimer:hover   { background: #d94f4f; color: white; box-shadow: 0 4px 12px rgba(217,79,79,0.25); }
+
+    .empty-state {
+        text-align: center; padding: 4rem 2rem;
+        background: #fdf8f2; border-radius: 12px; border: 2px dashed #f5c08a;
+    }
+    .empty-state h3 { color: #2c3e50; margin-bottom: 0.5rem; font-size: 1.5rem; }
+    .empty-state p  { color: #6c757d; font-size: 1rem; margin-bottom: 1.5rem; }
+
+    @media (max-width: 768px) {
+        .mo-content { flex-direction: column; align-items: flex-start; }
+        .mo-actions { width: 100%; justify-content: flex-start; }
+        .btn-action { flex: 1; justify-content: center; }
+    }
+</style>
+
+<div class="mo-container">
+
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#e8922a;
+              border:2px solid #e8922a;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="page-header-block">
+        <h1>
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+            </svg>
+            Modes opératoires
+        </h1>
+    </div>
+
+    {% if nb_total > 0 %}
+    <div class="stats-bar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        {{ nb_total }} mode{{ nb_total|pluralize }} opératoire{{ nb_total|pluralize }} actif{{ nb_total|pluralize }}
+    </div>
+    {% endif %}
+
+    {% if modes_operatoires %}
+        <div style="display:grid;gap:1rem;">
+            {% for mo in modes_operatoires %}
+            <div class="mo-card" data-url="{% url 'core:mo_edit' mo.id %}" onclick="window.location.href=this.dataset.url">
+                <div class="mo-content">
+                    <div class="mo-info">
+                        <div class="mo-header">
+                            <h3>{{ mo.titre }}</h3>
+                            <span class="badge-phases">{{ mo.lignes.count }} phase{{ mo.lignes.count|pluralize }}</span>
+                            {% if mo.theme %}
+                                <span class="badge-theme">
+                                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                    {{ mo.theme.nom }}
+                                </span>
+                            {% elif mo.atelier %}
+                                <span class="badge-atelier">
+                                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                                    {{ mo.atelier.titre }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% if mo.description %}
+                            <p class="mo-description">{{ mo.description|truncatewords:20 }}</p>
+                        {% endif %}
+                        <p class="mo-meta">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            Créé le {{ mo.date_creation|date:"d/m/Y" }}
+                            {% if mo.date_modification != mo.date_creation %}
+                            &bull; Modifié le {{ mo.date_modification|date:"d/m/Y" }}
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="mo-actions" onclick="event.stopPropagation();">
+                        <a href="{% url 'core:mo_edit' mo.id %}" class="btn-action btn-editer">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Éditer
+                        </a>
+
+                        {% if mo.theme %}
+                        <a href="{% url 'core:theme_detail' mo.theme.id %}" class="btn-action btn-voir-theme">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            Thème
+                        </a>
+                        {% elif mo.atelier %}
+                        <a href="{% url 'core:atelier_detail' mo.atelier.id %}" class="btn-action btn-voir-atelier">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                            Atelier
+                        </a>
+                        {% endif %}
+
+                        <form method="post" action="{% url 'core:mo_delete' mo.id %}"
+                              onsubmit="return confirm('Supprimer ce mode opératoire ?');"
+                              style="margin:0;display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-action btn-supprimer">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                Supprimer
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div class="empty-state">
+            <div style="margin-bottom:1.2rem;">
+                <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#e8922a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                </svg>
+            </div>
+            <h3>Aucun mode opératoire</h3>
+            <p>Créez des modes opératoires depuis les pages de <strong>thèmes</strong> ou d'<strong>ateliers</strong>.</p>
+            <a href="{% url 'core:gestion_themes' %}" class="btn-action btn-editer" style="display:inline-flex;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Voir les thèmes
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

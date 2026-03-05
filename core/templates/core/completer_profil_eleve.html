@@ -1,0 +1,335 @@
+{% extends 'core/base.html' %}
+{% block title %}Compléter le profil - {{ profil.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<style>
+    /* ═══════════════════════════════════════
+       COMPLÉTER PROFIL - HARMONISÉ BASE.HTML
+       ═══════════════════════════════════════ */
+
+    .page-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* Bouton retour */
+    .btn-retour { display: none; }
+
+    /* Header */
+    .page-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #2ab090;
+    }
+
+    .page-header h1 {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        color: #2c3e50;
+        font-size: 2rem;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .page-header h1 svg {
+        width: 32px;
+        height: 32px;
+        stroke: #2ab090;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    /* Info box */
+    .info-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1.2rem 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .info-box svg {
+        width: 24px;
+        height: 24px;
+        stroke: #856404;
+        stroke-width: 2;
+        fill: none;
+        flex-shrink: 0;
+    }
+
+    .info-box p {
+        margin: 0;
+        color: #856404;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    /* Formulaire */
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-left: 5px solid #2ab090;
+        margin-bottom: 2rem;
+    }
+
+    .form-card h2 {
+        color: #2c3e50;
+        font-size: 1.4rem;
+        margin: 0 0 1.5rem 0;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .form-card h2 svg {
+        width: 24px;
+        height: 24px;
+        stroke: #2ab090;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 1200px) {
+        .form-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+        .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 0.75rem 1rem;
+        border: 1.5px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #2ab090;
+        box-shadow: 0 0 0 3px rgba(42,176,144,0.1);
+    }
+
+    /* Bouton submit */
+    .btn-submit {
+        padding: 0.75rem 2rem;
+        background: white;
+        color: #2ab090;
+        border: 2px solid #2ab090;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-submit:hover {
+        background: #2ab090;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(42,176,144,0.3);
+    }
+
+    .btn-submit svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+    }
+</style>
+
+<div class="page-container">
+
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#2ab090;
+              border:2px solid #2ab090;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- Header -->
+    <div class="page-header">
+        <h1>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            Compléter le profil de {{ profil.user.get_full_name }}
+        </h1>
+    </div>
+
+    <!-- Info box -->
+    <div class="info-box">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <p>Complétez les informations suivantes pour finaliser le profil de l'élève (établissement d'origine, parcours, etc.)</p>
+    </div>
+
+    <!-- Formulaire -->
+    <div class="form-card">
+        <h2>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Informations complémentaires
+        </h2>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="date_naissance">Date de naissance</label>
+                    <input type="date" 
+                           id="date_naissance" 
+                           name="date_naissance" 
+                           value="{{ profil.date_naissance|date:'Y-m-d'|default:'' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="annee_entree">Année d'entrée</label>
+                    <input type="text" 
+                           id="annee_entree" 
+                           name="annee_entree" 
+                           value="{{ profil.annee_entree|default:'' }}"
+                           placeholder="Ex: 2024">
+                </div>
+
+                <div class="form-group">
+                    <label for="classe">Classe actuelle</label>
+                    <select id="classe" name="classe">
+                        <option value="">— Sélectionner une classe —</option>
+                        {% for c in classes %}
+                            <option value="{{ c.id }}" {% if profil.classe.id == c.id %}selected{% endif %}>
+                                {{ c.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <h2 style="margin-top:2rem;">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                Établissement d'origine
+            </h2>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="etablissement_origine">Établissement (collège)</label>
+                    <select id="etablissement_origine" name="etablissement_origine">
+                        <option value="">— Sélectionner —</option>
+                        {% for etab in etablissements %}
+                            <option value="{{ etab.id }}" 
+                                    {% if profil.etablissement_origine.id == etab.id %}selected{% endif %}>
+                                {{ etab.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="etablissement_origine_autre">Ville</label>
+                    <select id="etablissement_origine_autre" name="etablissement_origine_autre">
+                        <option value="">— Sélectionner —</option>
+                        {% for ville in villes %}
+                            <option value="{{ ville }}" {% if profil.etablissement_origine_autre == ville %}selected{% endif %}>{{ ville }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="classe_origine">Classe d'origine</label>
+                    <select id="classe_origine" name="classe_origine">
+                        <option value="">— Sélectionner —</option>
+                        <option value="3ème Générale" {% if profil.classe_origine == "3ème Générale" %}selected{% endif %}>3ème Générale</option>
+                        <option value="3ème Prépa Métier" {% if profil.classe_origine == "3ème Prépa Métier" %}selected{% endif %}>3ème Prépa Métier</option>
+                        <option value="3ème SEGPA" {% if profil.classe_origine == "3ème SEGPA" %}selected{% endif %}>3ème SEGPA</option>
+                        <option value="Dispositif ULIS" {% if profil.classe_origine == "Dispositif ULIS" %}selected{% endif %}>Dispositif ULIS</option>
+                        <option value="Seconde Pro" {% if profil.classe_origine == "Seconde Pro" %}selected{% endif %}>Seconde Pro</option>
+                        <option value="Seconde générale" {% if profil.classe_origine == "Seconde générale" %}selected{% endif %}>Seconde générale</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="diplome_obtenu">Diplôme obtenu</label>
+                    <select id="diplome_obtenu" name="diplome_obtenu">
+                        <option value="">— Sélectionner —</option>
+                        <option value="DNB" {% if profil.diplome_obtenu == "DNB" %}selected{% endif %}>DNB</option>
+                        <option value="DNB Pro" {% if profil.diplome_obtenu == "DNB Pro" %}selected{% endif %}>DNB Pro</option>
+                        <option value="CFG" {% if profil.diplome_obtenu == "CFG" %}selected{% endif %}>CFG</option>
+                        <option value="Aucun Diplôme" {% if profil.diplome_obtenu == "Aucun Diplôme" %}selected{% endif %}>Aucun Diplôme</option>
+                        <option value="CAP" {% if profil.diplome_obtenu == "CAP" %}selected{% endif %}>CAP</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top:2rem;text-align:center;">
+                <button type="submit" class="btn-submit">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Enregistrer les informations
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}

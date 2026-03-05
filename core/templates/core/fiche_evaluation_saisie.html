@@ -1,0 +1,353 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Évaluation - {{ eleve.user.get_full_name }}</title>
+    <style>
+        @page { size: A4; margin: 0; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+            color-adjust: exact !important; 
+        }
+
+        :root {
+            --bg-ne: #d9d9d9;
+            --bg-0: #ffc0c0;
+            --bg-1: #ffe6cc;
+            --bg-2: #ffff99;
+            --bg-3: #c6e0b4;
+            --bg-4: #a9d08e;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: #555; margin: 0; padding: 20px; }
+
+        .sheet {
+            background: white; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5); display: flex; flex-direction: column;
+        }
+
+        @media print {
+            body { background: none; margin: 0; padding: 0; }
+            .sheet { margin: 0; box-shadow: none; min-height: 297mm; }
+            .no-print { display: none !important; }
+        }
+
+        /* --- BARRE D'ACTIONS --- */
+        .action-bar {
+            background: white; padding: 10px; text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;
+            display: flex; justify-content: center; gap: 15px; border-bottom: 4px solid #10b981;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 15px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+            text-decoration: none; color: white; transition: 0.2s;
+        }
+        .btn-back { background: #f3f4f6; color: #333; border: 1px solid #ccc; }
+        .btn-save { background: #3b82f6; }
+        .btn-print { background: #6366f1; }
+        .btn-validate { background: #10b981; }
+        .status-badge { background: #d1fae5; color: #065f46; padding: 8px 12px; border-radius: 20px; font-weight: bold; border: 1px solid #10b981; }
+
+        /* --- EN-TÊTE --- */
+        .header-container { display: flex; gap: 15px; margin-bottom: 5px; align-items: flex-start; flex-shrink: 0; }
+        .logo-box { width: 80px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .logo-img { width: 100%; height: auto; object-fit: contain; }
+
+        .header-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .title-box { border: 2px solid #000; background: #f0f0f0; text-align: center; font-weight: bold; font-size: 14px; padding: 5px; text-transform: uppercase; }
+        
+        .types-box {
+            display: flex; justify-content: center; gap: 15px;
+            border: 1px solid #ccc; background: #f9f9f9; padding: 4px; border-radius: 4px;
+        }
+        .check-item { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; }
+        .check-box {
+            width: 14px; height: 14px; border: 2px solid #555; border-radius: 3px;
+            display: flex; align-items: center; justify-content: center; font-size: 10px;
+        }
+        .check-box.checked { background: #10b981; border-color: #10b981; color: white; }
+
+        .info-split { display: flex; gap: 6px; }
+        .student-info { width: 40%; border: 2px solid #000; padding: 5px; font-size: 11px; line-height: 1.4; }
+        .context-info { flex: 1; border: 2px solid #f59e0b; padding: 5px; font-size: 11px; }
+
+        /* --- TABLEAU --- */
+        .eval-section { flex: 2; overflow-y: auto; margin-bottom: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.70em; }
+        th, td { border: 1px solid #000; padding: 2px 3px; vertical-align: middle; }
+        th { text-align: center; background: #1f2d3d; color: white; padding: 3px; font-weight: 700; }
+        .th-cp { background: #4472c4; color: #fff; text-align: left; padding-left: 7px; font-weight: bold; border-top: 2px solid #000; }
+        .th-sc { background: #dce6f1; color: #333; text-align: left; padding-left: 16px; font-weight: bold; font-style: italic; }
+        .critere-cell { background: #fff; padding-left: 6px; }
+        
+        .bg-ne { background: var(--bg-ne); } .bg-0 { background: var(--bg-0); }
+        .bg-1 { background: var(--bg-1); } .bg-2 { background: var(--bg-2); }
+        .bg-3 { background: var(--bg-3); } .bg-4 { background: var(--bg-4); }
+        .bg-pct { background: #f8f9fa; width: 42px; text-align: center; }
+        
+        .radio-cell { text-align: center; }
+        input[type="radio"] { transform: scale(1.05); cursor: pointer; }
+        input[type="radio"]:disabled { cursor: not-allowed; opacity: 0.6; }
+        .input-weight { 
+            width: 36px; text-align: center; font-weight: bold; 
+            border: 1px solid #ccc; border-radius: 3px; padding: 1px;
+            font-size: 0.9em;
+        }
+        .input-weight:disabled { background: #f3f4f6; color: #6b7280; }
+
+        /* --- LÉGENDE --- */
+        .legende { display: flex; gap: 8px; font-size: 0.68em; flex-wrap: wrap; padding: 2px 0; align-items: center; flex-shrink: 0; }
+        .leg-item { display: flex; align-items: center; gap: 3px; }
+        .leg-color { width: 12px; height: 12px; border: 1px solid #999; flex-shrink: 0; }
+
+        /* --- PIED DE PAGE --- */
+        .footer-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #eee; padding: 5px 8px; border: 2px solid #000; margin-bottom: 4px; flex-shrink: 0;
+        }
+        .weight-status { padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em; border: 1px solid #999; }
+        .status-ok { background: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .status-err { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .note-display { border: 2px solid #000; padding: 2px 12px; background: white; font-size: 1.1em; font-weight: bold; min-width: 80px; text-align: center; }
+        
+        .n-red { background: #e74c3c; color: white; } .n-orange { background: #e67e22; color: white; }
+        .n-yellow { background: #f1c40f; color: black; } .n-green { background: #2ecc71; color: black; }
+
+        .comments-section { border: 2px solid #000; padding: 4px 6px; flex: 0 0 auto; min-height: 60px; display: flex; flex-direction: column; }
+        .comments-label { font-weight: bold; font-size: 0.8em; margin-bottom: 2px; }
+        .comments-box { min-height: 50px; border: none; resize: vertical; font-family: inherit; font-size: 0.8em; outline: none; padding: 5px; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="no-print action-bar">
+        <a href="{% url 'core:evaluation_detail' fiche_contrat.id %}" class="btn btn-back">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg> Retour
+        </a>
+        <button onclick="window.print()" class="btn btn-print">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimer
+        </button>
+
+        {% if fiche_eval.validee %}
+            <div class="status-badge">✅ Évaluation Validée</div>
+        {% else %}
+            <button type="button" onclick="soumettre('valider')" class="btn btn-validate">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg> Valider l'évaluation
+            </button>
+        {% endif %}
+    </div>
+
+    <div class="sheet" id="sheet-main">
+        
+        <!-- EN-TÊTE -->
+        <div class="header-container">
+            <div class="logo-box">
+                <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg" class="logo-img" alt="Logo Lycée">
+            </div>
+            <div class="header-content">
+                <div class="title-box">{{ fiche_contrat.titre_tp }}</div>
+                <div class="types-box">
+                    <div class="check-item"><div class="check-box {% if fiche_contrat.type_evaluation == 'formative' %}checked{% endif %}">{% if fiche_contrat.type_evaluation == 'formative' %}✓{% endif %}</div> Formative</div>
+                    <div class="check-item"><div class="check-box {% if fiche_contrat.type_evaluation == 'sommative' %}checked{% endif %}">{% if fiche_contrat.type_evaluation == 'sommative' %}✓{% endif %}</div> Sommative</div>
+                    <div class="check-item"><div class="check-box {% if fiche_contrat.type_evaluation == 'certificative' %}checked{% endif %}">{% if fiche_contrat.type_evaluation == 'certificative' %}✓{% endif %}</div> Certificative</div>
+                </div>
+                <div class="info-split">
+                    <div class="student-info">
+                        <strong>Nom :</strong> {{ eleve.user.last_name|upper }}<br>
+                        <strong>Prénom :</strong> {{ eleve.user.first_name }}<br>
+                        <strong>Classe :</strong> {{ fiche_contrat.classe.nom }}<br>
+                        <strong>Date :</strong> {{ fiche_contrat.date_tp|date:"d/m/Y"|default:"__/__/____" }}
+                    </div>
+                    <div class="context-info">
+                        <strong>Description de la situation professionnelle :</strong><br>
+                        {{ fiche_contrat.contexte|default:"-"|linebreaksbr }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau avec poids -->
+        <form method="post" id="evalForm">
+            {% csrf_token %}
+            <div class="eval-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:42%">Critère d'évaluation</th>
+                            <th class="bg-ne" style="width:7%">NE</th>
+                            <th class="bg-0"  style="width:7%">0</th>
+                            <th class="bg-1"  style="width:7%">1</th>
+                            <th class="bg-2"  style="width:7%">2</th>
+                            <th class="bg-3"  style="width:7%">3</th>
+                            <th class="bg-4"  style="width:7%">4</th>
+                            <th class="bg-pct" style="width:9%">Poids %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for groupe in groupes_competences %}
+                            <tr><td colspan="8" class="th-cp">{% if groupe.competence_pro %}{{ groupe.competence_pro.code }} - {{ groupe.competence_pro.nom }}{% else %}Autres indicateurs{% endif %}</td></tr>
+                            {% for sc_group in groupe.sous_competences %}
+                                {% if sc_group.sous_competence %}
+                                <tr><td colspan="8" class="th-sc">{{ sc_group.sous_competence.nom }}</td></tr>
+                                {% endif %}
+                                {% for ligne in sc_group.lignes %}
+                                <tr class="calc-row">
+                                    <td class="critere-cell">{{ ligne.ligne_contrat.critere.nom }}</td>
+                                    <td class="radio-cell bg-ne">
+                                        <input type="radio" name="note_{{ ligne.id }}" value="NE"
+                                            {% if ligne.note == 'NE' %}checked{% endif %}
+                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            onchange="recalc()">
+                                    </td>
+                                    <td class="radio-cell bg-0">
+                                        <input type="radio" name="note_{{ ligne.id }}" value="0"
+                                            {% if ligne.note == '0' %}checked{% endif %}
+                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            onchange="recalc()">
+                                    </td>
+                                    <td class="radio-cell bg-1">
+                                        <input type="radio" name="note_{{ ligne.id }}" value="1"
+                                            {% if ligne.note == '1' %}checked{% endif %}
+                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            onchange="recalc()">
+                                    </td>
+                                    <td class="radio-cell bg-2">
+                                        <input type="radio" name="note_{{ ligne.id }}" value="2"
+                                            {% if ligne.note == '2' %}checked{% endif %}
+                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            onchange="recalc()">
+                                    </td>
+                                    <td class="radio-cell bg-3">
+                                        <input type="radio" name="note_{{ ligne.id }}" value="3"
+                                            {% if ligne.note == '3' %}checked{% endif %}
+                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            onchange="recalc()">
+                                    </td>
+                                    <td class="radio-cell bg-4">
+                                        <input type="radio" name="note_{{ ligne.id }}" value="4"
+                                            {% if ligne.note == '4' %}checked{% endif %}
+                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            onchange="recalc()">
+                                    </td>
+                                    <td class="bg-pct">
+                                        <input type="text" class="input-weight"
+                                            name="poids_{{ ligne.id }}"
+                                            value="{{ ligne.ligne_contrat.poids|floatformat:2 }}"
+                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            oninput="recalc()">
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Légende -->
+            <div class="legende">
+                <div class="leg-item"><div class="leg-color" style="background:#d9d9d9;"></div> NC – Non évalué</div>
+                <div class="leg-item"><div class="leg-color" style="background:#ffc0c0;"></div> 0 – Non maîtrisé</div>
+                <div class="leg-item"><div class="leg-color" style="background:#ffe6cc;"></div> 1 – Insuffisant</div>
+                <div class="leg-item"><div class="leg-color" style="background:#ffff99;"></div> 2 – Partiel</div>
+                <div class="leg-item"><div class="leg-color" style="background:#c6e0b4;"></div> 3 – Satisfaisant</div>
+                <div class="leg-item"><div class="leg-color" style="background:#a9d08e;"></div> 4 – Très bien</div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer-row">
+                <div class="weight-status status-ok" id="weightStatus">Poids Total : <span id="totalWeight">100</span>%</div>
+                <div class="note-display" id="noteDisplay">Note : <span id="finalNote">{% if fiche_eval.note_sur_20 %}{{ fiche_eval.note_sur_20|floatformat:1 }}{% else %}--{% endif %}</span> / 20</div>
+            </div>
+
+            <div class="comments-section">
+                <div class="comments-label">Compte rendu / Observations :</div>
+                <textarea class="comments-box" name="compte_rendu"
+                    {% if fiche_eval.validee %}disabled{% endif %}>{{ fiche_eval.compte_rendu }}</textarea>
+            </div>
+
+            {% if not fiche_eval.validee %}
+            <input type="hidden" name="action" id="actionField" value="sauvegarder">
+            {% endif %}
+        </form>
+    </div>
+
+    <script>
+        function soumettre(action) {
+            if (action === 'valider') {
+                if (!confirm('Valider cette évaluation ? Elle ne pourra plus être modifiée.')) return;
+            }
+            document.getElementById('actionField').value = action;
+            document.getElementById('evalForm').submit();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initWeights();
+            recalc();
+        });
+
+        function initWeights() {
+            const rows = document.querySelectorAll('.calc-row');
+            if (!rows.length) return;
+            rows.forEach(r => {
+                const inp = r.querySelector('.input-weight');
+                if (inp && (!inp.value || inp.value.trim() === '' || inp.value.trim() === '0.00')) {
+                    inp.value = (100 / rows.length).toFixed(2);
+                }
+            });
+        }
+
+        function recalc() {
+            const rows = document.querySelectorAll('.calc-row');
+            let totalW = 0, wSum = 0, hasChecked = false;
+
+            rows.forEach(row => {
+                const wInput = row.querySelector('.input-weight');
+                const w = parseFloat(wInput ? wInput.value.replace(',', '.') : 0) || 0;
+                totalW += w;
+                const chk = row.querySelector('input[type="radio"]:checked');
+                if (chk) {
+                    hasChecked = true;
+                    const v = parseFloat(chk.value);
+                    if (!isNaN(v) && v >= 0) wSum += (v / 4) * w;
+                }
+            });
+
+            const dW = Math.round(totalW * 100) / 100;
+            const wStatus = document.getElementById('weightStatus');
+            const twSpan = document.getElementById('totalWeight');
+            twSpan.textContent = dW.toString().replace('.', ',');
+
+            if (dW >= 99.9 && dW <= 100.1) {
+                wStatus.className = 'weight-status status-ok';
+                wStatus.innerHTML = `Poids Total : <span id="totalWeight">${twSpan.textContent}</span>% ✓`;
+            } else {
+                wStatus.className = 'weight-status status-err';
+                wStatus.innerHTML = `⚠️ Poids : <span id="totalWeight">${twSpan.textContent}</span>% (doit être 100)`;
+            }
+
+            const noteDisplay = document.getElementById('noteDisplay');
+            const noteSpan = document.getElementById('finalNote');
+
+            if (!hasChecked) {
+                noteSpan.textContent = '--';
+                noteDisplay.className = 'note-display';
+            } else {
+                let note = totalW > 0 ? (wSum / totalW) * 20 : 0;
+                note = Math.round(note * 100) / 100;
+                noteSpan.textContent = note.toString().replace('.', ',');
+                noteDisplay.className = 'note-display';
+                if (note < 10) noteDisplay.classList.add('n-red');
+                else if (note < 12) noteDisplay.classList.add('n-orange');
+                else if (note < 15) noteDisplay.classList.add('n-yellow');
+                else noteDisplay.classList.add('n-green');
+            }
+        }
+    </script>
+</body>
+</html>

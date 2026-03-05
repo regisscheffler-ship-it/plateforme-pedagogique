@@ -1,0 +1,564 @@
+{% extends 'core/base.html' %}
+{% block title %}Paramètres - Nouvelle évaluation{% endblock %}
+
+{% block content %}
+<style>
+    .page-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .btn-retour {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.5rem;
+        background: white;
+        color: #4a9fc1;
+        border: 2px solid #4a9fc1;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    .btn-retour:hover { background: #4a9fc1; color: white; transform: translateY(-2px); }
+    .btn-retour svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2.5; fill: none; }
+
+    .page-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #4a9fc1;
+    }
+    .page-header h1 {
+        display: flex; align-items: center; gap: 0.8rem;
+        color: #2c3e50; font-size: 2rem; margin: 0 0 0.5rem 0; font-weight: 700;
+    }
+    .page-header h1 svg { width: 32px; height: 32px; stroke: #4a9fc1; stroke-width: 2; fill: none; }
+    .page-header p { color: #6c757d; margin: 0; font-size: 1rem; }
+
+    .form-step {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-left: 5px solid #4a9fc1;
+    }
+    .step-header {
+        display: flex; align-items: center; gap: 1rem;
+        margin-bottom: 1.5rem; padding-bottom: 1rem;
+        border-bottom: 2px solid #f8f9fa;
+    }
+    .step-number {
+        width: 40px; height: 40px; background: white; color: #4a9fc1;
+        border: 2px solid #4a9fc1;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; font-weight: 700; flex-shrink: 0;
+    }
+    .step-title { font-size: 1.3rem; color: #2c3e50; font-weight: 700; flex: 1; }
+
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label { display: block; font-weight: 700; color: #2c3e50; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .form-group .required { color: #dc3545; }
+    .form-control {
+        width: 100%; padding: 0.75rem 1rem;
+        border: 1.5px solid #e9ecef; border-radius: 8px;
+        font-size: 0.95rem; transition: all 0.3s; background: white;
+    }
+    .form-control:focus { outline: none; border-color: #4a9fc1; box-shadow: 0 0 0 3px rgba(74,159,193,0.1); }
+    textarea.form-control { min-height: 100px; resize: vertical; }
+
+    .eleves-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+    .eleve-checkbox {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 1rem; background: white; border: 2px solid #e9ecef;
+        border-radius: 10px; cursor: pointer; transition: all 0.3s;
+    }
+    .eleve-checkbox:hover { background: #f0f9ff; border-color: #4a9fc1; transform: translateY(-2px); }
+    .eleve-checkbox input[type="checkbox"] { width: 20px; height: 20px; accent-color: #4a9fc1; cursor: pointer; }
+    .eleve-checkbox.checked { background: #e0f2fe; border-color: #4a9fc1; }
+    .eleve-checkbox span { font-weight: 600; color: #2c3e50; font-size: 0.95rem; }
+
+    .selection-buttons { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .btn-select {
+        padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer;
+        font-weight: 600; transition: all 0.3s; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;
+        background: white; border: 2px solid currentColor;
+    }
+    .btn-select svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+    .btn-select-all { color: #4a9fc1; }
+    .btn-select-all:hover { background: #4a9fc1; color: white; transform: translateY(-2px); }
+    .btn-deselect-all { color: #dc3545; }
+    .btn-deselect-all:hover { background: #dc3545; color: white; transform: translateY(-2px); }
+
+    .counter {
+        display: inline-flex; align-items: center; padding: 0.6rem 1.2rem;
+        background: #f8f9fa; border-radius: 8px; font-weight: 700;
+        color: #2c3e50; margin-left: auto; font-size: 0.9rem;
+    }
+
+    /* ============================================
+       ARBRE DE COMPÉTENCES
+       ============================================ */
+    .competences-tree {
+        max-height: 600px;
+        overflow-y: auto;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1rem;
+        background: #f8f9fa;
+    }
+
+    .competence-group {
+        margin-bottom: 0.5rem;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .competence-header {
+        padding: 1rem 1.2rem;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: opacity 0.2s;
+        user-select: none;
+    }
+    .competence-header:hover { opacity: 0.88; }
+
+    .competence-body {
+        max-height: 0;
+        overflow: hidden;
+        background: #f8f9fa;
+        transition: max-height 0.35s ease-in-out;
+        padding: 0;
+    }
+
+    .competence-group.open > .competence-body {
+        max-height: 60000px;
+        overflow: visible;
+        padding: 0.8rem 0.8rem 0.8rem 1.5rem;
+    }
+
+    .niveau-competence { margin-left: 0.5rem; }
+    .niveau-cp         { margin-left: 0.5rem; }
+    .niveau-sc         { margin-left: 0.5rem; }
+
+    .niveau-bloc > .competence-header {
+        background: linear-gradient(135deg, #1a6680 0%, #2d8bad 100%);
+        font-size: 1.05rem;
+    }
+    .niveau-competence > .competence-header {
+        background: linear-gradient(135deg, #2d8bad 0%, #4a9fc1 100%);
+        font-size: 0.98rem;
+    }
+    .niveau-cp > .competence-header {
+        background: linear-gradient(135deg, #4a9fc1 0%, #6bb8d4 100%);
+        font-size: 0.93rem;
+    }
+    .niveau-sc > .competence-header {
+        background: linear-gradient(135deg, #6bb8d4 0%, #8fcde3 100%);
+        font-size: 0.88rem;
+    }
+
+    .toggle-icon { transition: transform 0.3s; font-weight: bold; font-size: 1rem; }
+    .competence-group.open > .competence-header .toggle-icon { transform: rotate(180deg); }
+
+    .savoirs-box {
+        background: #e0f2fe; border-left: 3px solid #4a9fc1;
+        padding: 0.8rem 1rem; margin: 0.5rem 0; border-radius: 8px; font-size: 0.88rem;
+    }
+    .savoirs-box strong { color: #1e5f74; display: block; margin-bottom: 0.5rem; }
+    .savoirs-box label { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; cursor: pointer; color: #1e5f74; }
+    .savoirs-box input[type="checkbox"] { width: 16px; height: 16px; accent-color: #4a9fc1; cursor: pointer; flex-shrink: 0; }
+
+    .indicateur-item {
+        display: flex; align-items: flex-start; gap: 0.8rem;
+        padding: 0.7rem 0.9rem; border-radius: 8px; margin-bottom: 0.4rem;
+        background: white; border: 1px solid #e9ecef; transition: all 0.2s;
+    }
+    .indicateur-item:hover { background: #e0f2fe; border-color: #4a9fc1; }
+    .indicateur-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: #4a9fc1; cursor: pointer; flex-shrink: 0; margin-top: 2px; }
+    .indicateur-item label { flex: 1; cursor: pointer; color: #2c3e50; font-weight: 500; font-size: 0.88rem; line-height: 1.4; }
+    .indicateur-item input[type="checkbox"]:checked + label { color: #4a9fc1; font-weight: 700; }
+
+    .submit-section { text-align: center; padding: 2rem; }
+    .btn-submit {
+        padding: 1rem 3rem; background: #4a9fc1; color: white; border: none;
+        border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer;
+        box-shadow: 0 4px 12px rgba(74,159,193,0.3); transition: all 0.3s;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-submit:hover { background: #3a8fb0; transform: translateY(-4px); box-shadow: 0 8px 20px rgba(74,159,193,0.4); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; background: #6c757d; }
+    .btn-submit svg { width: 20px; height: 20px; stroke: white; stroke-width: 2; fill: none; }
+    .submit-hint { color: #6c757d; margin-top: 1rem; font-size: 0.9rem; }
+
+    .empty-message { text-align: center; padding: 2rem; color: #6c757d; font-size: 0.95rem; }
+
+    .grid-2-cols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-bottom: 2rem; }
+    @media (max-width: 992px) { .grid-2-cols { grid-template-columns: 1fr; } }
+</style>
+
+<div class="page-container">
+
+    <a href="javascript:history.back()" class="btn-retour">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="page-header">
+        <h1>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6m5.657-13.657l-4.243 4.243m-2.828 2.828l-4.243 4.243m16.97 1.414l-6-6m-6-6l-6-6"></path>
+            </svg>
+            Paramètres - Nouvelle évaluation
+        </h1>
+        <p>Configurez votre évaluation en 4 étapes simples</p>
+    </div>
+
+    <form method="post" id="formEvaluation">
+        {% csrf_token %}
+
+        <div class="grid-2-cols">
+
+            <!-- ÉTAPE 1 -->
+            <div class="form-step">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Référentiel et Classe</div>
+                </div>
+                <div class="form-group">
+                    <label>Référentiel <span class="required">*</span></label>
+                    <select name="referentiel" id="selectReferentiel" class="form-control" required>
+                        <option value="">— Sélectionner —</option>
+                        {% for ref in referentiels %}
+                        <option value="{{ ref.id }}">{{ ref.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Classe <span class="required">*</span></label>
+                    <select name="classe" id="selectClasse" class="form-control" required>
+                        <option value="">— Sélectionner —</option>
+                        {% for classe in classes %}
+                        <option value="{{ classe.id }}">{{ classe.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Titre du TP <span class="required">*</span></label>
+                    <input type="text" name="titre_tp" class="form-control" placeholder="Ex: Mur 2" required>
+                </div>
+                <div class="form-group">
+                    <label>Date du TP</label>
+                    <input type="date" name="date_tp" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Type d'évaluation</label>
+                    <select name="type_evaluation" class="form-control">
+                        <!-- ✅ Formative sélectionnée par défaut -->
+                        <option value="formative" selected>Formative</option>
+                        <option value="sommative">Sommative</option>
+                        <option value="certificative">Certificative</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ÉTAPE 2 -->
+            <div class="form-step">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Sélection des élèves</div>
+                </div>
+                <div class="selection-buttons">
+                    <button type="button" class="btn-select btn-select-all" onclick="selectAllEleves()">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Tout sélectionner
+                    </button>
+                    <button type="button" class="btn-select btn-deselect-all" onclick="deselectAllEleves()">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Tout désélectionner
+                    </button>
+                    <span class="counter" id="elevesCounter">0 élève(s)</span>
+                </div>
+                <div id="elevesGrid" class="eleves-grid">
+                    <p class="empty-message">Sélectionnez d'abord une classe</p>
+                </div>
+                <input type="hidden" name="eleves_selectionnes" id="elevesJson" value="[]">
+            </div>
+
+        </div>
+
+        <!-- ÉTAPE 3 -->
+        <div class="form-step">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <div class="step-title">Informations du TP</div>
+            </div>
+            <div class="grid-2-cols" style="margin-bottom: 0;">
+                <div class="form-group">
+                    <label>Problématique</label>
+                    <textarea name="problematique" class="form-control" placeholder="Quelle est la problématique ?" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Description de la situation professionnelle</label>
+                    <textarea name="contexte" class="form-control" placeholder="Description de la situation professionnelle" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Consigne</label>
+                    <textarea name="consigne" class="form-control" placeholder="En atelier, vous devez..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Observation de l'environnement</label>
+                    <textarea name="observation_environnement" class="form-control" placeholder="En atelier, je dois veiller à..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Matériels à disposition</label>
+                    <textarea name="materiels" class="form-control" placeholder="Je disposerais de..." rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Risques et EPI</label>
+                    <textarea name="risques_epi" class="form-control" placeholder="Risques identifiés et EPI nécessaires" rows="3"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÉTAPE 4 -->
+        <div class="form-step">
+            <div class="step-header">
+                <div class="step-number">4</div>
+                <div class="step-title">Compétences à évaluer</div>
+                <span class="counter" id="competencesCounter">0 indicateur(s)</span>
+            </div>
+            <div id="competencesTree" class="competences-tree">
+                <p class="empty-message">Sélectionnez d'abord un référentiel</p>
+            </div>
+            <input type="hidden" name="competences_selectionnees" id="competencesJson" value="[]">
+        </div>
+
+        <div class="submit-section">
+            <button type="submit" class="btn-submit" id="btnSubmit" disabled>
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Générer les fiches
+            </button>
+            <p class="submit-hint" id="submitHint">Sélectionnez au moins un élève et une compétence</p>
+        </div>
+    </form>
+
+</div>
+
+<script>
+// ==================== ÉLÈVES ====================
+let elevesIDs = [];
+
+document.getElementById('selectClasse').addEventListener('change', function() {
+    const id = this.value;
+    if (!id) return;
+    fetch(`/api/eleves/?classe_id=${id}`)
+        .then(r => r.json())
+        .then(data => {
+            const grid = document.getElementById('elevesGrid');
+            if (!data.eleves || !data.eleves.length) {
+                grid.innerHTML = '<p class="empty-message">Aucun élève dans cette classe.</p>';
+                return;
+            }
+            grid.innerHTML = data.eleves.map(e => `
+                <div class="eleve-checkbox" onclick="toggleEleve(this, ${e.id})">
+                    <input type="checkbox" value="${e.id}" style="pointer-events:none;">
+                    <span>${e.nom} ${e.prenom}</span>
+                </div>
+            `).join('');
+            elevesIDs = [];
+            updateElevesCounter();
+            updateSubmit();
+        });
+});
+
+function toggleEleve(div, id) {
+    const cb = div.querySelector('input');
+    cb.checked = !cb.checked;
+    div.classList.toggle('checked', cb.checked);
+    if (cb.checked) elevesIDs.push(id);
+    else elevesIDs = elevesIDs.filter(x => x !== id);
+    document.getElementById('elevesJson').value = JSON.stringify(elevesIDs);
+    updateElevesCounter();
+    updateSubmit();
+}
+
+function selectAllEleves() {
+    document.querySelectorAll('.eleve-checkbox').forEach(d => {
+        if (!d.classList.contains('checked')) d.click();
+    });
+}
+
+function deselectAllEleves() {
+    document.querySelectorAll('.eleve-checkbox.checked').forEach(d => d.click());
+}
+
+function updateElevesCounter() {
+    document.getElementById('elevesCounter').innerText = `${elevesIDs.length} élève(s) sélectionné(s)`;
+}
+
+
+// ==================== COMPÉTENCES ====================
+let selectionFinale = [];
+
+document.getElementById('selectReferentiel').addEventListener('change', function() {
+    const id = this.value;
+    const tree = document.getElementById('competencesTree');
+    if (!id) return;
+
+    tree.innerHTML = '<p class="empty-message">Chargement...</p>';
+
+    fetch(`/api/competences/?referentiel_id=${id}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                tree.innerHTML = `<p class="empty-message" style="color:#dc3545">${data.error}</p>`;
+                return;
+            }
+            if (!data.length) {
+                tree.innerHTML = '<p class="empty-message">Aucune compétence trouvée.</p>';
+                return;
+            }
+            tree.innerHTML = generateBlocs(data);
+            selectionFinale = [];
+            updateSelection();
+        })
+        .catch(() => {
+            tree.innerHTML = '<p class="empty-message" style="color:#dc3545">Erreur de chargement.</p>';
+        });
+});
+
+function generateBlocs(blocs) {
+    return blocs.map(b => `
+        <div class="competence-group niveau-bloc">
+            <div class="competence-header" onclick="toggleNode(this)">
+                <span>${b.code} - ${b.nom}</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="competence-body">${generateComps(b.competences)}</div>
+        </div>
+    `).join('');
+}
+
+function generateComps(comps) {
+    if (!comps || !comps.length) return '<p style="padding:0.5rem;color:#94a3b8;font-size:0.85rem;">Aucune compétence</p>';
+    return comps.map(c => `
+        <div class="competence-group niveau-competence">
+            <div class="competence-header" onclick="toggleNode(this)">
+                <span>${c.code} - ${c.nom}</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="competence-body">${generateCP(c.competences_pro)}</div>
+        </div>
+    `).join('');
+}
+
+function generateCP(cps) {
+    if (!cps || !cps.length) return '<p style="padding:0.5rem;color:#94a3b8;font-size:0.85rem;">Aucune compétence professionnelle</p>';
+    return cps.map(cp => {
+        let html = '';
+
+        if (cp.connaissances && cp.connaissances.length) {
+            html += `<div class="savoirs-box">
+                <strong>Connaissances associées :</strong>
+                ${cp.connaissances.map(k => `
+                    <label>
+                        <input type="checkbox" class="sel-savoir" value="${k.id}" onchange="updateSelection()">
+                        ${k.nom}
+                    </label>
+                `).join('')}
+            </div>`;
+        }
+
+        html += generateSC(cp.sous_competences);
+
+        return `
+        <div class="competence-group niveau-cp">
+            <div class="competence-header" onclick="toggleNode(this)">
+                <span>${cp.code} - ${cp.nom}</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="competence-body">${html}</div>
+        </div>`;
+    }).join('');
+}
+
+function generateSC(scs) {
+    if (!scs || !scs.length) return '';
+    return scs.map(sc => `
+        <div class="competence-group niveau-sc">
+            <div class="competence-header" onclick="toggleNode(this)">
+                <span>${sc.nom}</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="competence-body">${generateCriteres(sc.criteres)}</div>
+        </div>
+    `).join('');
+}
+
+function generateCriteres(crits) {
+    if (!crits || !crits.length) return '<p style="padding:0.5rem;color:#94a3b8;font-size:0.85rem;">Aucun critère</p>';
+    return crits.map(c => `
+        <div class="indicateur-item">
+            <input type="checkbox" id="crit_${c.id}" class="sel-critere" value="${c.indicateur_id}" onchange="updateSelection()">
+            <label for="crit_${c.id}">${c.nom}</label>
+        </div>
+    `).join('');
+}
+
+function toggleNode(header) {
+    header.parentElement.classList.toggle('open');
+}
+
+function updateSelection() {
+    selectionFinale = [];
+
+    document.querySelectorAll('.sel-critere:checked').forEach(cb => {
+        selectionFinale.push({ type: 'critere', indicateur_id: parseInt(cb.value) });
+    });
+    document.querySelectorAll('.sel-savoir:checked').forEach(cb => {
+        selectionFinale.push({ type: 'connaissance', id: parseInt(cb.value) });
+    });
+
+    document.getElementById('competencesJson').value = JSON.stringify(selectionFinale);
+
+    const nbCrit = selectionFinale.filter(x => x.type === 'critere').length;
+    const nbSav  = selectionFinale.filter(x => x.type === 'connaissance').length;
+    document.getElementById('competencesCounter').innerText = `${nbCrit} critère(s), ${nbSav} connaissance(s)`;
+
+    updateSubmit();
+}
+
+function updateSubmit() {
+    const ok = elevesIDs.length > 0 && selectionFinale.length > 0;
+    document.getElementById('btnSubmit').disabled = !ok;
+    document.getElementById('submitHint').style.display = ok ? 'none' : 'block';
+}
+</script>
+
+{% endblock %}

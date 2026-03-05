@@ -1,0 +1,171 @@
+{% extends "core/base.html" %}
+{% block content %}
+<style>
+:root { --pcs: #20c997; --pcs-light: #eafaf6; }
+.page-container { max-width:760px; width:100%; margin:0 auto; padding:2rem; }
+.btn-retour {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px; border-radius:8px; font-size:0.85rem; font-weight:500;
+    background:var(--pcs-light); color:var(--pcs); border:1px solid var(--pcs);
+    text-decoration:none; margin-bottom:1.5rem;
+}
+.page-header { display:flex; align-items:center; gap:1rem; margin-bottom:1.8rem; }
+.page-header-icon {
+    width:48px; height:48px; border-radius:12px;
+    background:var(--pcs-light); color:var(--pcs);
+    display:flex; align-items:center; justify-content:center;
+}
+.page-header h1 { font-size:1.4rem; font-weight:700; color:#1f2d3d; margin:0; }
+.page-header p  { font-size:0.88rem; color:#64748b; margin:0; }
+
+.form-card {
+    background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+    padding:1.8rem; box-shadow:0 2px 10px rgba(0,0,0,.05);
+    border-top:4px solid var(--pcs); margin-bottom:2rem;
+}
+.form-card h2 { font-size:1rem; font-weight:700; color:var(--pcs); margin:0 0 1.2rem; }
+.form-group { margin-bottom:1rem; }
+.form-group label { display:block; font-size:0.85rem; font-weight:600; color:#374151; margin-bottom:4px; }
+.form-group select, .form-group input {
+    width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px;
+    font-size:0.9rem; color:#1f2d3d;
+}
+.form-group select:focus, .form-group input:focus { outline:none; border-color:var(--pcs); }
+.form-hint { font-size:0.78rem; color:#94a3b8; margin-top:3px; }
+
+.eleve-card {
+    background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px;
+    padding:1rem 1.4rem; margin-bottom:1.5rem; display:flex; gap:1.5rem; flex-wrap:wrap;
+}
+.eleve-card .ec-label { font-size:0.8rem; color:#64748b; margin-bottom:2px; }
+.eleve-card .ec-val   { font-weight:700; color:#1f2d3d; font-size:0.95rem; }
+.ec-classe-actuelle { color:var(--pcs); font-weight:700; }
+
+.alert-warn {
+    background:#fffbeb; border:1px solid #fde68a; border-radius:8px;
+    padding:0.9rem 1.2rem; font-size:0.85rem; color:#92400e; margin-bottom:1.2rem;
+    display:flex; gap:8px; align-items:flex-start;
+}
+.btn-submit {
+    background:white; color:var(--pcs); border:2px solid var(--pcs);
+    padding:12px 28px; border-radius:8px; font-size:0.95rem; font-weight:600;
+    cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+    width:100%; justify-content:center; margin-top:0.5rem; transition:all 0.2s;
+}
+.btn-submit:hover { background:var(--pcs); color:#fff; transform:translateY(-2px); box-shadow:0 4px 12px rgba(32,201,151,0.3); }
+
+/* Historique */
+.hist-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+.hist-table th {
+    background:#1f2d3d; color:#fff; padding:8px 12px; text-align:left; font-size:0.8rem;
+}
+.hist-table th:first-child { border-radius:6px 0 0 0; }
+.hist-table th:last-child  { border-radius:0 6px 0 0; }
+.hist-table td { padding:8px 12px; border-bottom:1px solid #e2e8f0; }
+.hist-table tr:hover td { background:#f8fafc; }
+</style>
+
+<div class="page-container">
+    <a href="javascript:history.back()" class="btn-retour">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+        </svg>
+        Retour
+    </a>
+
+    <div class="page-header">
+        <div class="page-header-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 11l-5-5-5 5"/><path d="M12 6v11"/></svg>
+        </div>
+        <div>
+            <h1>Passage en classe supérieure</h1>
+            <p>Déplacer un élève vers une nouvelle classe tout en conservant son historique</p>
+        </div>
+    </div>
+
+    <!-- Infos élève -->
+    <div class="eleve-card">
+        <div>
+            <div class="ec-label">Élève</div>
+            <div class="ec-val">{{ eleve.user.last_name|upper }} {{ eleve.user.first_name }}</div>
+        </div>
+        <div>
+            <div class="ec-label">Classe actuelle</div>
+            <div class="ec-val ec-classe-actuelle">{{ eleve.classe.nom|default:"—" }}</div>
+        </div>
+        <div>
+            <div class="ec-label">Entrée en établissement</div>
+            <div class="ec-val">{{ eleve.annee_entree|default:"—" }}</div>
+        </div>
+    </div>
+
+    <!-- Avertissement -->
+    <div class="alert-warn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Cette action déplace l'élève vers la nouvelle classe. L'ancienne classe est archivée dans l'historique. Les travaux, évaluations et PFMP de la classe actuelle ne seront plus visibles pour l'élève (ils restent en base).
+    </div>
+
+    <!-- Formulaire -->
+    <div class="form-card">
+        <h2>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px;"><path d="M17 11l-5-5-5 5"/><path d="M12 6v11"/></svg>
+            Effectuer le passage
+        </h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="nouvelle_classe">Nouvelle classe *</label>
+                <select id="nouvelle_classe" name="nouvelle_classe" required>
+                    <option value="">— Choisir une classe —</option>
+                    {% for classe in classes %}
+                    {% if classe != eleve.classe %}
+                    <option value="{{ classe.pk }}">{{ classe.nom }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="annee_actuelle">Année scolaire de la classe actuelle *</label>
+                <input type="text" id="annee_actuelle" name="annee_actuelle"
+                    placeholder="Ex : 2024-2025" required
+                    value="{{ eleve.classe.annee_scolaire|default:'' }}">
+                <div class="form-hint">Sera archivée dans l'historique de l'élève.</div>
+            </div>
+            <div class="form-group">
+                <label for="date_fin">Date de fin dans la classe actuelle</label>
+                <input type="date" id="date_fin" name="date_fin">
+                <div class="form-hint">Laissez vide pour utiliser la date du jour.</div>
+            </div>
+            <button type="submit" class="btn-submit">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 11l-5-5-5 5"/><path d="M12 6v11"/></svg>
+                Confirmer le passage en classe supérieure
+            </button>
+        </form>
+    </div>
+
+    <!-- Historique -->
+    {% if historique %}
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem;box-shadow:0 2px 10px rgba(0,0,0,.04);">
+        <h2 style="font-size:1rem;font-weight:700;color:#1f2d3d;margin:0 0 1rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px;"><polyline points="12 8 12 12 14 14"/><circle cx="12" cy="12" r="10"/></svg>
+            Historique des classes
+        </h2>
+        <table class="hist-table">
+            <thead>
+                <tr><th>Classe</th><th>Année scolaire</th><th>Début</th><th>Fin</th></tr>
+            </thead>
+            <tbody>
+                {% for h in historique %}
+                <tr>
+                    <td><strong>{{ h.classe.nom|default:"—" }}</strong></td>
+                    <td>{{ h.annee }}</td>
+                    <td>{{ h.date_debut|date:"d/m/Y" }}</td>
+                    <td>{% if h.date_fin %}{{ h.date_fin|date:"d/m/Y" }}{% else %}<span style="color:#94a3b8;">En cours</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

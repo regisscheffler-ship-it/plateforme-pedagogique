@@ -1,0 +1,461 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Évaluations par compétences{% endblock %}
+
+{% block content %}
+<style>
+    .page-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem 2.5rem;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: #333;
+    }
+
+    .btn-back-dashboard {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.5rem;
+        background: white;
+        color: #4a9fc1;
+        border: 2px solid #4a9fc1;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 2rem;
+        transition: all 0.3s ease;
+    }
+    .btn-back-dashboard:hover {
+        background: #4a9fc1;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .custom-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        margin-bottom: 2rem;
+        border: 1px solid #f3f4f6;
+    }
+    .border-left-green { border-left: 5px solid #4a9fc1; }
+    .border-left-blue  { border-left: 5px solid #4a9fc1; }
+
+    .header-content h1 {
+        font-size: 1.8rem;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+    .header-icon { color: #4a9fc1; font-size: 1.8rem; }
+    .header-content p { color: #6b7280; margin-left: 2.6rem; }
+
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .stat-box {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        border: 1px solid #e5e7eb;
+    }
+    .stat-value { font-size: 2rem; font-weight: 700; color: #4a9fc1; margin-bottom: 0.5rem; }
+    .stat-label { color: #6b7280; font-size: 0.9rem; font-weight: 500; }
+
+    .action-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .btn-create-standard {
+        background: white;
+        color: #4a9fc1;
+        border: 2px solid #4a9fc1;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+    .btn-create-standard:hover { background: #4a9fc1; color: white; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(74,159,193,0.25); }
+
+    .section-title {
+        font-size: 1.25rem;
+        color: #111827;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .eval-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.2s;
+        gap: 1rem;
+    }
+    .eval-row:last-child { border-bottom: none; }
+    .eval-row:hover { background-color: #f9fafb; }
+
+    .eval-details h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+        margin: 0 0 0.3rem 0;
+    }
+    .eval-meta-tags {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.85rem;
+        color: #6b7280;
+        flex-wrap: wrap;
+    }
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #f3f4f6;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        align-items: center;
+    }
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 0.5rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+        background: white;
+        border: 2px solid currentColor;
+    }
+    .bg-blue    { color: #4a9fc1; }
+    .bg-blue:hover   { background: #4a9fc1; color: white; box-shadow: 0 4px 12px rgba(74,159,193,0.25); }
+    .bg-indigo  { color: #4a9fc1; }
+    .bg-indigo:hover { background: #4a9fc1; color: white; box-shadow: 0 4px 12px rgba(74,159,193,0.25); }
+    .bg-green   { color: #059669; }
+    .bg-green:hover  { background: #059669; color: white; box-shadow: 0 4px 12px rgba(5,150,105,0.25); }
+    .bg-red     { color: #ef4444; }
+    .bg-red:hover    { background: #ef4444; color: white; box-shadow: 0 4px 12px rgba(239,68,68,0.25); }
+    .bg-red:hover    { background-color: #dc2626; }
+
+    .empty-message { text-align: center; padding: 3rem; color: #9ca3af; }
+
+    /* ✅ CORRECTION : modal de confirmation suppression */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        text-align: center;
+    }
+    .modal-box h3 { color: #1f2937; margin-bottom: 0.5rem; font-size: 1.2rem; }
+    .modal-box p  { color: #6b7280; margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .modal-actions { display: flex; gap: 1rem; justify-content: center; }
+    .btn-cancel {
+        padding: 0.6rem 1.2rem; border-radius: 8px;
+        background: #f3f4f6; color: #374151;
+        border: 1px solid #d1d5db; cursor: pointer;
+        font-weight: 600; font-size: 0.9rem;
+    }
+    .btn-cancel:hover { background: #e5e7eb; }
+    .btn-confirm-delete {
+        padding: 0.6rem 1.2rem; border-radius: 8px;
+        background: #ef4444; color: white;
+        border: none; cursor: pointer;
+        font-weight: 600; font-size: 0.9rem;
+    }
+    .btn-confirm-delete:hover { background: #dc2626; }
+
+    .custom-card { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+</style>
+
+<div class="page-container">
+
+    <!-- Bouton retour -->
+    <a href="{% url 'core:dashboard_professeur' %}" class="btn-back-dashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- Header -->
+    <div class="custom-card border-left-green">
+        <div class="action-header">
+            <div class="header-content">
+                <h1>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4a9fc1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
+                Évaluation par compétences
+            </h1>
+                <p>Gérez vos fiches contrats et évaluez les élèves sur le référentiel.</p>
+            </div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                <a href="{% url 'core:evaluation_parametres' %}" class="btn-create-standard">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Créer un TP
+                </a>
+                <a href="{% url 'core:qcm_gestion' %}" class="btn-create-standard" style="background:white;color:#4a9fc1;border-color:#4a9fc1;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    Créer un QCM
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-container">
+        <div class="stat-box">
+            <div class="stat-value">{{ nb_fiches_contrat }}</div>
+            <div class="stat-label">Fiche(s) contrat</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">{{ nb_evaluations }}</div>
+            <div class="stat-label">Évaluation(s)</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">{{ nb_validees }}</div>
+            <div class="stat-label">Validée(s)</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">{{ nb_en_cours }}</div>
+            <div class="stat-label">En cours</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value">{{ nb_qcm }}</div>
+            <div class="stat-label">QCM actif(s)</div>
+        </div>
+    </div>
+
+    <!-- Liste des évaluations -->
+    <div class="custom-card border-left-blue">
+        <div class="section-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4a9fc1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Liste des évaluations récentes
+        </div>
+
+        {% if fiches_recentes %}
+        <div class="eval-list-container">
+            {% for fiche in fiches_recentes %}
+            <div class="eval-row">
+                <div class="eval-details">
+                    <h3>{{ fiche.titre_tp }}</h3>
+                    <div class="eval-meta-tags">
+                        <span class="tag">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            {{ fiche.date_creation|date:"d/m/Y" }}
+                        </span>
+                        <span class="tag">{{ fiche.classe.nom }}</span>
+                        <span class="tag">{{ fiche.evaluations.count }} élève(s)</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <!-- Voir -->
+                    <a href="{% url 'core:evaluation_detail' fiche.id %}" class="btn-icon bg-indigo" title="Voir le détail">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </a>
+
+                    <!-- Contrat -->
+                    <a href="{% url 'core:generer_fiches_eleves' fiche.id %}" class="btn-icon bg-blue" target="_blank" title="Imprimer Contrat">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        Contrat
+                    </a>
+
+                    <!-- Évaluation -->
+                    <a href="{% url 'core:generer_fiches_evaluation' fiche.id %}" class="btn-icon bg-green" target="_blank" title="Imprimer Évaluation">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                        Éval.
+                    </a>
+
+                    <!-- ✅ CORRECTION : Supprimer via form POST (et non <a href>) -->
+                    <button type="button"
+                            class="btn-icon bg-red"
+                            title="Supprimer"
+                            onclick="ouvrirModalSuppression('{{ fiche.id }}', '{{ fiche.titre_tp|escapejs }}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-message">
+            <p>Aucune évaluation pour le moment.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ── Section QCM ── -->
+    <div class="custom-card border-left-blue" style="margin-top:2rem;">
+        <div class="section-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4a9fc1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            QCM — Questionnaires à choix multiples
+            <a href="{% url 'core:qcm_gestion' %}" style="margin-left:auto;font-size:0.82rem;font-weight:600;color:#4a9fc1;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.8rem;border:1.5px solid #4a9fc1;border-radius:7px;background:white;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Gérer les QCM
+            </a>
+        </div>
+
+        {% if qcms %}
+        <div class="eval-list-container">
+            {% for qcm in qcms %}
+            <div class="eval-row">
+                <div class="eval-details">
+                    <h3 style="display:flex;align-items:center;gap:0.5rem;">
+                        {{ qcm.titre }}
+                        <span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.15rem 0.6rem;border-radius:20px;font-size:0.73rem;font-weight:600;{% if qcm.actif %}background:#d1fae5;color:#065f46;{% else %}background:#f3f4f6;color:#6b7280;{% endif %}">{% if qcm.actif %}Actif{% else %}Brouillon{% endif %}</span>
+                    </h3>
+                    <div class="eval-meta-tags">
+                        {% if qcm.theme %}<span class="tag">{{ qcm.theme.nom }}</span>{% endif %}
+                        {% if qcm.classe %}<span class="tag">{{ qcm.classe.nom }}</span>{% endif %}
+                        <span class="tag">{{ qcm.nb_questions }} question{{ qcm.nb_questions|pluralize }}</span>
+                        <span class="tag">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            {{ qcm.date_creation|date:"d/m/Y" }}
+                        </span>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <a href="{% url 'core:qcm_edit' pk=qcm.id %}" class="btn-icon bg-indigo" title="Éditer">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Éditer
+                    </a>
+                    <a href="{% url 'core:qcm_resultats_prof' pk=qcm.id %}" class="btn-icon bg-blue" title="Résultats">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Résultats
+                    </a>
+                    <form method="post" action="{% url 'core:qcm_delete' pk=qcm.id %}" onsubmit="return confirm('Supprimer le QCM &laquo; {{ qcm.titre }} &raquo; ?')" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-icon bg-red" title="Supprimer">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-message">
+            <p>Aucun QCM créé. <a href="{% url 'core:qcm_gestion' %}" style="color:#4a9fc1;font-weight:600;">Créer un QCM →</a></p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- ✅ MODAL DE CONFIRMATION SUPPRESSION -->
+<div class="modal-overlay" id="modalSuppression">
+    <div class="modal-box">
+        <h3>🗑️ Supprimer l'évaluation</h3>
+        <p id="modalTexte">Êtes-vous sûr de vouloir supprimer cette évaluation ?<br>Cette action est irréversible.</p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fermerModal()">Annuler</button>
+            <!-- Le form est soumis dynamiquement avec le bon ID -->
+            <form id="formSuppression" method="post" action="" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-confirm-delete">Supprimer définitivement</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function ouvrirModalSuppression(ficheId, titreTp) {
+    const modal   = document.getElementById('modalSuppression');
+    const form    = document.getElementById('formSuppression');
+    const texte   = document.getElementById('modalTexte');
+
+    // Construit l'URL de suppression avec le bon ID
+    form.action = '/evaluations/' + ficheId + '/supprimer/';
+    texte.innerHTML = 'Supprimer <strong>"' + titreTp + '"</strong> ?<br><span style="color:#ef4444;font-size:0.85rem;">Cette action est irréversible et supprimera toutes les fiches associées.</span>';
+    modal.classList.add('active');
+}
+
+function fermerModal() {
+    document.getElementById('modalSuppression').classList.remove('active');
+}
+
+// Fermer si clic en dehors du modal
+document.getElementById('modalSuppression').addEventListener('click', function(e) {
+    if (e.target === this) fermerModal();
+});
+</script>
+
+{% endblock %}

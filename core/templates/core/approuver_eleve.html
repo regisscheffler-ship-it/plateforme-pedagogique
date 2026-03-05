@@ -1,0 +1,179 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Approuver l'inscription{% endblock %}
+
+{% block content %}
+<style>
+    .page-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #2ab090;
+        max-width: 700px;
+    }
+
+    .form-card h2 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        border-left: 5px solid #2ab090;
+        padding-left: 1rem;
+    }
+
+    .info-box {
+        background: #f0fdf9;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-left: 3px solid #2ab090;
+    }
+
+    .info-box h3 {
+        color: #2c3e50;
+        font-size: 1.2rem;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .info-box p {
+        margin: 0.3rem 0;
+        color: #6c757d;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-group select,
+    .form-group input {
+        width: 100%;
+        padding: 0.8rem;
+        border: 1.5px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-family: inherit;
+    }
+
+    .form-group select:focus,
+    .form-group input:focus {
+        outline: none;
+        border-color: #2ab090;
+        box-shadow: 0 0 0 3px rgba(42,176,144,0.1);
+    }
+
+    .btn-submit {
+        padding: 0.8rem 2rem;
+        background: #2ab090;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-submit:hover {
+        background: #229175;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(42,176,144,0.3);
+    }
+</style>
+
+<div class="page-container">
+
+    <a href="#" class="btn-back-universal"
+       style="display:inline-flex;align-items:center;gap:0.5rem;
+              padding:0.6rem 1.2rem;background:white;color:#2ab090;
+              border:2px solid #2ab090;border-radius:8px;
+              text-decoration:none;font-weight:600;font-size:0.9rem;
+              transition:all 0.3s ease;margin-bottom:1.5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="form-card">
+        <h2>Approuver l'inscription de {{ profil.user.get_full_name }}</h2>
+
+        <div class="info-box">
+            <h3>Informations de l'élève</h3>
+            <p><strong>Nom :</strong> {{ profil.user.last_name }}</p>
+            <p><strong>Prénom :</strong> {{ profil.user.first_name }}</p>
+            <p><strong>Date de naissance :</strong> {{ profil.date_naissance|date:"d/m/Y"|default:"Non renseigné" }}</p>
+            <p><strong>Classe demandée :</strong> {{ profil.classe.nom }}</p>
+            <p><strong>Identifiant :</strong> {{ profil.user.username }}</p>
+            <p><strong>Date d'inscription :</strong> {{ profil.user.date_joined|date:"d/m/Y à H:i" }}</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="etablissement_origine">Établissement d'origine *</label>
+                <select name="etablissement_origine" id="etablissement_origine" required>
+                    <option value="">-- Sélectionner --</option>
+                    {% for etab in etablissements %}
+                    <option value="{{ etab }}">{{ etab }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="type_classe_origine">Type de classe d'origine *</label>
+                <select name="type_classe_origine" id="type_classe_origine" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="3eme_generale">3ème Générale</option>
+                    <option value="3eme_prepa_metier">3ème Prépa Métier</option>
+                    <option value="segpa">SEGPA</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="diplome_origine">Diplôme obtenu *</label>
+                <select name="diplome_origine" id="diplome_origine" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="dnb">DNB</option>
+                    <option value="dnb_pro">DNB Pro</option>
+                    <option value="cfg">CFG</option>
+                    <option value="cap_loucheur">CAP à Loucheur</option>
+                    <option value="cap_autre">CAP autre établissement</option>
+                    <option value="aucun">Aucun</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="classe">Valider/Modifier la classe *</label>
+                <select name="classe" id="classe" required>
+                    {% for classe in classes %}
+                    <option value="{{ classe.id }}" {% if classe.id == profil.classe.id %}selected{% endif %}>
+                        {{ classe.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <button type="submit" class="btn-submit">Approuver et activer le compte</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

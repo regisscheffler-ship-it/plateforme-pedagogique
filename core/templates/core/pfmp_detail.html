@@ -1,0 +1,410 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ pfmp.titre }}{% endblock %}
+
+{% block content %}
+<style>
+    .theme-container { max-width: 1600px; margin: 0 auto; padding: 2rem 2.5rem; }
+
+    /* ══ BOUTON RETOUR ══ */
+    .btn-back-custom {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        border: 2px solid #6b7fd4; border-radius: 8px;
+        color: #6b7fd4; background: white;
+        font-weight: 600; text-decoration: none;
+        margin-bottom: 1.5rem; transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+    .btn-back-custom:hover { background: #6b7fd4; color: white; transform: translateY(-2px); }
+    .btn-back-custom svg  { width: 18px; height: 18px; stroke-width: 2.5; }
+
+    /* ══ HEADER CARD ══ */
+    .theme-header {
+        background: white; border-radius: 16px; padding: 2rem;
+        margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        border-left: 6px solid #6b7fd4;
+        display: flex; justify-content: space-between;
+        align-items: flex-start; gap: 2rem;
+    }
+    .theme-info  { flex: 1; }
+    .theme-title { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .theme-icon  {
+        width: 52px; height: 52px; background: #eef2ff; color: #6b7fd4;
+        border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .theme-icon svg    { width: 26px; height: 26px; stroke-width: 2; }
+    .theme-title h1    { margin: 0; font-size: 1.8rem; color: #2c3e50; font-weight: 700; }
+    .theme-desc        { color: #6c757d; font-size: 0.95rem; margin-left: 4.2rem; line-height: 1.6; }
+    .theme-meta        { display: flex; gap: 0.8rem; margin-top: 0.8rem; margin-left: 4.2rem; flex-wrap: wrap; }
+
+    .badge {
+        padding: 0.35rem 0.75rem; border-radius: 8px;
+        font-size: 0.82rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+    .badge svg      { width: 13px; height: 13px; }
+    .badge-info     { background: #eef2ff; color: #4338ca; }
+    .badge-dates    { background: #d1fae5; color: #065f46; }
+    .badge-proche   { background: #fef3c7; color: #92400e; }
+    .badge-urgente  { background: #fee2e2; color: #dc2626; }
+    .badge-nodates  { background: #fef3c7; color: #92400e; }
+    .badge-vert     { background: #d1fae5; color: #065f46; }
+    .badge-bleu     { background: #dbeafe; color: #1e40af; }
+    .badge-gris     { background: #f3f4f6; color: #6b7280; }
+
+    /* ══ RESSOURCE PRINCIPALE ══ */
+    .main-resource {
+        margin-top: 1.2rem; margin-left: 4.2rem;
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        border-radius: 12px;
+        padding: 1.2rem 1.5rem;
+        display: flex; align-items: center;
+        justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    }
+    .resource-info h3 { margin: 0 0 0.3rem; color: #3730a3; font-size: 1rem; font-weight: 700; }
+    .resource-info p  { margin: 0; color: #6b7280; font-size: 0.85rem; }
+
+    .btn-resource {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; border-radius: 8px;
+        font-size: 0.88rem; font-weight: 600; text-decoration: none;
+        transition: all 0.2s; white-space: nowrap;
+        background: white; color: #6b7fd4; border: 2px solid #6b7fd4;
+    }
+    .btn-resource:hover { background: #6b7fd4; color: white; transform: translateY(-1px); }
+    .btn-resource svg   { width: 15px; height: 15px; }
+
+    .video-responsive {
+        margin-top: 1rem; margin-left: 4.2rem;
+        position: relative; padding-bottom: 56.25%;
+        height: 0; overflow: hidden;
+        border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .video-responsive iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+    /* ══ ACTIONS HEADER ══ */
+    .theme-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-start; }
+    .btn-action {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.65rem 1.1rem; border-radius: 10px;
+        font-size: 0.88rem; font-weight: 600; text-decoration: none;
+        transition: all 0.2s; border: none; cursor: pointer;
+    }
+    .btn-action svg     { width: 16px; height: 16px; }
+    .btn-primary        { background: white; color: #6b7fd4; border: 2px solid #6b7fd4; }
+    .btn-primary:hover  { background: #6b7fd4; color: white; box-shadow: 0 4px 12px rgba(107,127,212,0.25); transform: translateY(-2px); }
+    .btn-secondary      { background: white; color: #e8922a; border: 2px solid #e8922a; }
+    .btn-secondary:hover{ background: #e8922a; color: white; box-shadow: 0 4px 12px rgba(232,146,42,0.25); transform: translateY(-2px); }
+
+    /* ══ SECTION TITRE ══ */
+    .section-title {
+        font-size: 1.3rem; color: #34495e; margin-bottom: 1.5rem;
+        font-weight: 700; display: flex; align-items: center; gap: 0.8rem;
+    }
+    .section-title svg { width: 22px; height: 22px; stroke: #6b7fd4; }
+
+    /* ══ DOSSIER CARD ══ */
+    .dossier-card {
+        background: white; border-radius: 12px; margin-bottom: 1.2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef; overflow: hidden;
+    }
+    .dossier-header {
+        background: #f8f9fa; padding: 1rem 1.4rem;
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .dossier-title         { display: flex; align-items: center; gap: 0.75rem; }
+    .dossier-title h3      { margin: 0; font-size: 1rem; color: #2c3e50; font-weight: 700; }
+    .dossier-icon          { color: #6c757d; }
+    .dossier-actions       { display: flex; gap: 0.4rem; }
+    .btn-icon              { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: #6c757d; transition: all 0.2s; text-decoration: none; border: none; background: transparent; cursor: pointer; }
+    .btn-icon:hover        { background: #e9ecef; color: #6b7fd4; }
+    .btn-icon.delete:hover { background: #fee2e2; color: #dc3545; }
+    .btn-icon svg          { width: 16px; height: 16px; }
+
+    /* ══ FICHIERS ══ */
+    .file-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.9rem 1.4rem; border-bottom: 1px solid #f0f2f5; transition: background 0.15s;
+    }
+    .file-item:last-child  { border-bottom: none; }
+    .file-item:hover       { background: #fafafa; }
+    .file-info             { display: flex; align-items: center; gap: 1rem; flex: 1; }
+    .file-icon-box         { width: 38px; height: 38px; background: #e9ecef; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #495057; flex-shrink: 0; }
+    .file-icon-box svg     { width: 18px; height: 18px; }
+    .file-details h4       { margin: 0; font-size: 0.95rem; font-weight: 600; color: #34495e; }
+    .file-details span     { font-size: 0.82rem; color: #adb5bd; }
+    .file-actions          { display: flex; gap: 0.6rem; align-items: center; }
+
+    .btn-download {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 0.45rem 0.9rem; font-size: 0.82rem; font-weight: 600;
+        color: #6b7fd4; background: white;
+        border: 2px solid #6b7fd4; border-radius: 8px;
+        text-decoration: none; transition: all 0.2s ease; white-space: nowrap;
+    }
+    .btn-download:hover    { background: #6b7fd4; color: white; transform: translateY(-1px); }
+    .btn-download svg      { width: 13px; height: 13px; }
+
+    /* ══ ÉTATS VIDES ══ */
+    .empty-state { text-align: center; padding: 3.5rem 2rem; color: #adb5bd; background: white; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    .empty-state svg { width: 56px; height: 56px; margin-bottom: 1rem; stroke: #dee2e6; }
+    .empty-state h3  { color: #6c757d; margin-bottom: 0.5rem; font-size: 1.1rem; }
+    .empty-state p   { margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+    /* ══ IFRAME ══ */
+    .iframe-wrapper         { display: none; margin: 1rem 1.4rem; background: #000; border-radius: 8px; overflow: hidden; }
+    .iframe-wrapper.active  { display: block; }
+    .iframe-wrapper iframe  { width: 100%; height: 450px; border: none; }
+
+    /* ══ MODAL ══ */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: white; border-radius: 16px; padding: 2.5rem; max-width: 460px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+    .modal-icon { width: 72px; height: 72px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
+    .modal-icon svg { width: 32px; height: 32px; stroke: #dc2626; }
+    .modal-box h3 { margin: 0 0 0.5rem; color: #2c3e50; font-size: 1.3rem; }
+    .modal-box p  { color: #6c757d; margin: 0 0 2rem; }
+    .modal-actions { display: flex; gap: 1rem; justify-content: center; }
+    .btn-modal-cancel  { padding: 0.7rem 1.8rem; background: #f8f9fa; color: #495057; border: 2px solid #dee2e6; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-modal-cancel:hover { background: #e9ecef; }
+    .btn-modal-confirm { padding: 0.7rem 1.8rem; background: #dc2626; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    .btn-modal-confirm:hover { background: #b91c1c; }
+
+    @media (max-width: 768px) {
+        .theme-header { flex-direction: column; }
+        .theme-actions { width: 100%; }
+        .theme-desc, .theme-meta, .main-resource, .video-responsive { margin-left: 0; }
+        .file-item { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+        .file-actions { width: 100%; justify-content: flex-end; }
+    }
+</style>
+
+<!-- MODAL SUPPRESSION -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-box">
+        <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+        </div>
+        <h3>Confirmer la suppression</h3>
+        <p id="modalTexte">Cette action est irréversible.</p>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeModal()">Annuler</button>
+            <form id="deleteForm" method="POST" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-modal-confirm">Oui, supprimer</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="theme-container">
+
+    <a href="#" onclick="history.back(); return false;" class="btn-back-universal btn-back-custom">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <!-- HEADER PFMP -->
+    <div class="theme-header">
+        <div class="theme-info">
+            <div class="theme-title">
+                <div class="theme-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <h1>{{ pfmp.titre }}</h1>
+            </div>
+
+            {% if pfmp.description %}
+                <p class="theme-desc">{{ pfmp.description }}</p>
+            {% endif %}
+
+            <div class="theme-meta">
+                <span class="badge badge-info">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    {{ pfmp.classe.nom }}
+                </span>
+                <span class="badge badge-info">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    {{ nb_eleves }} élève{{ nb_eleves|pluralize }}
+                </span>
+                {% if pfmp.date_debut and pfmp.date_fin %}
+                <span class="badge badge-dates" id="badge-dates-pfmp" data-debut="{{ pfmp.date_debut|date:'Y-m-d' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    {{ pfmp.date_debut|date:"d/m/Y" }} → {{ pfmp.date_fin|date:"d/m/Y" }}
+                </span>
+                {% else %}
+                <span class="badge badge-nodates">Dates non définies</span>
+                {% endif %}
+                {% if statut_texte %}
+                <span class="badge {% if statut_couleur == 'vert' %}badge-vert{% elif statut_couleur == 'bleu' %}badge-bleu{% else %}badge-gris{% endif %}">
+                    {{ statut_texte }}
+                </span>
+                {% endif %}
+            </div>
+
+            {% if pfmp.fichier or pfmp.lien_externe or pfmp.code_iframe %}
+            <div class="main-resource">
+                <div class="resource-info">
+                    <h3>Document principal de la PFMP</h3>
+                    <p>{% if pfmp.type_contenu == 'fichier' %}Fichier joint à télécharger{% elif pfmp.type_contenu == 'lien' %}Lien web externe{% else %}Vidéo / Contenu intégré{% endif %}</p>
+                </div>
+                {% if pfmp.type_contenu == 'fichier' and pfmp.fichier %}
+                    <a href="{{ pfmp.fichier.url }}" target="_blank" class="btn-resource">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Télécharger
+                    </a>
+                {% elif pfmp.type_contenu == 'lien' and pfmp.lien_externe %}
+                    <a href="{{ pfmp.lien_externe }}" target="_blank" class="btn-resource">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        Accéder au lien
+                    </a>
+                {% endif %}
+            </div>
+            {% if pfmp.type_contenu == 'iframe' and pfmp.code_iframe %}
+            <div class="video-responsive">{{ pfmp.code_iframe|safe }}</div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        {% if is_prof %}
+        <div class="theme-actions">
+            <a href="{% url 'core:pfmp_dossier_create' pfmp.id %}" class="btn-action btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nouveau Dossier
+            </a>
+            <a href="{% url 'core:pfmp_update' pfmp.id %}" class="btn-action btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                Modifier
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- SECTION DOSSIERS -->
+    <h2 class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        Dossiers et fichiers
+    </h2>
+
+    {% if dossiers_avec_fichiers %}
+        {% for item in dossiers_avec_fichiers %}
+        <div class="dossier-card">
+            <div class="dossier-header">
+                <div class="dossier-title">
+                    <span class="dossier-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    </span>
+                    <h3>{{ item.dossier.nom }}</h3>
+                </div>
+                {% if is_prof %}
+                <div class="dossier-actions">
+                    <a href="{% url 'core:pfmp_fichier_create' item.dossier.id %}" class="btn-icon" title="Ajouter un fichier">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </a>
+                    <a href="{% url 'core:pfmp_dossier_update' item.dossier.id %}" class="btn-icon" title="Modifier">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </a>
+                    <button class="btn-icon delete" onclick="openModal('{% url 'core:pfmp_dossier_delete' item.dossier.id %}', '{{ item.dossier.nom|escapejs }}', 'dossier')" title="Supprimer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            <div class="files-list">
+                {% if item.fichiers %}
+                    {% for fichier in item.fichiers %}
+                    <div class="file-item">
+                        <div class="file-info">
+                            <div class="file-icon-box">
+                                {% if fichier.type_contenu == 'lien' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                {% elif fichier.type_contenu == 'iframe' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+                                {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>{% endif %}
+                            </div>
+                            <div class="file-details">
+                                <h4>{{ fichier.nom }}</h4>
+                                <span>{{ fichier.description|default:"Ressource PFMP" }}</span>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            {% if fichier.type_contenu == 'iframe' %}
+                                <button class="btn-download" onclick="toggleIframe('frame-{{ fichier.id }}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Voir</button>
+                            {% elif fichier.type_contenu == 'lien' %}
+                                <a href="{{ fichier.lien_externe }}" target="_blank" class="btn-download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>Ouvrir</a>
+                            {% elif fichier.fichier %}
+                                <a href="{{ fichier.fichier.url }}" target="_blank" class="btn-download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Consulter</a>
+                            {% endif %}
+                            {% if is_prof %}
+                                <a href="{% url 'core:pfmp_fichier_update' fichier.id %}" class="btn-icon" title="Modifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></a>
+                                <button class="btn-icon delete" onclick="openModal('{% url 'core:pfmp_fichier_delete' fichier.id %}', '{{ fichier.nom|escapejs }}', 'fichier')" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if fichier.type_contenu == 'iframe' %}
+                    <div id="frame-{{ fichier.id }}" class="iframe-wrapper">{{ fichier.code_iframe|safe }}</div>
+                    {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div style="padding:1.5rem 1.4rem; font-size:0.9rem; color:#adb5bd;">Dossier vide</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <h3>Aucun dossier créé</h3>
+            <p>{% if is_prof %}Créez des dossiers pour organiser vos documents de PFMP.{% else %}Aucun document disponible pour le moment.{% endif %}</p>
+            {% if is_prof %}
+            <a href="{% url 'core:pfmp_dossier_create' pfmp.id %}" class="btn-action btn-primary" style="display:inline-flex;margin:0 auto;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Créer un dossier</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+</div>
+
+<script>
+function openModal(url, nom, type) {
+    document.getElementById('deleteForm').action = url;
+    const label = type === 'dossier' ? `Supprimer le dossier "${nom}" et tous ses fichiers ?` : `Supprimer le fichier "${nom}" ?`;
+    document.getElementById('modalTexte').textContent = label;
+    document.getElementById('deleteModal').classList.add('active');
+}
+function closeModal() { document.getElementById('deleteModal').classList.remove('active'); }
+document.getElementById('deleteModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+function toggleIframe(id) { const el = document.getElementById(id); if (el) el.classList.toggle('active'); }
+
+// Coloration dynamique badge dates
+(function() {
+    var badge = document.getElementById('badge-dates-pfmp');
+    if (!badge) return;
+    var debutStr = badge.dataset.debut;
+    if (!debutStr) return;
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var debut = new Date(debutStr);
+    debut.setHours(0, 0, 0, 0);
+    var diffDays = (debut - today) / (1000 * 60 * 60 * 24);
+    if (diffDays <= 0) return; // en cours ou terminée
+    var semaines = diffDays / 7;
+    if (semaines < 3) {
+        badge.classList.remove('badge-dates');
+        badge.classList.add('badge-urgente');
+    } else if (semaines <= 8) {
+        badge.classList.remove('badge-dates');
+        badge.classList.add('badge-proche');
+    }
+    // > 8 semaines : reste vert (badge-dates)
+})();
+</script>
+{% endblock %}

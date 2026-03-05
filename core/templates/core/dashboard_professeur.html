@@ -1,0 +1,425 @@
+{% extends 'core/base.html' %}
+{% block title %}Tableau de bord Professeur{% endblock %}
+
+{% block content %}
+<style>
+    /* ═══════════════════════════════════════
+       DASHBOARD PROFESSEUR
+       ═══════════════════════════════════════ */
+
+    .dashboard-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+        min-height: calc(100vh - 200px);
+    }
+
+    /* Header */
+    .dashboard-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 5px solid #2ab090;
+    }
+
+    .dashboard-header h1 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+        font-size: 2.2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .dashboard-header h1 svg {
+        width: 36px;
+        height: 36px;
+        stroke: #2ab090;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .dashboard-header p {
+        margin: 0;
+        color: #7a8694;
+        font-size: 1.1rem;
+    }
+
+    /* Grid 4 colonnes */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 992px)  { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px)  { .dashboard-grid { grid-template-columns: 1fr; } }
+
+    /* Carte tuile */
+    .dashboard-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border-left: 5px solid #2ab090;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        min-height: 200px;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        color: inherit;
+    }
+
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0; right: 0;
+        width: 120px; height: 120px;
+        background: currentColor;
+        opacity: 0.05;
+        border-radius: 50%;
+        transform: translate(30%, -30%);
+    }
+
+    /* Badge alerte (vignettes avec urgence) */
+    .card-badge {
+        position: absolute;
+        top: 1rem; right: 1rem;
+        background: #d94f4f;
+        color: white;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 20px;
+        z-index: 2;
+    }
+    .card-badge.badge-orange { background: #e8922a; }
+    .card-badge.badge-green  { background: #2ab090; }
+
+    /* Icon wrapper */
+    .card-icon-wrapper {
+        width: 70px; height: 70px;
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 1.5rem;
+        position: relative; z-index: 1;
+    }
+
+    .card-icon-wrapper svg {
+        width: 36px; height: 36px;
+        stroke-width: 2; fill: none;
+    }
+
+    .card-content {
+        flex: 1; display: flex; flex-direction: column;
+        position: relative; z-index: 1;
+    }
+
+    .card-content h3 {
+        margin: 0 0 0.8rem 0;
+        color: #2c3e50; font-size: 1.2rem; font-weight: 700; line-height: 1.3;
+    }
+
+    .card-count {
+        font-size: 2.8rem; font-weight: 700;
+        margin: auto 0 0.5rem 0; line-height: 1;
+    }
+
+    .card-description {
+        margin: 0; color: #7a8694; font-size: 0.95rem; line-height: 1.4;
+    }
+
+    /* Couleurs */
+    .card-classes      { border-left-color: #4a7fc1;  color: #4a7fc1;  }
+    .card-eleves       { border-left-color: #2ab090;  color: #2ab090;  }
+    .card-themes       { border-left-color: #7c5cbf;  color: #7c5cbf;  }
+    .card-travaux-faire{ border-left-color: #2ab090;  color: #2ab090;  }
+    .card-travaux-corr { border-left-color: #d94f4f;  color: #d94f4f;  }
+    .card-pfmp         { border-left-color: #6b7fd4;  color: #6b7fd4;  }
+    .card-ateliers     { border-left-color: #e8922a;  color: #e8922a;  }
+    .card-evaluations  { border-left-color: #4a9fc1;  color: #4a9fc1;  }
+    .card-archives     { border-left-color: #7a8694;  color: #7a8694;  }
+    .card-stats        { border-left-color: #4a7fc1;  color: #4a7fc1;  }
+    .card-assistant    { border-left-color: #8b5cf6;  color: #8b5cf6;  }
+    .card-sorties      { border-left-color: #d94f4f;  color: #d94f4f;  }
+
+    .card-classes .card-icon-wrapper       { background: #eff6ff; }
+    .card-eleves .card-icon-wrapper        { background: #d1fae5; }
+    .card-themes .card-icon-wrapper        { background: #f5f3ff; }
+    .card-travaux-faire .card-icon-wrapper { background: #d1fae5; }
+    .card-travaux-corr .card-icon-wrapper  { background: #fee2e2; }
+    .card-pfmp .card-icon-wrapper          { background: #eef2ff; }
+    .card-ateliers .card-icon-wrapper      { background: #fef3c7; }
+    .card-evaluations .card-icon-wrapper   { background: #e0f2fe; }
+    .card-archives .card-icon-wrapper      { background: #f3f4f6; }
+    .card-stats .card-icon-wrapper         { background: #eff6ff; }
+    .card-assistant .card-icon-wrapper     { background: #f5f3ff; }
+    .card-sorties .card-icon-wrapper       { background: #fee2e2; }
+
+    /* Vignette désactivée (en cours de dev) */
+    .card-disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+    .card-disabled:hover {
+        transform: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .dev-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #9ca3af;
+        margin-top: 0.4rem;
+        font-style: italic;
+    }
+</style>
+
+<div class="dashboard-container">
+
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h1>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Tableau de bord Professeur
+        </h1>
+        <p>Bienvenue {{ request.user.get_full_name|default:request.user.username }}</p>
+    </div>
+
+    <!-- Grid -->
+    <div class="dashboard-grid">
+
+        <!-- ── LIGNE 1 : Gestion des personnes & classes ── -->
+
+        <!-- Gestion Classes -->
+        <a href="{% url 'core:gestion_classes' %}" class="dashboard-card card-classes">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Gestion Classes</h3>
+                <p class="card-count">{{ nb_classes }}</p>
+                <p class="card-description">Classe{{ nb_classes|pluralize }} active{{ nb_classes|pluralize }}</p>
+            </div>
+        </a>
+
+        <!-- Gestion Élèves -->
+        <a href="{% url 'core:gestion_eleves' %}" class="dashboard-card card-eleves">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Gestion Élèves</h3>
+                <p class="card-count">{{ nb_eleves }}</p>
+                <p class="card-description">Élève{{ nb_eleves|pluralize }} inscrit{{ nb_eleves|pluralize }}</p>
+            </div>
+        </a>
+
+        <!-- Gestion Thèmes -->
+        <a href="{% url 'core:gestion_themes' %}" class="dashboard-card card-themes">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Gestion Thèmes</h3>
+                <p class="card-count">{{ nb_themes }}</p>
+                <p class="card-description">Thème{{ nb_themes|pluralize }} de cours</p>
+            </div>
+        </a>
+
+        <!-- Gestion Sorties -->
+        <a href="{% url 'core:gestion_sorties' %}" class="dashboard-card card-sorties">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Gestion Sorties</h3>
+                <p class="card-count">{{ nb_sorties }}</p>
+                <p class="card-description">Élève{{ nb_sorties|pluralize }} sorti{{ nb_sorties|pluralize }}</p>
+            </div>
+        </a>
+
+        <!-- ── LIGNE 2 : Travaux & activités pédagogiques ── -->
+
+        <!-- Travail à Faire -->
+        <a href="{% url 'core:travaux_par_classe' %}" class="dashboard-card card-travaux-faire">
+            {% if nb_travaux_publies %}
+            <div class="card-badge badge-orange">{{ nb_travaux_publies }} publié{{ nb_travaux_publies|pluralize }}</div>
+            {% endif %}
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Travail à Faire</h3>
+                <p class="card-count">{{ nb_travaux_publies|default:"0" }}</p>
+                <p class="card-description">Travail{{ nb_travaux_publies|default:0|pluralize }} publié{{ nb_travaux_publies|default:0|pluralize }}</p>
+            </div>
+        </a>
+
+        <!-- Gestion PFMP -->
+        <a href="{% url 'core:gestion_pfmp' %}" class="dashboard-card card-pfmp">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Gestion PFMP</h3>
+                <p class="card-count">{{ nb_pfmp }}</p>
+                <p class="card-description">Période{{ nb_pfmp|pluralize }} de stage</p>
+            </div>
+        </a>
+
+        <!-- Gestion Ateliers -->
+        <a href="{% url 'core:gestion_ateliers' %}" class="dashboard-card card-ateliers">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Gestion Ateliers</h3>
+                <p class="card-count">{{ nb_ateliers }}</p>
+                <p class="card-description">Atelier{{ nb_ateliers|pluralize }} pratique{{ nb_ateliers|pluralize }}</p>
+            </div>
+        </a>
+
+        <!-- Travaux à Corriger -->
+        <a href="{% url 'core:travaux_corriger' %}" class="dashboard-card card-travaux-corr">
+            {% if nb_travaux_a_corriger %}
+            <div class="card-badge">{{ nb_travaux_a_corriger }} en attente</div>
+            {% endif %}
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Travaux à Corriger</h3>
+                <p class="card-count">{{ nb_travaux_a_corriger }}</p>
+                <p class="card-description">En attente de correction</p>
+            </div>
+        </a>
+
+        <!-- ── LIGNE 3 : Évaluations & suivi ── -->
+
+        <!-- Évaluations -->
+        <a href="{% url 'core:evaluations_home' %}" class="dashboard-card card-evaluations">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Évaluations</h3>
+                <p class="card-count">{{ nb_evaluations }}</p>
+                <p class="card-description">Fiche{{ nb_evaluations|pluralize }} d'évaluation</p>
+            </div>
+        </a>
+
+        <!-- Archives -->
+        <a href="{% url 'core:archives' %}" class="dashboard-card card-archives">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                    <rect x="1" y="3" width="22" height="5"></rect>
+                    <line x1="10" y1="12" x2="14" y2="12"></line>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Archives</h3>
+                <p class="card-count">{{ nb_archives }}</p>
+                <p class="card-description">Élève{{ nb_archives|pluralize }} archivé{{ nb_archives|pluralize }}</p>
+            </div>
+        </a>
+
+        <!-- Statistiques -->
+        <a href="{% url 'core:statistiques' %}" class="dashboard-card card-stats">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Statistiques</h3>
+                <div class="card-count">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:50px;height:50px;stroke-width:2;fill:none;">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                </div>
+                <p class="card-description">Analyses et graphiques</p>
+            </div>
+        </a>
+
+        <!-- Assistant IA -->
+        <a href="{% url 'core:assistant_ia' %}" class="dashboard-card card-assistant">
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1a7 7 0 0 1-7 7H9a7 7 0 0 1-7-7H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/>
+                    <path d="M9 14h.01M15 14h.01"/>
+                    <path d="M9.5 17.5c.83.83 2.17.83 3 0"/>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Assistant</h3>
+                <div class="card-count" style="font-size:1.8rem;">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:46px;height:46px;stroke-width:1.8;fill:none;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <p class="card-description">Recherche rapide IA</p>
+            </div>
+        </a>
+
+    </div>
+
+{% endblock %}

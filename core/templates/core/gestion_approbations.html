@@ -1,0 +1,165 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Demandes d'inscription{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .page-header h1 {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        color: #2c3e50;
+        font-size: 2rem;
+        margin: 0;
+    }
+
+    .badge-pending {
+        background: #ffc107;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .eleves-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .eleve-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border-left: 4px solid #ffc107;
+    }
+
+    .eleve-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+    }
+
+    .eleve-info h3 {
+        color: #2c3e50;
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+    }
+
+    .eleve-meta {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-action {
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-approve {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-approve:hover {
+        background: #218838;
+        transform: translateY(-2px);
+    }
+
+    .btn-reject {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-reject:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+</style>
+
+<div class="page-container">
+
+<div class="page-header">
+    <h1>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="23" y1="11" x2="17" y2="11"></line>
+        </svg>
+        Demandes d'inscription
+    </h1>
+    {% if eleves_en_attente %}
+    <span class="badge-pending">{{ eleves_en_attente.count }} en attente</span>
+    {% endif %}
+</div>
+
+{% if eleves_en_attente %}
+<div class="eleves-grid">
+    {% for profil in eleves_en_attente %}
+    <div class="eleve-card">
+        <div class="eleve-header">
+            <div class="eleve-info">
+                <h3>{{ profil.user.first_name }} {{ profil.user.last_name }}</h3>
+                <div class="eleve-meta">
+                    📅 Inscrit le {{ profil.user.date_joined|date:"d/m/Y à H:i" }}<br>
+                    🎓 Classe demandée : <strong>{{ profil.classe.nom }}</strong><br>
+                    👤 Identifiant : {{ profil.user.username }}<br>
+                    🎂 Né(e) le : {{ profil.date_naissance|date:"d/m/Y"|default:"Non renseigné" }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <a href="{% url 'core:approuver_eleve' profil.id %}" class="btn-action btn-approve">
+                ✅ Approuver
+            </a>
+            <a href="{% url 'core:refuser_eleve' profil.id %}" 
+               class="btn-action btn-reject"
+               onclick="return confirm('Êtes-vous sûr de vouloir refuser cette demande ?')">
+                ❌ Refuser
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="no-data">
+    <p>✅ Aucune demande d'inscription en attente.</p>
+</div>
+{% endif %}
+</div>
+{% endblock %}
