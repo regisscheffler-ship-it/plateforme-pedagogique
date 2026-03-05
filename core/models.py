@@ -1400,6 +1400,7 @@ class HistoriqueClasse(models.Model):
     )
     date_debut = models.DateField(verbose_name='Date de début')
     date_fin = models.DateField(null=True, blank=True, verbose_name='Date de fin')
+    redoublement = models.BooleanField(default=False, verbose_name='Redoublement')
 
     class Meta:
         verbose_name = "Historique classe"

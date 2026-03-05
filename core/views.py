@@ -2526,6 +2526,7 @@ def passer_en_classe_superieure(request, eleve_id):
         nouvelle_classe_id = request.POST.get('nouvelle_classe')
         annee_actuelle     = request.POST.get('annee_actuelle', '').strip()
         date_fin_str       = request.POST.get('date_fin', '')
+        redoublement       = request.POST.get('redoublement') == 'on'
         if not nouvelle_classe_id or not annee_actuelle:
             messages.error(request, "❌ La nouvelle classe et l'année scolaire sont obligatoires.")
         else:
@@ -2542,6 +2543,7 @@ def passer_en_classe_superieure(request, eleve_id):
                     annee=annee_actuelle,
                     date_debut=eleve.date_inscription.date() if hasattr(eleve.date_inscription, 'date') else date.today(),
                     date_fin=date_fin_val,
+                    redoublement=redoublement,
                 )
             # Affecter la nouvelle classe
             ancienne_classe = eleve.classe.nom if eleve.classe else '—'
