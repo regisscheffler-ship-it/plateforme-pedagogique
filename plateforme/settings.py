@@ -200,6 +200,7 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = 'DENY'
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    CSRF_TRUSTED_ORIGINS = ['https://plateforme-pedagogique.onrender.com']  # Requis Django 4+
 
 # IA — Gemini
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
