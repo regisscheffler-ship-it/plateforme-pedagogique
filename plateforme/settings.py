@@ -186,6 +186,21 @@ LOGIN_URL = 'core:login_prof'
 LOGIN_REDIRECT_URL = 'core:dashboard_professeur'
 LOGOUT_REDIRECT_URL = 'core:home'
 
+# ---------------------------------------------------------------------------
+# Sécurité HTTPS — actif uniquement en production (DEBUG=False)
+# ---------------------------------------------------------------------------
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True                  # Force HTTPS
+    SECURE_HSTS_SECONDS = 31536000              # HSTS 1 an
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True                # Cookie session HTTPS uniquement
+    CSRF_COOKIE_SECURE = True                   # Cookie CSRF HTTPS uniquement
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Render proxy
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
 # IA — Gemini
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 # Rotation automatique quand le quota d'une clé est épuisé
