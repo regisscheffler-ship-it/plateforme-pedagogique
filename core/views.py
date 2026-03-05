@@ -2518,9 +2518,11 @@ def saisie_suivi_pfmp(request, pfmp_id):
 @login_required
 @user_passes_test(est_professeur)
 def passer_en_classe_superieure(request, eleve_id):
-    """Passage d'un élève en classe supérieure : archivage dans HistoriqueClasse puis changement de classe."""
+    """Passage d'un élève en classe supérieure ou redoublement."""
     eleve = get_object_or_404(ProfilUtilisateur, id=eleve_id, type_utilisateur='eleve')
     classes = Classe.objects.all().order_by('nom')
+    mode = request.GET.get('mode', '') or request.POST.get('mode', '')
+    est_redoublement = (mode == 'redoublement')
 
     if request.method == 'POST':
         nouvelle_classe_id = request.POST.get('nouvelle_classe')
@@ -2545,21 +2547,22 @@ def passer_en_classe_superieure(request, eleve_id):
                     date_fin=date_fin_val,
                     redoublement=redoublement,
                 )
-            # Affecter la nouvelle classe
+            # Affecter la nouvelle classe (même classe si redoublement)
             ancienne_classe = eleve.classe.nom if eleve.classe else '—'
             eleve.classe_id = nouvelle_classe_id
             eleve.save(update_fields=['classe'])
-            messages.success(
-                request,
-                f'✅ {eleve.user.get_full_name()} transféré de {ancienne_classe} vers '
-                f'{eleve.classe.nom}. Historique enregistré.'
-            )
+            if redoublement:
+                messages.success(request, f'✅ Redoublement enregistré pour {eleve.user.get_full_name()}. Historique mis à jour.')
+            else:
+                messages.success(request, f'✅ {eleve.user.get_full_name()} transféré de {ancienne_classe} vers {eleve.classe.nom}. Historique enregistré.')
             return redirect('core:classe_detail', pk=int(nouvelle_classe_id))
 
     return render(request, 'core/passer_en_classe_superieure.html', {
         'eleve': eleve,
         'classes': classes,
         'historique': HistoriqueClasse.objects.filter(eleve=eleve).order_by('-date_debut'),
+        'mode': mode,
+        'est_redoublement': est_redoublement,
     })
 
 

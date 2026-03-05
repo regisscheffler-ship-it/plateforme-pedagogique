@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
 {% block content %}
 <style>
-:root { --pcs: #20c997; --pcs-light: #eafaf6; }
+:root { --pcs: {% if est_redoublement %}#f97316{% else %}#20c997{% endif %}; --pcs-light: {% if est_redoublement %}#fff8f0{% else %}#eafaf6{% endif %}; }
 .page-container { max-width:760px; width:100%; margin:0 auto; padding:2rem; }
 .btn-retour {
     display:inline-flex; align-items:center; gap:6px;
@@ -78,8 +78,8 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 11l-5-5-5 5"/><path d="M12 6v11"/></svg>
         </div>
         <div>
-            <h1>Passage en classe supérieure</h1>
-            <p>Déplacer un élève vers une nouvelle classe tout en conservant son historique</p>
+            <h1>{% if est_redoublement %}Redoublement{% else %}Passage en classe supérieure{% endif %}</h1>
+            <p>{% if est_redoublement %}Enregistrer le redoublement de l'élève dans la même classe{% else %}Déplacer un élève vers une nouvelle classe tout en conservant son historique{% endif %}</p>
         </div>
     </div>
 
@@ -113,13 +113,18 @@
         </h2>
         <form method="post">
             {% csrf_token %}
+            <input type="hidden" name="mode" value="{{ mode }}">
             <div class="form-group">
-                <label for="nouvelle_classe">Nouvelle classe *</label>
+                <label for="nouvelle_classe">{% if est_redoublement %}Classe (même classe){% else %}Nouvelle classe{% endif %} *</label>
                 <select id="nouvelle_classe" name="nouvelle_classe" required>
                     <option value="">— Choisir une classe —</option>
                     {% for classe in classes %}
+                    {% if est_redoublement %}
+                    <option value="{{ classe.pk }}" {% if classe == eleve.classe %}selected{% endif %}>{{ classe.nom }}</option>
+                    {% else %}
                     {% if classe != eleve.classe %}
                     <option value="{{ classe.pk }}">{{ classe.nom }}</option>
+                    {% endif %}
                     {% endif %}
                     {% endfor %}
                 </select>
@@ -137,14 +142,19 @@
                 <div class="form-hint">Laissez vide pour utiliser la date du jour.</div>
             </div>
             <div class="form-group" style="display:flex;align-items:center;gap:10px;background:#fff8f0;border:1px solid #fed7aa;border-radius:8px;padding:12px 14px;">
-                <input type="checkbox" id="redoublement" name="redoublement" style="width:18px;height:18px;accent-color:#f97316;cursor:pointer;">
+                <input type="checkbox" id="redoublement" name="redoublement" style="width:18px;height:18px;accent-color:#f97316;cursor:pointer;" {% if est_redoublement %}checked{% endif %}>
                 <label for="redoublement" style="margin:0;font-size:0.9rem;font-weight:600;color:#c2410c;cursor:pointer;">
                     🔁 Redoublement — l'élève reste dans la même année
                 </label>
             </div>
             <button type="submit" class="btn-submit">
+                {% if est_redoublement %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.49"/></svg>
+                Confirmer le redoublement
+                {% else %}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 11l-5-5-5 5"/><path d="M12 6v11"/></svg>
                 Confirmer le passage en classe supérieure
+                {% endif %}
             </button>
         </form>
     </div>
