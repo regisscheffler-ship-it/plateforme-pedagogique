@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'storages',  # django-storages (R2/S3)
+    'cloudinary',
+    'cloudinary_storage',
     'core',
     'plateforme',
 ]
@@ -136,41 +137,32 @@ STATICFILES_DIRS = [BASE_DIR / 'static']  # dossier de dev (tes assets)
 
 # ---------------------------------------------------------------------------
 # Stockage des fichiers media
-# En production (USE_S3=True) : Cloudflare R2 via django-storages/boto3
-# En local (USE_S3=False)     : dossier media/ classique
+# En production (USE_CLOUDINARY=True) : Cloudinary
+# En local (USE_CLOUDINARY=False)     : dossier media/ classique
 # ---------------------------------------------------------------------------
-USE_S3 = os.environ.get('USE_S3', 'False') == 'True'
+USE_CLOUDINARY = os.environ.get('USE_CLOUDINARY', 'False') == 'True'
 
-if USE_S3:
-    # --- Credentials Cloudflare R2 ---
-    AWS_ACCESS_KEY_ID     = os.environ.get('R2_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME')
-    # URL d'API Cloudflare R2 : https://<account_id>.r2.cloudflarestorage.com
-    AWS_S3_ENDPOINT_URL   = os.environ.get('R2_ENDPOINT_URL')
-    AWS_S3_REGION_NAME    = 'auto'
-    AWS_DEFAULT_ACL       = 'public-read'
-    AWS_S3_FILE_OVERWRITE = False
-    AWS_QUERYSTRING_AUTH  = False  # URLs publiques sans signature
-
-    # URL publique du bucket (R2.dev ou domaine custom Cloudflare)
-    # Exemple : https://pub-xxxxx.r2.dev  ou  https://media.monsite.fr
-    MEDIA_URL = os.environ.get('R2_PUBLIC_URL', '/media/') + '/'
-
-    # Django 4.2+ : dictionnaire STORAGES unifié
+if USE_CLOUDINARY:
+    import cloudinary
+    cloudinary.config(
+        cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
+        api_key    = os.environ.get('CLOUDINARY_API_KEY'),
+        api_secret = os.environ.get('CLOUDINARY_API_SECRET'),
+        secure     = True,
+    )
     STORAGES = {
         'default': {
-            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+            'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
         },
         'staticfiles': {
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
         },
     }
+    MEDIA_URL = '/media/'  # Cloudinary gère les URLs directement
 else:
     # Développement local
     MEDIA_URL  = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
-
     STORAGES = {
         'default': {
             'BACKEND': 'django.core.files.storage.FileSystemStorage',
@@ -179,6 +171,13 @@ else:
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
         },
     }
+
+# Cloudinary config (chargée même hors USE_CLOUDINARY pour éviter les erreurs d'import)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY':    os.environ.get('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+}
 
 # Auth redirects (login/logout) - CORRIGÉ
 LOGIN_URL = 'core:login_prof'
