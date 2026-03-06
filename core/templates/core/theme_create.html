@@ -266,13 +266,15 @@
                         <input type="text" name="nom" placeholder="Ex: Électronique numérique" required autofocus>
                     </div>
                     <div class="form-group">
-                        <label>Classe(s) *</label>
-                        <select name="classes" multiple required size="4" style="min-height:90px;">
+                        <label>Classes *</label>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.8rem;max-height:200px;overflow:auto;">
                             {% for classe in classes %}
-                                <option value="{{ classe.id }}">{{ classe.nom }}</option>
+                            <label style="display:flex;align-items:center;gap:6px;">
+                                <input type="checkbox" name="classes" value="{{ classe.id }}">
+                                {{ classe.nom }}
+                            </label>
                             {% endfor %}
-                        </select>
-                        <small style="color:#6b7280;font-size:0.82rem;">Maintenez Ctrl (ou Cmd) pour sélectionner plusieurs classes.</small>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">

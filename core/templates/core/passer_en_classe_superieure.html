@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
 {% block content %}
 <style>
-:root { --pcs: {% if est_redoublement %}#f97316{% else %}#2ab090{% endif %}; --pcs-light: {% if est_redoublement %}#fff8f0{% else %}#eafaf6{% endif %}; }
+:root { --pcs: #2ab090; --pcs-light: #eafaf6; }
 .page-container { max-width:1600px; width:100%; margin:0 auto; padding:2rem; }
 .btn-retour {
     display:inline-flex; align-items:center; gap:6px;
@@ -141,9 +141,9 @@
                 <input type="date" id="date_fin" name="date_fin">
                 <div class="form-hint">Laissez vide pour utiliser la date du jour.</div>
             </div>
-            <div class="form-group" style="display:flex;align-items:center;gap:10px;background:#fff8f0;border:1px solid #fed7aa;border-radius:8px;padding:12px 14px;">
-                <input type="checkbox" id="redoublement" name="redoublement" style="width:18px;height:18px;accent-color:#f97316;cursor:pointer;" {% if est_redoublement %}checked{% endif %}>
-                <label for="redoublement" style="margin:0;font-size:0.9rem;font-weight:600;color:#c2410c;cursor:pointer;">
+            <div class="form-group" style="display:flex;align-items:center;gap:10px;background:var(--pcs-light);border:1px solid var(--pcs);border-radius:8px;padding:12px 14px;">
+                <input type="checkbox" id="redoublement" name="redoublement" style="width:18px;height:18px;accent-color:var(--pcs);cursor:pointer;" {% if est_redoublement %}checked{% endif %}>
+                <label for="redoublement" style="margin:0;font-size:0.9rem;font-weight:600;color:var(--pcs);cursor:pointer;">
                     🔁 Redoublement — l'élève reste dans la même année
                 </label>
             </div>

@@ -348,10 +348,20 @@ def gestion_eleves(request):
             return redirect('core:gestion_eleves')
     eleves = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False)\
         .select_related('user', 'classe').order_by('classe__nom', 'user__last_name')
+    nb_eleves_sortis = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).count()
+    nb_garcons = eleves.filter(sexe='M').count()
+    nb_filles  = eleves.filter(sexe='F').count()
+    total = nb_garcons + nb_filles
+    pc_filles = f"{nb_filles*100/total:.0f}" if total else '0'
+    pc_garcons = f"{nb_garcons*100/total:.0f}" if total else '0'
     return render(request, 'core/gestion_eleves.html', {
         'eleves': eleves,
         'classes': Classe.objects.all().order_by('nom'),
-        'nb_eleves_sortis': ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).count()
+        'nb_eleves_sortis': nb_eleves_sortis,
+        'nb_garcons': nb_garcons,
+        'nb_filles': nb_filles,
+        'pc_filles': pc_filles,
+        'pc_garcons': pc_garcons,
     })
 
 

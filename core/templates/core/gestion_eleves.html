@@ -619,6 +619,11 @@
             <div class="stat-info">
                 <h3>Élèves actifs</h3>
                 <p>{{ eleves.count }} élève{{ eleves.count|pluralize }} en formation</p>
+                {% if nb_garcons or nb_filles %}
+                    <p style="font-size:0.78rem;color:#64748b;margin:4px 0 0;line-height:1.4;">
+                        ♀ {{ pc_filles }}% filles &nbsp;|&nbsp; ♂ {{ pc_garcons }}% garçons
+                    </p>
+                {% endif %}
             </div>
             <div class="stat-number">{{ eleves.count }}</div>
         </div>
