@@ -31,13 +31,17 @@ SECRET_KEY = os.environ.get('SECRET_KEY', '7eSBcMNOnQlXa3iZQ9az-CKw7PzdCTMmLlRVm
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-# Accepte tous les sous-domaines pythonanywhere.com
 ALLOWED_HOSTS += ['.pythonanywhere.com']
+ALLOWED_HOSTS += ['.onrender.com']
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Ajoute ici le domaine exact de ton compte PythonAnywhere
 _pa_host = os.environ.get('PYTHONANYWHERE_HOST', '')
-CSRF_TRUSTED_ORIGINS = [f'https://{_pa_host}'] if _pa_host else []
+CSRF_TRUSTED_ORIGINS = [
+    'https://plateforme-pedagogique.onrender.com',
+    f'https://{_pa_host}' if _pa_host else '',
+]
+CSRF_TRUSTED_ORIGINS = [x for x in CSRF_TRUSTED_ORIGINS if x]
 
 
 # Application definition
@@ -185,7 +189,7 @@ LOGOUT_REDIRECT_URL = 'core:home'
 # Sécurité HTTPS — actif uniquement en production (DEBUG=False)
 # ---------------------------------------------------------------------------
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True                  # Force HTTPS
+    SECURE_SSL_REDIRECT = False                  # Force HTTPS
     SECURE_HSTS_SECONDS = 31536000              # HSTS 1 an
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
