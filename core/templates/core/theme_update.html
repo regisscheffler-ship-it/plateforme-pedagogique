@@ -88,14 +88,15 @@
                     <input type="text" name="nom" value="{{ theme.nom }}" required>
                 </div>
                 <div class="form-group">
-                    <label>Classe associée</label>
-                    <select name="classe">
+                    <label>Classe(s) associée(s)</label>
+                    <select name="classes" multiple size="4" style="min-height:90px;">
                         {% for classe in classes %}
-                            <option value="{{ classe.id }}" {% if theme.classe.id == classe.id %}selected{% endif %}>
+                            <option value="{{ classe.id }}" {% if classe in theme.classes.all %}selected{% endif %}>
                                 {{ classe.nom }}
                             </option>
                         {% endfor %}
                     </select>
+                    <small style="color:#868e96;font-size:0.82rem;">Maintenez Ctrl (ou Cmd) pour sélectionner plusieurs classes.</small>
                 </div>
             </div>
 

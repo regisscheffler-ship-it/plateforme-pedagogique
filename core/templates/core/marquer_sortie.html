@@ -3,20 +3,20 @@
 
 {% block content %}
 <style>
+    .page-container { max-width: 1600px; width: 100%; margin: 0 auto; padding: 2rem; }
     .form-card {
-        background: white; border-radius: 14px;
+        background: white; border-radius: 16px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        padding: 2rem; max-width: 620px; margin: 0 auto;
-        border-top: 4px solid #e74c3c;
+        padding: 2rem; border-left: 5px solid #2ab090;
     }
     .eleve-badge {
-        background: #fef2f2; border: 1px solid #fecaca;
+        background: #eafaf6; border: 1px solid #a7f3d0;
         border-radius: 10px; padding: 1rem 1.2rem;
         display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem;
     }
     .eleve-avatar {
         width: 48px; height: 48px; border-radius: 50%;
-        background: #e74c3c; color: white;
+        background: #2ab090; color: white;
         display: flex; align-items: center; justify-content: center;
         font-size: 1.2rem; font-weight: 700; flex-shrink: 0;
     }
@@ -34,7 +34,7 @@
     }
     .form-group select:focus,
     .form-group textarea:focus,
-    .form-group input[type="text"]:focus { border-color: #e74c3c; }
+    .form-group input[type="text"]:focus { border-color: #2ab090; }
     .field-hint { font-size: 0.78rem; color: #94a3b8; margin-top: 4px; }
     .warning-box {
         background: #fff7ed; border: 1px solid #fed7aa;
@@ -42,13 +42,13 @@
         font-size: 0.83rem; color: #92400e; margin-bottom: 1.2rem;
     }
     .btn-submit {
-        width: 100%; padding: 12px; background: #e74c3c; color: white;
-        border: none; border-radius: 8px; font-size: 1rem;
-        font-weight: 700; cursor: pointer; transition: background 0.2s;
+        width: 100%; padding: 12px; background: white; color: #2ab090;
+        border: 2px solid #2ab090; border-radius: 8px; font-size: 1rem;
+        font-weight: 700; cursor: pointer; transition: all 0.2s;
         display:flex;align-items:center;justify-content:center;gap:0.5rem;
     }
-    .btn-submit:hover { background: #c0392b; }
-    .btn-submit svg { stroke: white; }
+    .btn-submit:hover { background: #2ab090; color: white; transform: translateY(-2px); }
+    .btn-submit svg { stroke: currentColor; }
     .btn-annuler {
         display: block; text-align: center; margin-top: 12px;
         color: #94a3b8; text-decoration: none; font-size: 0.85rem;
@@ -67,7 +67,7 @@
         display: flex; align-items: center; gap: 0.6rem;
         margin-bottom: 0.8rem; cursor: pointer;
     }
-    .toggle-row input[type=checkbox] { width:16px; height:16px; accent-color:#e74c3c; cursor:pointer; }
+    .toggle-row input[type=checkbox] { width:16px; height:16px; accent-color:#2ab090; cursor:pointer; }
     .toggle-row label { font-size:0.87rem; font-weight:600; color:#374151; cursor:pointer; margin:0; }
 </style>
 
@@ -81,13 +81,13 @@
     <style>
     .btn-retour {
         display:inline-flex;align-items:center;gap:6px;
-        padding:8px 16px;background:white;color:#e74c3c;
-        border:2px solid #e74c3c;border-radius:10px;
+        padding:8px 16px;background:white;color:#2ab090;
+        border:2px solid #2ab090;border-radius:10px;
         text-decoration:none;font-weight:600;font-size:0.9rem;
         margin-bottom:1.5rem;transition:all 0.2s;
     }
     .btn-retour:hover {
-        background:#e74c3c;color:white;transform:translateY(-2px);
+        background:#2ab090;color:white;transform:translateY(-2px);
     }
     </style>
 

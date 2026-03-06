@@ -126,8 +126,11 @@ class ProfilUtilisateur(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profil')
     type_utilisateur = models.CharField(max_length=20, choices=TYPE_UTILISATEUR, default='eleve')
     classe = models.ForeignKey('Classe', on_delete=models.SET_NULL, null=True, blank=True, related_name='eleves')
+    SEXE_CHOICES = [('M', 'Garçon'), ('F', 'Fille')]
+
     date_naissance = models.DateField(null=True, blank=True)
     photo = models.ImageField(upload_to='photos_profils/', null=True, blank=True)
+    sexe = models.CharField(max_length=1, choices=SEXE_CHOICES, null=True, blank=True, verbose_name='Sexe')
 
     compte_approuve = models.BooleanField(default=False)
     date_inscription = models.DateTimeField(auto_now_add=True)
@@ -182,7 +185,7 @@ class ProfilUtilisateur(models.Model):
 # =====================================================
 class Theme(models.Model):
     nom = models.CharField(max_length=200)
-    classe = models.ForeignKey(Classe, on_delete=models.CASCADE, related_name='themes')
+    classes = models.ManyToManyField(Classe, related_name='themes', blank=True)
     description = models.TextField(blank=True, null=True)
     ressources_html = models.TextField(blank=True, null=True, verbose_name="Ressources intégrées (HTML)")
     ordre = models.IntegerField(default=0)
@@ -197,7 +200,8 @@ class Theme(models.Model):
         verbose_name_plural = "Thèmes"
 
     def __str__(self):
-        return f"{self.nom} - {self.classe.nom}"
+        classes_str = ", ".join(c.nom for c in self.classes.all()) or "Sans classe"
+        return f"{self.nom} - {classes_str}"
 
 
 # =====================================================

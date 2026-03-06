@@ -187,6 +187,8 @@ def dashboard_professeur(request):
     context = {
         'nb_classes':            Classe.objects.count(),
         'nb_eleves':             ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False).count(),
+        'nb_garcons':            ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False, sexe='M').count(),
+        'nb_filles':             ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False, sexe='F').count(),
         'nb_themes':             Theme.objects.count(),
         'nb_travaux_a_corriger': RenduEleve.objects.filter(corrige=False, rendu=True).count(),
         'nb_travaux_publies':    TravailARendre.objects.filter(actif=True).count(),
@@ -214,6 +216,9 @@ def dashboard_professeur(request):
             fiches_map[tid] = []
         fiches_map[tid].append({'id': f.id, 'titre': f.titre, 'nb': f.nb_cartes})
     context['fiches_par_theme_json'] = json.dumps(fiches_map)
+    total_sexe = context['nb_garcons'] + context['nb_filles']
+    context['pc_garcons'] = f"{context['nb_garcons']*100/total_sexe:.0f}" if total_sexe else '0'
+    context['pc_filles'] = f"{context['nb_filles']*100/total_sexe:.0f}" if total_sexe else '0'
     return render(request, 'core/dashboard_professeur.html', context)
 
 
@@ -229,7 +234,7 @@ def dashboard_eleve(request):
             return render(request, 'core/dashboard_eleve.html', {'classe': None})
         context = {
             'ma_classe': classe,
-            'themes': Theme.objects.filter(classe=classe, visible_eleves=True).order_by('ordre', 'nom'),
+            'themes': Theme.objects.filter(classes=classe, visible_eleves=True).order_by('ordre', 'nom'),
             'travaux_a_faire': TravailARendre.objects.filter(classe=classe, actif=True).exclude(rendus__eleve=profil).order_by('date_limite'),
             'mes_rendus': RenduEleve.objects.filter(eleve=profil).select_related('travail').order_by('-date_rendu'),
             'notifications': Notification.objects.filter(destinataire=request.user, lue=False).order_by('-date_creation'),
@@ -317,7 +322,7 @@ def classe_detail(request, pk):
     classe = get_object_or_404(Classe, pk=pk)
     return render(request, 'core/classe_detail.html', {
         'classe': classe,
-        'themes': Theme.objects.filter(classe=classe),
+        'themes': Theme.objects.filter(classes=classe),
         'eleves': ProfilUtilisateur.objects.filter(classe=classe, type_utilisateur='eleve', compte_approuve=True, est_sorti=False)
     })
 
@@ -338,7 +343,7 @@ def gestion_eleves(request):
                 email=request.POST.get('email', '')
             )
             classe = Classe.objects.get(id=request.POST.get('classe')) if request.POST.get('classe') else None
-            ProfilUtilisateur.objects.create(user=user, type_utilisateur='eleve', classe=classe, compte_approuve=True)
+            ProfilUtilisateur.objects.create(user=user, type_utilisateur='eleve', classe=classe, compte_approuve=True, sexe=request.POST.get('sexe') or None)
             messages.success(request, "✅ Élève créé !")
             return redirect('core:gestion_eleves')
     eleves = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False)\
@@ -385,6 +390,7 @@ def modifier_eleve(request, pk):
                 profil.type_diplome_obtenu = 'cap'
             elif raison in ('bac_pro_mention', 'bac_pro_sans_mention', 'echec_bac_pro'):
                 profil.type_diplome_obtenu = 'bac_pro'
+        profil.sexe = request.POST.get('sexe') or None
         profil.save()
         messages.success(request, '✅ Élève modifié !')
         return redirect('core:gestion_eleves')
@@ -444,7 +450,7 @@ def gestion_themes(request):
     classes = Classe.objects.all().order_by('nom')
     classe_selectionnee = request.GET.get('classe')
     if classe_selectionnee:
-        themes = Theme.objects.filter(classe_id=classe_selectionnee).annotate(nb_dossiers=Count('dossiers'))
+        themes = Theme.objects.filter(classes__id=classe_selectionnee).annotate(nb_dossiers=Count('dossiers'))
     else:
         themes = Theme.objects.all().annotate(nb_dossiers=Count('dossiers'))
     return render(request, 'core/gestion_themes.html', {'classes': classes, 'themes': themes, 'classe_selectionnee': classe_selectionnee})
@@ -455,17 +461,18 @@ def gestion_themes(request):
 def theme_create(request):
     if request.method == 'POST':
         nom = request.POST.get('nom')
-        classe_id = request.POST.get('classe')
-        if not nom or not classe_id:
-            messages.error(request, '❌ Le nom et la classe sont obligatoires.')
+        classe_ids = request.POST.getlist('classes')
+        if not nom:
+            messages.error(request, '❌ Le nom du thème est obligatoire.')
             return render(request, 'core/theme_create.html', {'classes': Classe.objects.all()})
         theme = Theme.objects.create(
             nom=nom,
-            classe=Classe.objects.get(id=classe_id),
             description=request.POST.get('description', ''),
             visible_eleves=request.POST.get('visible_eleves') == 'on',
             ordre=request.POST.get('ordre', 0)
         )
+        if classe_ids:
+            theme.classes.set(Classe.objects.filter(id__in=classe_ids))
         messages.success(request, f'✅ Thème "{theme.nom}" créé !')
         dossier = None
         if request.POST.get('creer_dossier') == 'on':
@@ -504,7 +511,7 @@ def theme_detail(request, pk):
     theme = get_object_or_404(Theme, id=pk)
     is_prof = est_professeur(request.user)
     if hasattr(request.user, 'profil') and request.user.profil.est_eleve():
-        if theme.classe != request.user.profil.classe:
+        if request.user.profil.classe and not theme.classes.filter(pk=request.user.profil.classe_id).exists():
             messages.error(request, "❌ Vous n'avez pas accès à ce thème.")
             return redirect('core:dashboard_eleve')
         dossiers = Dossier.objects.filter(theme=theme, actif=True, visible_eleves=True).order_by('ordre', 'nom')
@@ -542,9 +549,8 @@ def theme_update(request, pk):
             theme.nom = nom
             theme.description = request.POST.get('description', '')
             theme.visible_eleves = request.POST.get('visible_eleves') == 'on'
-            classe_id = request.POST.get('classe')
-            if classe_id:
-                theme.classe = Classe.objects.get(id=classe_id)
+            classe_ids = request.POST.getlist('classes')
+            theme.classes.set(Classe.objects.filter(id__in=classe_ids))
             theme.save()
             messages.success(request, f'✅ Thème "{theme.nom}" modifié.')
             if request.POST.get('ajouter_ressource') == 'on':

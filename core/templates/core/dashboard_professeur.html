@@ -235,6 +235,11 @@
                 <h3>Gestion Élèves</h3>
                 <p class="card-count">{{ nb_eleves }}</p>
                 <p class="card-description">Élève{{ nb_eleves|pluralize }} inscrit{{ nb_eleves|pluralize }}</p>
+                {% if nb_garcons or nb_filles %}
+                <p style="font-size:0.78rem;color:#64748b;margin:4px 0 0;line-height:1.4;">
+                    ♂ {{ pc_garcons }}% garçons &nbsp;|&nbsp; ♀ {{ pc_filles }}% filles
+                </p>
+                {% endif %}
             </div>
         </a>
 

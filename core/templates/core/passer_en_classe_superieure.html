@@ -1,15 +1,15 @@
 {% extends "core/base.html" %}
 {% block content %}
 <style>
-:root { --pcs: {% if est_redoublement %}#f97316{% else %}#20c997{% endif %}; --pcs-light: {% if est_redoublement %}#fff8f0{% else %}#eafaf6{% endif %}; }
-.page-container { max-width:760px; width:100%; margin:0 auto; padding:2rem; }
+:root { --pcs: {% if est_redoublement %}#f97316{% else %}#2ab090{% endif %}; --pcs-light: {% if est_redoublement %}#fff8f0{% else %}#eafaf6{% endif %}; }
+.page-container { max-width:1600px; width:100%; margin:0 auto; padding:2rem; }
 .btn-retour {
     display:inline-flex; align-items:center; gap:6px;
     padding:6px 14px; border-radius:8px; font-size:0.85rem; font-weight:500;
     background:var(--pcs-light); color:var(--pcs); border:1px solid var(--pcs);
     text-decoration:none; margin-bottom:1.5rem;
 }
-.page-header { display:flex; align-items:center; gap:1rem; margin-bottom:1.8rem; }
+.page-header { background:white; border-radius:16px; padding:2rem; margin-bottom:2rem; box-shadow:0 8px 24px rgba(0,0,0,0.08); display:flex; align-items:center; gap:1rem; }
 .page-header-icon {
     width:48px; height:48px; border-radius:12px;
     background:var(--pcs-light); color:var(--pcs);
@@ -21,7 +21,7 @@
 .form-card {
     background:#fff; border:1px solid #e2e8f0; border-radius:12px;
     padding:1.8rem; box-shadow:0 2px 10px rgba(0,0,0,.05);
-    border-top:4px solid var(--pcs); margin-bottom:2rem;
+    border-left:5px solid var(--pcs); margin-bottom:2rem;
 }
 .form-card h2 { font-size:1rem; font-weight:700; color:var(--pcs); margin:0 0 1.2rem; }
 .form-group { margin-bottom:1rem; }

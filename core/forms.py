@@ -61,7 +61,7 @@ class FormulaireSortie(forms.ModelForm):
 class ThemeForm(forms.ModelForm):
     class Meta:
         model = Theme
-        fields = ['nom', 'description', 'classe', 'visible_eleves', 'ressources_html', 'ordre']
+        fields = ['nom', 'description', 'classes', 'visible_eleves', 'ressources_html', 'ordre']
         widgets = {
             'nom': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -72,7 +72,7 @@ class ThemeForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Description courte du thème...'
             }),
-            'classe': forms.Select(attrs={'class': 'form-control'}),
+            'classes': forms.SelectMultiple(attrs={'class': 'form-control'}),
             'visible_eleves': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'ressources_html': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -85,7 +85,7 @@ class ThemeForm(forms.ModelForm):
         labels = {
             'nom': 'Nom du thème',
             'description': 'Description',
-            'classe': 'Classe',
+            'classes': 'Classes',
             'visible_eleves': 'Visible pour les élèves',
             'ressources_html': '📎 Ressources intégrées (HTML/iframes)',
             'ordre': 'Ordre d\'affichage',
