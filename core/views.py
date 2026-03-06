@@ -1943,6 +1943,12 @@ def statistiques(request):
     pfmp_stats         = _stats_pfmp()
     annees_sortis, top_etabs_diplomes_json, poursuite_json = _stats_sortis_enriched()
     orig_college, orig_classe, orig_diplome, orig_ville = _stats_profil_origine()
+    # gender stats
+    nb_garcons = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False, sexe='M').count()
+    nb_filles  = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False, sexe='F').count()
+    total_gender = nb_garcons + nb_filles
+    pc_garcons = f"{nb_garcons*100/total_gender:.0f}" if total_gender else '0'
+    pc_filles  = f"{nb_filles*100/total_gender:.0f}" if total_gender else '0'
 
     context = {
         'total_eleves': total_eleves, 'eleves_actifs': eleves_actifs,
@@ -1978,6 +1984,11 @@ def statistiques(request):
         'orig_diplome':       orig_diplome,
         'orig_ville':         orig_ville,
         'orig_college_json':  json.dumps(orig_college,  ensure_ascii=False),
+        # gender metrics
+        'nb_garcons': nb_garcons,
+        'nb_filles': nb_filles,
+        'pc_garcons': pc_garcons,
+        'pc_filles': pc_filles,
         'orig_classe_json':   json.dumps(orig_classe,   ensure_ascii=False),
         'orig_diplome_json':  json.dumps(orig_diplome,  ensure_ascii=False),
         'orig_ville_json':    json.dumps(orig_ville,    ensure_ascii=False),
