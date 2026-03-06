@@ -31,13 +31,13 @@ SECRET_KEY = os.environ.get('SECRET_KEY', '7eSBcMNOnQlXa3iZQ9az-CKw7PzdCTMmLlRVm
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-# Accepte automatiquement tous les sous-domaines onrender.com
-ALLOWED_HOSTS += ['.onrender.com']
+# Accepte tous les sous-domaines pythonanywhere.com
+ALLOWED_HOSTS += ['.pythonanywhere.com']
 
-# Render : proxy SSL + origines CSRF (requis Django 4.0+, quel que soit DEBUG)
-# Render injecte automatiquement X-Forwarded-Proto: https
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_TRUSTED_ORIGINS = ['https://plateforme-pedagogique.onrender.com']
+# Ajoute ici le domaine exact de ton compte PythonAnywhere
+_pa_host = os.environ.get('PYTHONANYWHERE_HOST', '')
+CSRF_TRUSTED_ORIGINS = [f'https://{_pa_host}'] if _pa_host else []
 
 
 # Application definition
@@ -88,24 +88,14 @@ WSGI_APPLICATION = 'plateforme.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-# En production : variable DATABASE_URL fournie par Neon.tech
-# En local : fallback sur SQLite
-_DATABASE_URL = os.environ.get('DATABASE_URL', '')
-if _DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.parse(
-            _DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# En production : variable DATABASE_URL fournie par Supabase
+# En local : SQLite si DATABASE_URL absent du .env
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+    )
+}
 
 
 # Password validation
