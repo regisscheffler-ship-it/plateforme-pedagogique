@@ -171,6 +171,8 @@
         align-items: center;
         gap: 6px;
         transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
     }
 
     .btn-voir:hover {
@@ -277,6 +279,51 @@
     }
 
     .fichier-name { font-weight: 600; color: #2c3e50; }
+
+    /* NOUVEAU : CSS pour l'Iframe intégré */
+    .iframe-wrapper {
+        display: none;
+        margin-top: 0.5rem;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid #e9ecef;
+    }
+    .iframe-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .iframe-header span {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+    .iframe-close {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 0.3rem 0.8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: background 0.3s ease;
+    }
+    .iframe-close:hover {
+        background: #5a6268;
+    }
+    .iframe-content {
+        padding: 1rem;
+    }
+    .iframe-content iframe {
+        width: 100%;
+        min-height: 450px;
+        border: none;
+        border-radius: 8px;
+    }
 
     .empty-state {
         text-align: center;
@@ -468,18 +515,30 @@
                             </div>
                         </div>
                     </div>
+                    
                     <div class="dossier-actions">
-                        {% if fichier.fichier %}
-                        <a href="{{ fichier.fichier.url }}" target="_blank" class="btn-voir">
-                            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                            Voir
-                        </a>
-                        {% elif fichier.lien_externe %}
-                        <a href="{{ fichier.lien_externe }}" target="_blank" class="btn-voir">Ouvrir</a>
+                        <!-- ACTIONS D'AFFICHAGE SELON LE TYPE DE FICHIER -->
+                        {% if fichier.type_contenu == 'fichier' and fichier.fichier %}
+                            <a href="{{ fichier.fichier.url }}" target="_blank" class="btn-voir">
+                                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                Voir
+                            </a>
+                        {% elif fichier.type_contenu == 'lien' and fichier.lien_externe %}
+                            <a href="{{ fichier.lien_externe }}" target="_blank" class="btn-voir">
+                                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                Ouvrir
+                            </a>
+                        {% elif fichier.type_contenu == 'iframe' and fichier.code_iframe %}
+                            <button class="btn-voir" onclick="toggleIframe({{ fichier.id }})">
+                                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                Afficher
+                            </button>
                         {% endif %}
+
+                        <!-- ACTIONS DE MODIFICATION (PROF UNIQUEMENT) -->
                         {% if not is_eleve %}
                         <form method="POST" action="{% url 'core:atelier_fichier_toggle_visibilite' fichier.id %}" style="display:contents;">
                             {% csrf_token %}
@@ -502,6 +561,22 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- LECTEUR IFRAME INVISIBLE PAR DÉFAUT (Apparaît au clic sur "Afficher") -->
+                {% if fichier.type_contenu == 'iframe' and fichier.code_iframe %}
+                <div class="iframe-wrapper" id="iframe-{{ fichier.id }}">
+                    <div class="iframe-header">
+                        <span>{{ fichier.nom }}</span>
+                        <button class="iframe-close" onclick="toggleIframe({{ fichier.id }})">
+                            ✕ Fermer
+                        </button>
+                    </div>
+                    <div class="iframe-content">
+                        {{ fichier.code_iframe|safe }}
+                    </div>
+                </div>
+                {% endif %}
+                
                 {% endfor %}
             </div>
             {% else %}
@@ -517,9 +592,7 @@
     </div>
     {% endif %}
 
-    <!-- ══════════════════════════════════════════ -->
-    <!-- MODES OPÉRATOIRES                          -->
-    <!-- ══════════════════════════════════════════ -->
+    <!-- MODES OPÉRATOIRES -->
     <div style="margin-top:2rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:0.7rem;">
             <h2 style="font-size:1.15rem;font-weight:700;color:#34495e;margin:0;display:flex;align-items:center;gap:0.6rem;">
@@ -585,7 +658,7 @@
 </div>
 
 <script>
-// ✅ data-attributes — pas de problème de guillemets/apostrophes
+// Modal de suppression
 document.querySelectorAll('.btn-supprimer').forEach(function(btn) {
     btn.addEventListener('click', function() {
         document.getElementById('modalTitle').textContent   = this.dataset.titre;
@@ -602,6 +675,23 @@ function closeModal() {
 document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
+
+// NOUVEAU : Fonction pour ouvrir/fermer le code intégré (iframe)
+function toggleIframe(id) {
+    const container = document.getElementById('iframe-' + id);
+    if (container) {
+        if (container.style.display === 'none' || container.style.display === '') {
+            // Ferme les autres iframes ouverts
+            document.querySelectorAll('.iframe-wrapper').forEach(w => w.style.display = 'none');
+            // Ouvre celui-ci
+            container.style.display = 'block';
+            // Scrolle doucement vers la vidéo
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            container.style.display = 'none';
+        }
+    }
+}
 </script>
 
 {% endblock %}

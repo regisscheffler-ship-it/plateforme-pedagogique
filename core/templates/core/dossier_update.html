@@ -1,57 +1,184 @@
 {% extends 'core/base.html' %}
+{% block title %}Modifier le dossier – {{ dossier.nom }}{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 1600px; width: 100%; margin: 0 auto; padding: 2rem;">
-    <h2>✏️ Modifier le dossier</h2>
-    <p style="color: #6c757d; margin-bottom: 2rem;">Thème : <strong>{{ dossier.theme.nom }}</strong></p>
+<style>
+    .form-container { max-width: 1400px; width: 100%; margin: 0 auto; padding: 2rem; }
 
-    <form method="post">
-        {% csrf_token %}
+    .btn-back {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #7c5cbf;
+        border: 2px solid #7c5cbf; border-radius: 8px; text-decoration: none;
+        font-weight: 600; font-size: 0.9rem; transition: all 0.2s; margin-bottom: 1.5rem;
+    }
+    .btn-back:hover { background: #7c5cbf; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(124,92,191,0.25); }
+    .btn-back svg { width: 18px; height: 18px; }
 
-        <div style="margin-bottom: 1.5rem;">
-            <label for="nom" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1rem;">
-                📁 Nom du dossier <span style="color: #dc3545;">*</span>
-            </label>
-            <input type="text" id="nom" name="nom" value="{{ dossier.nom }}" required 
-                   placeholder="Ex: Vocabulaire, Exercices, Documents..."
-                   style="width: 100%; padding: 0.8rem; border: 1px solid #e9ecef; border-radius: 8px; font-size: 1rem;">
+    .form-card { background: white; border-radius: 16px; padding: 2rem;
+                 box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-left: 6px solid #7c5cbf; }
+
+    .form-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem; }
+    .form-header svg { width: 28px; height: 28px; stroke: #7c5cbf; flex-shrink: 0; fill: none; }
+    .form-header h1 { margin: 0; font-size: 1.6rem; font-weight: 700; color: #2c3e50; }
+    .form-subtitle { color: #6c757d; font-size: 0.9rem; margin: 0 0 2rem 2.4rem; }
+    .form-subtitle strong { color: #7c5cbf; }
+
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label {
+        display: flex; align-items: center; gap: 0.5rem;
+        font-weight: 600; color: #2c3e50; font-size: 0.9rem; margin-bottom: 0.5rem;
+    }
+    .form-group label svg { width: 16px; height: 16px; stroke: #7c5cbf; fill: none; flex-shrink: 0; }
+    .required { color: #d94f4f; }
+
+    .form-control {
+        width: 100%; padding: 0.8rem 1rem; border: 2px solid #e9ecef;
+        border-radius: 10px; font-size: 0.95rem; color: #2c3e50;
+        font-family: inherit; transition: all 0.2s; background: white;
+    }
+    .form-control:focus { outline: none; border-color: #7c5cbf; box-shadow: 0 0 0 3px rgba(124,92,191,0.1); }
+    textarea.form-control { resize: vertical; min-height: 120px; }
+    .form-control-sm { width: 160px; }
+    .form-hint { color: #6c757d; font-size: 0.82rem; margin-top: 0.4rem; }
+
+    .checkbox-group {
+        display: flex; align-items: center; gap: 0.8rem; padding: 1rem 1.2rem;
+        background: #f5f3ff; border-radius: 10px; border: 2px solid #e0d9f5;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .checkbox-group:hover { border-color: #7c5cbf; background: #ede9fa; }
+    .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #7c5cbf; }
+    .checkbox-label { font-weight: 600; color: #2c3e50; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+    .checkbox-label svg { width: 18px; height: 18px; stroke: #7c5cbf; fill: none; }
+
+    .form-divider { border: none; border-top: 1px solid #e9ecef; margin: 2rem 0; }
+
+    .form-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+    .btn-save {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.8rem 1.6rem; background: #7c5cbf; color: white;
+        border: 2px solid #7c5cbf; border-radius: 10px; font-weight: 600;
+        font-size: 0.95rem; cursor: pointer; transition: all 0.2s; font-family: inherit;
+    }
+    .btn-save:hover { background: #6a4daa; border-color: #6a4daa; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(124,92,191,0.3); }
+    .btn-save svg { width: 18px; height: 18px; fill: none; }
+    .btn-cancel {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.8rem 1.6rem; background: white; color: #6c757d;
+        border: 2px solid #dee2e6; border-radius: 10px; font-weight: 600;
+        font-size: 0.95rem; text-decoration: none; transition: all 0.2s;
+    }
+    .btn-cancel:hover { background: #f8f9fa; border-color: #adb5bd; color: #495057; transform: translateY(-2px); }
+    .btn-cancel svg { width: 18px; height: 18px; fill: none; }
+
+    @media (max-width: 576px) {
+        .form-actions { flex-direction: column; }
+        .btn-save, .btn-cancel { width: 100%; justify-content: center; }
+    }
+</style>
+
+<div class="form-container">
+
+    <a href="#" class="btn-back btn-back-universal">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Retour
+    </a>
+
+    <div class="form-card">
+
+        <div class="form-header">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <h1>Modifier le dossier</h1>
         </div>
+        <p class="form-subtitle">Thème : <strong>{{ dossier.theme.nom }}</strong></p>
 
-        <div style="margin-bottom: 1.5rem;">
-            <label for="description" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1rem;">
-                📝 Description
-            </label>
-            <textarea id="description" name="description" rows="4" 
-                      placeholder="Description du contenu de ce dossier..."
-                      style="width: 100%; padding: 0.8rem; border: 1px solid #e9ecef; border-radius: 8px; font-size: 1rem;">{{ dossier.description }}</textarea>
-        </div>
+        <form method="post">
+            {% csrf_token %}
 
-        <div style="margin-bottom: 1.5rem;">
-            <label for="ordre" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1rem;">
-                🔢 Ordre d'affichage
-            </label>
-            <input type="number" id="ordre" name="ordre" value="{{ dossier.ordre }}" min="0"
-                   style="width: 150px; padding: 0.8rem; border: 1px solid #e9ecef; border-radius: 8px; font-size: 1rem;">
-            <small style="display: block; color: #6c757d; margin-top: 0.3rem;">Plus le nombre est petit, plus le dossier apparaît en premier</small>
-        </div>
+            <div class="form-group">
+                <label for="nom">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Nom du dossier <span class="required">*</span>
+                </label>
+                <input type="text" id="nom" name="nom" class="form-control"
+                       value="{{ dossier.nom }}"
+                       placeholder="Ex : Vocabulaire, Exercices, Documents..."
+                       required autofocus>
+            </div>
 
-        <div style="margin-bottom: 1.5rem;">
-            <label style="display: flex; align-items: center; gap: 0.8rem; cursor: pointer;">
-                <input type="checkbox" id="visible_eleves" name="visible_eleves" {% if dossier.visible_eleves %}checked{% endif %}
-                       style="width: 20px; height: 20px; cursor: pointer;">
-                <span style="font-weight: 500; font-size: 1rem;">👁️ Visible aux élèves</span>
-            </label>
-        </div>
+            <div class="form-group">
+                <label for="description">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="17" y1="10" x2="3" y2="10"></line>
+                        <line x1="21" y1="6" x2="3" y2="6"></line>
+                        <line x1="21" y1="14" x2="3" y2="14"></line>
+                        <line x1="17" y1="18" x2="3" y2="18"></line>
+                    </svg>
+                    Description
+                </label>
+                <textarea id="description" name="description" class="form-control"
+                          placeholder="Description du contenu de ce dossier...">{{ dossier.description }}</textarea>
+            </div>
 
-        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-            <button type="submit" class="btn" style="background: #20c997; color: white; border: 1px solid #20c997; padding: 0.8rem 1.5rem; font-size: 1rem;">
-                💾 Enregistrer les modifications
-            </button>
-            <a href="{% url 'core:theme_detail' dossier.theme.id %}" 
-               class="btn btn-secondary" style="padding: 0.8rem 1.5rem; font-size: 1rem;">
-                ❌ Annuler
-            </a>
-        </div>
-    </form>
+            <div class="form-group">
+                <label for="ordre">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Ordre d'affichage
+                </label>
+                <input type="number" id="ordre" name="ordre"
+                       class="form-control form-control-sm"
+                       value="{{ dossier.ordre }}" min="0">
+                <p class="form-hint">Plus le nombre est petit, plus le dossier apparaît en premier.</p>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-group" for="visible_eleves">
+                    <input type="checkbox" id="visible_eleves" name="visible_eleves"
+                           {% if dossier.visible_eleves %}checked{% endif %}>
+                    <span class="checkbox-label">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Visible aux élèves
+                    </span>
+                </label>
+            </div>
+
+            <hr class="form-divider">
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Enregistrer les modifications
+                </button>
+                <a href="#" class="btn-cancel btn-back-universal">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
