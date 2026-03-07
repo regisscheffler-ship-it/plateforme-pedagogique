@@ -479,44 +479,50 @@ EL_VOIX_DISPONIBLES = {
 }
 
 
-async def _generer_audio_edge(texte, voice):
-    """Génère l'audio via edge-tts (async)."""
-    import edge_tts
-    import io
-
-    communicate = edge_tts.Communicate(texte, voice)
-    buffer = io.BytesIO()
-    async for chunk in communicate.stream():
-        if chunk["type"] == "audio":
-            buffer.write(chunk["data"])
-    buffer.seek(0)
-    return buffer.read()
-
-
 def synthetiser_voix(texte, voice_id=None):
     """
     Convertit du texte en audio MP3 via Microsoft Edge TTS.
-    Gratuit, sans clé API, voix neuronales haute qualité.
-
-    Args:
-        texte    (str) : texte à synthétiser (max 5000 chars)
-        voice_id (str) : identifiant de la voix (défaut : fr-FR-DeniseNeural)
-    Returns:
-        bytes : données audio MP3
+    Utilise un thread séparé pour éviter les conflits asyncio avec Gunicorn.
     """
     import asyncio
+    import threading
+    import io
+    import edge_tts
 
     texte = texte[:5000]
     voice = voice_id if voice_id in EL_VOIX_DISPONIBLES else 'fr-FR-DeniseNeural'
 
-    try:
-        audio_bytes = asyncio.run(_generer_audio_edge(texte, voice))
-    except RuntimeError:
-        # Si un event loop tourne déjà (cas rare avec certains serveurs)
-        import concurrent.futures
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            future = pool.submit(asyncio.run, _generer_audio_edge(texte, voice))
-            audio_bytes = future.result(timeout=30)
+    resultat = {'audio': None, 'erreur': None}
 
-    print(f"[Edge-TTS] Audio généré ({len(audio_bytes)} octets), voix={voice}")
-    return audio_bytes
+    async def _generer():
+        communicate = edge_tts.Communicate(texte, voice)
+        buffer = io.BytesIO()
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                buffer.write(chunk["data"])
+        buffer.seek(0)
+        resultat['audio'] = buffer.read()
+
+    def _executer():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(_generer())
+        except Exception as e:
+            resultat['erreur'] = e
+        finally:
+            loop.close()
+
+    thread = threading.Thread(target=_executer)
+    thread.start()
+    thread.join(timeout=30)
+
+    if resultat['erreur']:
+        print(f"[Edge-TTS] Erreur : {resultat['erreur']}")
+        raise resultat['erreur']
+
+    if not resultat['audio']:
+        raise Exception("Edge-TTS : timeout, aucun audio généré.")
+
+    print(f"[Edge-TTS] Audio généré ({len(resultat['audio'])} octets), voix={voice}")
+    return resultat['audio']
