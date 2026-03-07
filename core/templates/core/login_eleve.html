@@ -4,16 +4,10 @@
 
 {% block content %}
 <style>
-    body {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-    }
-
-    /* --- MOBILE D'ABORD (max-width 500px) --- */
     .login-container {
         max-width: 500px;
         margin: 3rem auto;
         padding: 0 1rem;
-        transition: max-width 0.3s ease;
     }
 
     .login-header {
@@ -34,14 +28,16 @@
         gap: 0.6rem;
         font-size: 2rem;
         color: #20c997;
-        font-weight: 600;
+        font-weight: 700;
         margin-bottom: 0.5rem;
     }
 
     .login-header h1 svg {
-        width: 28px;
-        height: 28px;
-        fill: #20c997;
+        width: 30px;
+        height: 30px;
+        stroke: #20c997;
+        fill: none;
+        stroke-width: 2;
     }
 
     .login-header p {
@@ -50,7 +46,7 @@
         margin: 0;
     }
 
-    /* Carte de formulaire */
+    /* Carte formulaire */
     .login-card {
         background: white;
         border: 2px solid #e9ecef;
@@ -59,7 +55,6 @@
         box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     }
 
-    /* Groupes de champs */
     .form-group {
         margin-bottom: 1.5rem;
     }
@@ -92,7 +87,7 @@
         color: #adb5bd;
     }
 
-    /* Bouton de connexion */
+    /* Bouton connexion — vert */
     .btn-connexion {
         width: 100%;
         padding: 1rem;
@@ -119,10 +114,12 @@
     .btn-connexion svg {
         width: 20px;
         height: 20px;
-        fill: white;
+        stroke: white;
+        fill: none;
+        stroke-width: 2.5;
     }
 
-    /* Section inscription */
+    /* Séparateur inscription */
     .inscription-section {
         text-align: center;
         margin-top: 2rem;
@@ -136,62 +133,104 @@
         font-size: 0.95rem;
     }
 
-    .inscription-section a {
+    /* Bouton inscription — outlined vert */
+    .btn-inscription {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 600;
-        padding: 0.6rem 1.2rem;
-        border: 2px solid #667eea;
+        gap: 0.6rem;
+        padding: 0.7rem 1.4rem;
+        background: white;
+        color: #20c997;
+        border: 2px solid #20c997;
         border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
         transition: all 0.3s;
     }
 
-    .inscription-section a:hover {
-        background: #667eea;
+    .btn-inscription:hover {
+        background: #20c997;
         color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
     }
 
-    .inscription-section a svg {
+    .btn-inscription svg {
         width: 18px;
         height: 18px;
         stroke: currentColor;
+        fill: none;
+        stroke-width: 2.5;
     }
 
-    /* Lien retour */
-    .retour-link {
-        text-align: center;
-        margin-top: 2rem;
-    }
-
-    .retour-link a {
+    /* Bouton retour */
+    .btn-retour {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 600;
+        gap: 0.6rem;
+        margin-top: 1.5rem;
+        padding: 0.7rem 1.4rem;
+        background: white;
+        color: #20c997;
+        border: 2px solid #20c997;
+        border-radius: 8px;
         font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
         transition: all 0.3s;
     }
 
-    .retour-link a:hover {
-        color: #764ba2;
-        gap: 0.8rem;
+    .btn-retour:hover {
+        background: #20c997;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
     }
 
-    .retour-link svg {
-        width: 20px;
-        height: 20px;
+    .btn-retour svg {
+        width: 18px;
+        height: 18px;
         stroke: currentColor;
+        fill: none;
+        stroke-width: 2.5;
     }
 
-    /* --- C'EST ICI QUE CA CHANGE POUR LE PC --- */
+    .retour-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+
+    /* Messages d'erreur Django */
+    .error-msg {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 0.8rem 1rem;
+        margin-bottom: 1.2rem;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .error-msg svg {
+        width: 18px;
+        height: 18px;
+        stroke: #721c24;
+        fill: none;
+        stroke-width: 2;
+        flex-shrink: 0;
+    }
+
+    /* Responsive PC */
     @media (min-width: 992px) {
         .login-container {
-            max-width: 900px; /* BEAUCOUP PLUS LARGE */
+            max-width: 900px;
             margin: 5rem auto;
         }
 
@@ -248,93 +287,106 @@
             font-size: 1.1rem;
         }
 
-        .inscription-section a {
-            padding: 0.8rem 1.6rem;
-            font-size: 1.1rem;
+        .btn-inscription,
+        .btn-retour {
+            padding: 0.85rem 1.8rem;
+            font-size: 1.05rem;
         }
     }
 </style>
 
-<!-- En-tête -->
 <div class="login-container">
+
+    <!-- En-tête -->
     <div class="login-header">
-        <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg" 
+        <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg"
              alt="Logo Lycée Louis Loucheur">
-        
         <h1>
-            <svg viewBox="0 0 24 24">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="8.5" cy="7" r="4"/>
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path>
             </svg>
             Connexion Élève
         </h1>
         <p>Accédez à vos cours et ressources</p>
     </div>
 
-    <!-- Carte Formulaire -->
+    <!-- Carte formulaire -->
     <div class="login-card">
+
+        {% if form.errors %}
+        <div class="error-msg">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            Identifiant ou mot de passe incorrect.
+        </div>
+        {% endif %}
+
         <form method="POST">
             {% csrf_token %}
-            
-            <!-- Identifiant -->
+
             <div class="form-group">
                 <label for="username">Identifiant</label>
-                <input 
-                    type="text" 
-                    id="username" 
-                    name="username" 
-                    placeholder="Votre identifiant" 
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Votre identifiant"
                     required
                     autocomplete="username"
                 >
             </div>
 
-            <!-- Mot de passe -->
             <div class="form-group">
                 <label for="password">Mot de passe</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    placeholder="Votre mot de passe" 
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Votre mot de passe"
                     required
                     autocomplete="current-password"
                 >
             </div>
 
-            <!-- Bouton -->
             <button type="submit" class="btn-connexion">
-                <svg viewBox="0 0 24 24">
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
                 </svg>
                 Se connecter
             </button>
         </form>
 
-        <!-- Section inscription -->
+        <!-- Inscription -->
         <div class="inscription-section">
             <p>Pas encore de compte ?</p>
-            <a href="{% url 'core:inscription_eleve' %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="8.5" cy="7" r="4"/>
-                    <line x1="20" y1="8" x2="20" y2="14"/>
-                    <line x1="23" y1="11" x2="17" y2="11"/>
+            <a href="{% url 'core:inscription_eleve' %}" class="btn-inscription">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
                 </svg>
                 S'inscrire maintenant
             </a>
         </div>
     </div>
 
-    <!-- Retour -->
-    <div class="retour-link">
-        <a href="{% url 'core:choix_eleve' %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
+    <!-- Bouton retour -->
+    <div class="retour-wrapper">
+        <a href="{% url 'core:choix_eleve' %}" class="btn-retour btn-back-universal">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5"></path>
+                <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             Retour
         </a>
     </div>
-</div>
 
+</div>
 {% endblock %}

@@ -4,16 +4,10 @@
 
 {% block content %}
 <style>
-    body {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-    }
-
-    /* --- MOBILE D'ABORD (max-width 500px) --- */
     .login-container {
         max-width: 500px;
         margin: 3rem auto;
         padding: 0 1rem;
-        transition: max-width 0.3s ease; /* Transition fluide */
     }
 
     .login-header {
@@ -33,15 +27,17 @@
         justify-content: center;
         gap: 0.6rem;
         font-size: 2rem;
-        color: #667eea;
-        font-weight: 600;
+        color: #20c997;
+        font-weight: 700;
         margin-bottom: 0.5rem;
     }
 
     .login-header h1 svg {
-        width: 28px;
-        height: 28px;
-        fill: #667eea;
+        width: 30px;
+        height: 30px;
+        stroke: #20c997;
+        fill: none;
+        stroke-width: 2;
     }
 
     .login-header p {
@@ -50,7 +46,7 @@
         margin: 0;
     }
 
-    /* Carte de formulaire */
+    /* Carte formulaire */
     .login-card {
         background: white;
         border: 2px solid #e9ecef;
@@ -59,7 +55,6 @@
         box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     }
 
-    /* Groupes de champs */
     .form-group {
         margin-bottom: 1.5rem;
     }
@@ -84,19 +79,19 @@
 
     .form-group input:focus {
         outline: none;
-        border-color: #667eea;
-        background: #f0f2ff;
+        border-color: #20c997;
+        background: #f0fdf8;
     }
 
     .form-group input::placeholder {
         color: #adb5bd;
     }
 
-    /* Bouton de connexion BLEU */
+    /* Bouton connexion — vert */
     .btn-connexion {
         width: 100%;
         padding: 1rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #20c997 0%, #1aa179 100%);
         color: white;
         border: none;
         border-radius: 8px;
@@ -108,73 +103,110 @@
         align-items: center;
         justify-content: center;
         gap: 0.6rem;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
     }
 
     .btn-connexion:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 20px rgba(32, 201, 151, 0.4);
     }
 
     .btn-connexion svg {
         width: 20px;
         height: 20px;
-        fill: white;
+        stroke: white;
+        fill: none;
+        stroke-width: 2.5;
     }
 
-    /* Lien retour */
-    .retour-link {
-        text-align: center;
-        margin-top: 2rem;
-    }
-
-    .retour-link a {
+    /* Bouton retour */
+    .btn-retour {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 600;
+        gap: 0.6rem;
+        margin-top: 1.5rem;
+        padding: 0.7rem 1.4rem;
+        background: white;
+        color: #20c997;
+        border: 2px solid #20c997;
+        border-radius: 8px;
         font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
         transition: all 0.3s;
     }
 
-    .retour-link a:hover {
-        color: #764ba2;
-        gap: 0.8rem;
+    .btn-retour:hover {
+        background: #20c997;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
     }
 
-    .retour-link svg {
-        width: 20px;
-        height: 20px;
+    .btn-retour svg {
+        width: 18px;
+        height: 18px;
         stroke: currentColor;
+        fill: none;
+        stroke-width: 2.5;
+        transition: stroke 0.3s;
     }
 
-    /* --- C'EST ICI QUE CA CHANGE POUR LE PC --- */
+    .retour-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+
+    /* Messages d'erreur Django */
+    .error-msg {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 0.8rem 1rem;
+        margin-bottom: 1.2rem;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .error-msg svg {
+        width: 18px;
+        height: 18px;
+        stroke: #721c24;
+        fill: none;
+        stroke-width: 2;
+        flex-shrink: 0;
+    }
+
+    /* Responsive PC */
     @media (min-width: 992px) {
         .login-container {
-            max-width: 900px; /* BEAUCOUP PLUS LARGE */
+            max-width: 900px;
             margin: 5rem auto;
         }
-        
+
         .login-card {
-            padding: 4rem 5rem; /* Plus d'espace intérieur */
+            padding: 4rem 5rem;
         }
 
         .login-header img {
-            max-width: 150px; /* Logo plus grand */
+            max-width: 150px;
         }
-        
+
         .login-header h1 {
-            font-size: 2.8rem; /* Titre plus gros */
+            font-size: 2.8rem;
             margin-bottom: 1rem;
         }
-        
+
         .login-header h1 svg {
             width: 38px;
             height: 38px;
         }
-        
+
         .login-header p {
             font-size: 1.2rem;
             margin-bottom: 2rem;
@@ -185,89 +217,107 @@
         }
 
         .form-group input {
-            padding: 1.2rem 1.5rem; /* Champs plus grands */
+            padding: 1.2rem 1.5rem;
             font-size: 1.2rem;
             border-radius: 10px;
         }
 
         .btn-connexion {
-            padding: 1.3rem; /* Bouton plus imposant */
+            padding: 1.3rem;
             font-size: 1.3rem;
             border-radius: 10px;
         }
-        
+
         .btn-connexion svg {
             width: 26px;
             height: 26px;
         }
+
+        .btn-retour {
+            padding: 0.85rem 1.8rem;
+            font-size: 1.05rem;
+        }
     }
 </style>
 
-<!-- En-tête -->
 <div class="login-container">
+
+    <!-- En-tête -->
     <div class="login-header">
-        <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg" 
+        <img src="https://lp-louis-loucheur-roubaix.59.ac-lille.fr/wp-content/uploads/sites/17/2019/11/logoL_LOUCHEUR-300x300.jpg"
              alt="Logo Lycée Louis Loucheur">
-        
         <h1>
-            <svg viewBox="0 0 24 24">
-                <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
             </svg>
             Espace Professeur
         </h1>
         <p>Connectez-vous pour accéder à votre tableau de bord</p>
     </div>
 
-    <!-- Carte Formulaire -->
+    <!-- Carte formulaire -->
     <div class="login-card">
+
+        {% if form.errors %}
+        <div class="error-msg">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            Identifiant ou mot de passe incorrect.
+        </div>
+        {% endif %}
+
         <form method="POST">
             {% csrf_token %}
-            
-            <!-- Identifiant -->
+
             <div class="form-group">
                 <label for="username">Identifiant</label>
-                <input 
-                    type="text" 
-                    id="username" 
-                    name="username" 
-                    placeholder="Votre identifiant" 
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Votre identifiant"
                     required
                     autocomplete="username"
                 >
             </div>
 
-            <!-- Mot de passe -->
             <div class="form-group">
                 <label for="password">Mot de passe</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    placeholder="Votre mot de passe" 
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Votre mot de passe"
                     required
                     autocomplete="current-password"
                 >
             </div>
 
-            <!-- Bouton -->
             <button type="submit" class="btn-connexion">
-                <svg viewBox="0 0 24 24">
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
                 </svg>
                 Se connecter
             </button>
         </form>
     </div>
 
-    <!-- Retour -->
-    <div class="retour-link">
-        <a href="{% url 'core:home' %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
+    <!-- Bouton retour -->
+    <div class="retour-wrapper">
+        <a href="{% url 'core:home' %}" class="btn-retour btn-back-universal">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5"></path>
+                <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             Retour
         </a>
     </div>
-</div>
 
+</div>
 {% endblock %}

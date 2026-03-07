@@ -45,14 +45,7 @@ def extraire_texte_pdf(fichier):
     """
     Extrait et concatène le texte de toutes les pages d'un fichier PDF.
     Utilise pymupdf (fitz) en priorité, puis PyPDF2 en fallback.
-
-    Args:
-        fichier : objet fichier Django (InMemoryUploadedFile) ou chemin
-
-    Returns:
-        str : texte extrait, ou None si erreur / PDF scanné
     """
-    # Lire les bytes une seule fois (compatible InMemoryUploadedFile Django)
     try:
         if hasattr(fichier, 'read'):
             if hasattr(fichier, 'seek'):
@@ -65,7 +58,6 @@ def extraire_texte_pdf(fichier):
         print(f"[PDF] Impossible de lire le fichier : {e}")
         return None
 
-    # ── Tentative 1 : pymupdf (fitz) ──────────────────────────────────────
     try:
         import fitz  # pymupdf
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -79,11 +71,9 @@ def extraire_texte_pdf(fichier):
         print(f"[PDF] pymupdf : {len(texte_pages)} pages avec texte, {len(resultat)} caractères.")
         if resultat.strip():
             return resultat
-        # texte vide → peut-être PDF scanné, on essaie PyPDF2 au cas où
     except Exception as e:
         print(f"[PDF] pymupdf erreur (fallback PyPDF2) : {e}")
 
-    # ── Tentative 2 : PyPDF2 (fallback) ───────────────────────────────────
     try:
         import io
         import PyPDF2
@@ -106,19 +96,6 @@ def extraire_texte_pdf(fichier):
 # =====================================================
 
 def generer_qcm_depuis_texte(texte, nb_questions=10):
-    """
-    Génère une liste de questions QCM à partir d'un texte,
-    en utilisant l'API Google Gemini.
-
-    Args:
-        texte        (str) : texte source (cours, PDF extrait, etc.)
-        nb_questions (int) : nombre de questions à générer (défaut 10)
-
-    Returns:
-        list[dict] : liste de dicts avec clés
-                     enonce, choix_a, choix_b, choix_c, choix_d, bonne_reponse
-                     ou None si erreur
-    """
     try:
         from google import genai
         from django.conf import settings
@@ -130,9 +107,7 @@ def generer_qcm_depuis_texte(texte, nb_questions=10):
 
         client = genai.Client(api_key=api_key)
 
-        # Tronquer le texte à 8000 caractères max pour rester dans les limites du prompt
         texte_tronque = texte[:8000] if len(texte) > 8000 else texte
-        # Nettoyer les caractères problématiques pour le prompt
         texte_tronque = texte_tronque.replace('\\', ' ').replace('"', "'")
 
         prompt = (
@@ -155,17 +130,14 @@ def generer_qcm_depuis_texte(texte, nb_questions=10):
         raw = response.text.strip()
         print(f"[Gemini] Réponse brute ({len(raw)} chars) : {raw[:200]}...")
 
-        # Nettoyage : supprimer les blocs ```json ... ``` si présents
         raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
         raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE)
         raw = raw.strip()
-        # Corriger les backslashes invalides en JSON (LaTeX, etc.)
         raw = re.sub(r'\\([^"\\/bfnrtu])', r'\1', raw)
 
         data = json.loads(raw)
         questions_brutes = data.get('questions', [])
 
-        # Validation : seuls enonce, choix_a, choix_b et bonne_reponse sont obligatoires
         questions_valides = []
         champs_requis = {'enonce', 'choix_a', 'choix_b', 'bonne_reponse'}
         for i, q in enumerate(questions_brutes):
@@ -177,7 +149,6 @@ def generer_qcm_depuis_texte(texte, nb_questions=10):
                 print(f"[Gemini] Question #{i+1} ignorée — bonne_reponse invalide : {q.get('bonne_reponse')}")
                 continue
             q['bonne_reponse'] = q['bonne_reponse'].upper()
-            # S'assurer que choix_c/choix_d existent (optionnels)
             q.setdefault('choix_c', '')
             q.setdefault('choix_d', '')
             questions_valides.append(q)
@@ -199,29 +170,14 @@ def generer_qcm_depuis_texte(texte, nb_questions=10):
 # =====================================================
 
 def _nettoyer_texte(texte):
-    """Supprime la notation LaTeX et les backslashes problématiques."""
     if not texte:
         return texte
-    # Supprimer les formules LaTeX $...$
     texte = re.sub(r'\$[^\$]*\$', lambda m: re.sub(r'[\\{}^_$]', '', m.group()), texte)
-    # Remplacer les backslashes restants par un espace
     texte = texte.replace('\\', ' ')
     return texte.strip()
 
 
 def generer_distracteurs_depuis_cartes(cartes):
-    """
-    Prend une liste de CarteRevision et demande à Gemini de générer
-    3 réponses fausses mais plausibles pour chacune.
-    La bonne réponse est toujours le choix A.
-
-    Args:
-        cartes : liste de CarteRevision (avec .question et .reponse)
-
-    Returns:
-        list[dict] avec clés enonce, choix_a, choix_b, choix_c, choix_d, bonne_reponse
-        ou None si erreur
-    """
     if not cartes:
         return None
     try:
@@ -258,7 +214,6 @@ def generer_distracteurs_depuis_cartes(cartes):
         raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
         raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE)
         raw = raw.strip()
-        # Corriger les backslashes invalides en JSON (ex : \c, \o, \C, \°...)
         raw = re.sub(r'\\([^"\\/bfnrtu])', r'\1', raw)
 
         data = json.loads(raw)
@@ -289,16 +244,6 @@ def generer_distracteurs_depuis_cartes(cartes):
 # =====================================================
 
 def generer_une_question(sujet, contexte=''):
-    """
-    Génère UNE nouvelle question QCM pour remplacer une question existante.
-
-    Args:
-        sujet    (str) : énoncé de la question existante (contexte thématique)
-        contexte (str) : texte supplémentaire optionnel
-
-    Returns:
-        dict | None : {'enonce', 'choix_a', 'choix_b', 'choix_c', 'choix_d', 'bonne_reponse'}
-    """
     try:
         from google import genai
         from django.conf import settings
@@ -327,7 +272,6 @@ def generer_une_question(sujet, contexte=''):
         raw = re.sub(r'\\([^"\\/bfnrtu])', r'\1', raw)
 
         q = json.loads(raw)
-        # accepter aussi une liste […]
         if isinstance(q, list) and q:
             q = q[0]
         if not isinstance(q, dict):
@@ -356,19 +300,6 @@ def generer_une_question(sujet, contexte=''):
 # =====================================================
 
 def generer_mode_operatoire(texte, titre):
-    """
-    Génère un mode opératoire structuré en JSON via Gemini.
-
-    Args:
-        texte  (str) : texte source (cours, PDF, description)
-        titre  (str) : titre du mode opératoire
-
-    Returns:
-        list[dict] : liste de lignes avec clés
-                     ordre, phase, operations, materiels,
-                     controle, risques_sante, risques_environnement
-        None si erreur
-    """
     try:
         from google import genai
         from django.conf import settings
@@ -412,7 +343,6 @@ def generer_mode_operatoire(texte, titre):
         raw = response.text.strip()
         print(f"[Gemini-MO] Réponse brute ({len(raw)} chars) : {raw[:200]}...")
 
-        # Nettoyage blocs markdown
         raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
         raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE)
         raw = raw.strip()
@@ -442,18 +372,6 @@ def generer_mode_operatoire(texte, titre):
 
 
 def regenerer_ligne(titre_mo, phase, colonne):
-    """
-    Régénère le contenu d'une cellule unique d'un mode opératoire.
-
-    Args:
-        titre_mo (str) : titre du mode opératoire
-        phase    (str) : nom de la phase concernée
-        colonne  (str) : nom de la colonne à régénérer
-                         (operations, materiels, controle, risques_sante, risques_environnement)
-
-    Returns:
-        str | None : texte régénéré ou None si erreur
-    """
     try:
         from google import genai
         from django.conf import settings
@@ -466,7 +384,7 @@ def regenerer_ligne(titre_mo, phase, colonne):
         client = genai.Client(api_key=api_key)
 
         descriptions_colonnes = {
-            'operations':            'actions concrètes à réaliser (verbes d\'action, 2-3 phrases max)',
+            'operations':            "actions concrètes à réaliser (verbes d'action, 2-3 phrases max)",
             'materiels':             'liste courte de matériels et outils séparés par des virgules (pas de phrases)',
             'controle':              '1-2 points de contrôle essentiels, très concis',
             'risques_sante':         '1-2 risques santé + mesure EPI, format : "Risque — prévention"',
@@ -496,19 +414,6 @@ def regenerer_ligne(titre_mo, phase, colonne):
 # =====================================================
 
 def assistant_recherche(question, historique=None, fichier_bytes=None, fichier_mime=None, fichier_nom=None):
-    """
-    Répond à une question libre avec Gemini.
-    Supporte l'envoi d'un fichier inline (PDF, image, texte).
-
-    Args:
-        question      (str)   : question ou sujet de recherche
-        historique    (list)  : liste de dicts {role, texte} pour le contexte
-        fichier_bytes (bytes) : contenu binaire du fichier joint (optionnel)
-        fichier_mime  (str)   : type MIME du fichier (ex. 'application/pdf')
-        fichier_nom   (str)   : nom du fichier (pour affichage dans le prompt)
-    Returns:
-        str : réponse formatée, ou message d'erreur
-    """
     try:
         from google import genai
         from google.genai import types
@@ -520,7 +425,6 @@ def assistant_recherche(question, historique=None, fichier_bytes=None, fichier_m
 
         client = genai.Client(api_key=api_key)
 
-        # Construire le prompt texte avec l'historique
         contexte_hist = ""
         if historique:
             for msg in historique[-6:]:
@@ -545,7 +449,7 @@ def assistant_recherche(question, historique=None, fichier_bytes=None, fichier_m
                 f"L'utilisateur a joint le fichier '{nom_affiche}'.\n"
                 f"Question : {question or 'Fais un résumé structuré de ce document.'}"
             )
-            part_texte  = types.Part.from_text(text=prompt_texte)
+            part_texte   = types.Part.from_text(text=prompt_texte)
             part_fichier = types.Part.from_bytes(data=fichier_bytes, mime_type=fichier_mime)
             contents = [part_texte, part_fichier]
         else:
@@ -564,10 +468,12 @@ def assistant_recherche(question, historique=None, fichier_bytes=None, fichier_m
 # =====================================================
 
 # Voix ElevenLabs disponibles
+# IMPORTANT : ces IDs sont des voix de la bibliothèque publique ElevenLabs.
+# Si vous obtenez une erreur 404, connectez-vous sur elevenlabs.io → Voices
+# → cherchez chaque voix → cliquez "Add to my voices" pour les activer sur votre compte.
 _EL_VOICE_ID = 'XB0fDUnXU5powFXDhCwa'  # Charlotte (défaut)
 _EL_MODEL    = 'eleven_multilingual_v2'
 
-# IDs de voix ElevenLabs pré-faites (compatibles français / multilingue)
 EL_VOIX_DISPONIBLES = {
     'XB0fDUnXU5powFXDhCwa': 'Charlotte – Femme, naturelle',
     'EXAVITQu4vr4xnSDxMaL': 'Sarah – Femme, douce',
@@ -582,8 +488,11 @@ def synthetiser_voix(texte, voice_id=None):
     Convertit du texte en audio MP3 via l'API ElevenLabs.
     Rotation automatique des clés si quota épuisé (429) ou invalide (403/401).
 
+    PRÉREQUIS : Les voix dans EL_VOIX_DISPONIBLES doivent être ajoutées à votre
+    compte ElevenLabs via elevenlabs.io → Voices → "Add to my voices".
+
     Args:
-        texte     (str) : texte à synthétiser (markdown nettoyé)
+        texte     (str) : texte à synthétiser
         voice_id  (str) : ID de la voix ElevenLabs (défaut : Charlotte)
     Returns:
         bytes : données audio MP3
@@ -597,16 +506,20 @@ def synthetiser_voix(texte, voice_id=None):
     if not cles:
         raise Exception("Aucune clé ElevenLabs configurée (ELEVENLABS_API_KEY dans .env).")
 
-    # Limiter à 4000 caractères max (économise le quota mensuel)
+    print(f"[ElevenLabs] {len(cles)} clé(s) disponible(s).")
+
+    # Limiter à 4000 caractères max
     texte = texte[:4000]
 
     derniere_erreur = None
     for cle in cles:
         try:
+            print(f"[ElevenLabs] Tentative avec clé ...{cle[-8:]} (longueur={len(cle)})")
             vid = voice_id if voice_id in EL_VOIX_DISPONIBLES else _EL_VOICE_ID
+            print(f"[ElevenLabs] Voix utilisée : {vid}")
+
             resp = _req.post(
                 f'https://api.elevenlabs.io/v1/text-to-speech/{vid}',
-
                 headers={
                     'xi-api-key': cle,
                     'Content-Type': 'application/json',
@@ -624,16 +537,33 @@ def synthetiser_voix(texte, voice_id=None):
                 },
                 timeout=30,
             )
-            if resp.status_code in (401, 403, 429):
-                print(f"[ElevenLabs] Code {resp.status_code} pour clé ...{cle[-6:]}, bascule.")
-                derniere_erreur = Exception(f"ElevenLabs HTTP {resp.status_code}")
+
+            # LOG DÉTAILLÉ de l'erreur pour diagnostic
+            if resp.status_code != 200:
+                corps_erreur = resp.text[:500] if resp.text else '(vide)'
+                print(f"[ElevenLabs] Erreur HTTP {resp.status_code} : {corps_erreur}")
+
+            if resp.status_code in (401, 403):
+                derniere_erreur = Exception(f"ElevenLabs clé invalide (HTTP {resp.status_code}) : {resp.text[:200]}")
                 continue
+            if resp.status_code == 429:
+                print(f"[ElevenLabs] Quota épuisé pour clé ...{cle[-8:]}, bascule.")
+                derniere_erreur = Exception(f"ElevenLabs quota épuisé (HTTP 429)")
+                continue
+            if resp.status_code == 404:
+                # La voix n'est pas dans le compte — on lève une erreur claire
+                raise Exception(
+                    f"Voix '{vid}' introuvable (HTTP 404). "
+                    f"Allez sur elevenlabs.io → Voices → cherchez la voix → cliquez 'Add to my voices'."
+                )
+
             resp.raise_for_status()
-            print(f"[ElevenLabs] Audio généré ({len(resp.content)} octets) avec clé ...{cle[-6:]}")
+            print(f"[ElevenLabs] Audio généré ({len(resp.content)} octets) avec clé ...{cle[-8:]}")
             return resp.content
+
         except _req.exceptions.RequestException as e:
+            print(f"[ElevenLabs] Erreur réseau : {e}")
             derniere_erreur = e
             continue
 
-    raise derniere_erreur or Exception("Toutes les clés ElevenLabs sont épuisées.") 
-
+    raise derniere_erreur or Exception("Toutes les clés ElevenLabs sont épuisées.")
