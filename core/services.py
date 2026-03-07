@@ -463,107 +463,47 @@ def assistant_recherche(question, historique=None, fichier_bytes=None, fichier_m
         return f"Une erreur s'est produite : {str(e)}"
 
 
-# =====================================================
-# SYNTHÈSE VOCALE — ELEVENLABS TTS
+# # =====================================================
+# SYNTHÈSE VOCALE — GOOGLE TTS (gTTS)
 # =====================================================
 
-# Voix ElevenLabs disponibles
-# IMPORTANT : ces IDs sont des voix de la bibliothèque publique ElevenLabs.
-# Si vous obtenez une erreur 404, connectez-vous sur elevenlabs.io → Voices
-# → cherchez chaque voix → cliquez "Add to my voices" pour les activer sur votre compte.
-_EL_VOICE_ID = 'XB0fDUnXU5powFXDhCwa'  # Charlotte (défaut)
-_EL_MODEL    = 'eleven_multilingual_v2'
-
+# Voix disponibles (langues gTTS)
 EL_VOIX_DISPONIBLES = {
-    'XB0fDUnXU5powFXDhCwa': 'Charlotte – Femme, naturelle',
-    'EXAVITQu4vr4xnSDxMaL': 'Sarah – Femme, douce',
-    'piTKgcLEGmPE4e6mEKli': 'Nicole – Femme, posée',
-    'onwK4e9ZLuTAKqWW03F9': 'Daniel – Homme, professionnel',
-    'nPczCjzI2devNBz1zQrb': 'Brian – Homme, clair',
-    'JBFqnCBsd6RMkjVDRZzb': 'George – Homme, grave',
+    'fr-FR': 'Français standard',
+    'fr-CA': 'Français canadien',
+    'en-US': 'Anglais américain',
 }
 
 def synthetiser_voix(texte, voice_id=None):
     """
-    Convertit du texte en audio MP3 via l'API ElevenLabs.
-    Rotation automatique des clés si quota épuisé (429) ou invalide (403/401).
-
-    PRÉREQUIS : Les voix dans EL_VOIX_DISPONIBLES doivent être ajoutées à votre
-    compte ElevenLabs via elevenlabs.io → Voices → "Add to my voices".
+    Convertit du texte en audio MP3 via gTTS (Google Translate TTS).
+    Gratuit, sans clé API, sans restriction de datacenter.
 
     Args:
-        texte     (str) : texte à synthétiser
-        voice_id  (str) : ID de la voix ElevenLabs (défaut : Charlotte)
+        texte    (str) : texte à synthétiser
+        voice_id (str) : code langue (défaut : fr-FR)
     Returns:
         bytes : données audio MP3
-    Raises:
-        Exception si toutes les clés sont épuisées ou non configurées
     """
-    import requests as _req
-    from django.conf import settings
+    from gtts import gTTS
+    import io
 
-    cles = getattr(settings, 'ELEVENLABS_API_KEYS', [])
-    if not cles:
-        raise Exception("Aucune clé ElevenLabs configurée (ELEVENLABS_API_KEY dans .env).")
-
-    print(f"[ElevenLabs] {len(cles)} clé(s) disponible(s).")
-
-    # Limiter à 4000 caractères max
     texte = texte[:4000]
 
-    derniere_erreur = None
-    for cle in cles:
-        try:
-            print(f"[ElevenLabs] Tentative avec clé ...{cle[-8:]} (longueur={len(cle)})")
-            vid = voice_id if voice_id in EL_VOIX_DISPONIBLES else _EL_VOICE_ID
-            print(f"[ElevenLabs] Voix utilisée : {vid}")
+    # Déterminer la langue
+    lang = 'fr'
+    tld = 'fr'  # accent français de France
+    if voice_id == 'fr-CA':
+        tld = 'ca'
+    elif voice_id and voice_id.startswith('en'):
+        lang = 'en'
+        tld = 'com'
 
-            resp = _req.post(
-                f'https://api.elevenlabs.io/v1/text-to-speech/{vid}',
-                headers={
-                    'xi-api-key': cle,
-                    'Content-Type': 'application/json',
-                    'Accept': 'audio/mpeg',
-                },
-                json={
-                    'text': texte,
-                    'model_id': _EL_MODEL,
-                    'voice_settings': {
-                        'stability': 0.5,
-                        'similarity_boost': 0.75,
-                        'style': 0.0,
-                        'use_speaker_boost': True,
-                    },
-                },
-                timeout=30,
-            )
+    tts = gTTS(text=texte, lang=lang, tld=tld, slow=False)
 
-            # LOG DÉTAILLÉ de l'erreur pour diagnostic
-            if resp.status_code != 200:
-                corps_erreur = resp.text[:500] if resp.text else '(vide)'
-                print(f"[ElevenLabs] Erreur HTTP {resp.status_code} : {corps_erreur}")
+    buffer = io.BytesIO()
+    tts.write_to_fp(buffer)
+    buffer.seek(0)
 
-            if resp.status_code in (401, 403):
-                derniere_erreur = Exception(f"ElevenLabs clé invalide (HTTP {resp.status_code}) : {resp.text[:200]}")
-                continue
-            if resp.status_code == 429:
-                print(f"[ElevenLabs] Quota épuisé pour clé ...{cle[-8:]}, bascule.")
-                derniere_erreur = Exception(f"ElevenLabs quota épuisé (HTTP 429)")
-                continue
-            if resp.status_code == 404:
-                # La voix n'est pas dans le compte — on lève une erreur claire
-                raise Exception(
-                    f"Voix '{vid}' introuvable (HTTP 404). "
-                    f"Allez sur elevenlabs.io → Voices → cherchez la voix → cliquez 'Add to my voices'."
-                )
-
-            resp.raise_for_status()
-            print(f"[ElevenLabs] Audio généré ({len(resp.content)} octets) avec clé ...{cle[-8:]}")
-            return resp.content
-
-        except _req.exceptions.RequestException as e:
-            print(f"[ElevenLabs] Erreur réseau : {e}")
-            derniere_erreur = e
-            continue
-
-    raise derniere_erreur or Exception("Toutes les clés ElevenLabs sont épuisées.")
+    print(f"[gTTS] Audio généré ({buffer.getbuffer().nbytes} octets), lang={lang}, tld={tld}")
+    return buffer.read()

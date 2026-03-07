@@ -279,6 +279,14 @@
         font-size: 1rem; line-height: 1; margin-left: 0.2rem; flex-shrink: 0;
     }
     .file-badge button:hover { color: #dc2626; }
+
+    /* Badge gTTS */
+    .gtts-badge {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;
+        border-radius: 20px; padding: 0.25rem 0.65rem;
+        font-size: 0.78rem; font-weight: 600; margin-bottom: 0.7rem;
+    }
 </style>
 
 <div class="page-container">
@@ -387,7 +395,7 @@
                 </div>
             </div>
 
-            <!-- Paramètres vocaux -->
+            <!-- Paramètres vocaux — gTTS -->
             <div class="panel-card">
                 <div class="panel-header">
                     <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -398,13 +406,18 @@
                     Voix de l'assistant
                 </div>
                 <div class="panel-body" style="padding-bottom:0.9rem;">
-                    <select class="voice-select" id="voixSelect" title="Choisir la voix">
-                        <option value="XB0fDUnXU5powFXDhCwa">Charlotte – Femme, naturelle</option>
-                        <option value="EXAVITQu4vr4xnSDxMaL">Sarah – Femme, douce</option>
-                        <option value="piTKgcLEGmPE4e6mEKli">Nicole – Femme, posée</option>
-                        <option value="onwK4e9ZLuTAKqWW03F9">Daniel – Homme, professionnel</option>
-                        <option value="nPczCjzI2devNBz1zQrb">Brian – Homme, clair</option>
-                        <option value="JBFqnCBsd6RMkjVDRZzb">George – Homme, grave</option>
+                    <!-- Badge gTTS gratuit -->
+                    <div class="gtts-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Google TTS — Gratuit
+                    </div>
+                    <!-- MODIF : 2 accents gTTS au lieu des voix ElevenLabs -->
+                    <select class="voice-select" id="voixSelect" title="Choisir l'accent">
+                        <option value="fr-FR">Français — France</option>
+                        <option value="fr-CA">Français — Canada</option>
                     </select>
                     <button class="btn-test-voix" id="btnTestVoix">
                         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -457,7 +470,7 @@
     const fileNameEl   = document.getElementById('fileName');
 
     let historique = [];
-    let fichierJoint = null; // File object ou null
+    let fichierJoint = null;
 
     // Compteur caractères + auto-resize textarea
     userInput.addEventListener('input', function() {
@@ -538,7 +551,6 @@
         if (el) el.remove();
     }
 
-    // Stockage des textes bruts pour la lecture TTS (évite les problèmes d'échappement HTML)
     const ttsTextes = new Map();
     let ttsIdCounter = 0;
 
@@ -546,8 +558,6 @@
         const div = document.createElement('div');
         div.className = 'msg-ai';
         const html = marked.parse(texte);
-
-        // Créer le bouton TTS séparément pour éviter l'inline onclick avec JSON
         const ttsId = 'tts-' + (++ttsIdCounter);
         ttsTextes.set(ttsId, texte);
 
@@ -571,17 +581,13 @@
                 </button>
             </div>`;
 
-        // Attacher l'écouteur directement sur le bouton (pas de onclick inline)
         const btn = div.querySelector('.tts-btn');
         btn.addEventListener('click', () => lireHautVoix(btn, ttsTextes.get(ttsId)));
-
         chatMessages.appendChild(div);
         scrollBas();
     }
 
-    function scrollBas() {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+    function scrollBas() { chatMessages.scrollTop = chatMessages.scrollHeight; }
 
     function escapeHtml(text) {
         return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -591,8 +597,7 @@
         const question = userInput.value.trim();
         if ((!question && !fichierJoint) || sendBtn.disabled) return;
 
-        // Affichage message utilisateur
-        const labelUser = question || `📎 ${fichierJoint.name}`;
+        const labelUser = question || `Fichier : ${fichierJoint.name}`;
         ajouterMessageUser(labelUser);
         historique.push({ role: 'user', texte: question || `[Fichier : ${fichierJoint.name}]` });
 
@@ -601,12 +606,11 @@
         charCount.textContent = '0';
         sendBtn.disabled = true;
 
-        const typing = ajouterTyping();
+        ajouterTyping();
 
         try {
             let resp;
             if (fichierJoint) {
-                // ── Envoi multipart avec fichier ──
                 const fd = new FormData();
                 fd.append('question', question);
                 fd.append('historique', JSON.stringify(historique));
@@ -619,7 +623,6 @@
                 });
                 retirerFichier();
             } else {
-                // ── Envoi JSON classique ──
                 resp = await fetch("{% url 'core:assistant_ia_query' %}", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
@@ -630,7 +633,7 @@
             retirerTyping();
 
             if (!resp.ok) {
-                ajouterMessageAI('❌ Erreur serveur. Réessayez.');
+                ajouterMessageAI('Erreur serveur. Réessayez.');
             } else {
                 const data = await resp.json();
                 const reponse = data.reponse || data.error || 'Réponse vide.';
@@ -639,7 +642,7 @@
             }
         } catch(e) {
             retirerTyping();
-            ajouterMessageAI('❌ Impossible de contacter le serveur.');
+            ajouterMessageAI('Impossible de contacter le serveur.');
         }
 
         sendBtn.disabled = false;
@@ -651,14 +654,13 @@
         return cookie ? cookie.split('=')[1].trim() : '';
     }
 
-    // ── Lecture à haute voix (ElevenLabs TTS) ──
-    let ttsEnCours = null;   // { btn, audio }
-    const SVG_ECOUTER = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Écouter';
+    // ── Lecture à haute voix — gTTS ──
+    let ttsEnCours = null;
+    const SVG_ECOUTER    = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Écouter';
     const SVG_CHARGEMENT = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Chargement…';
-    const SVG_STOP = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Arrêter';
+    const SVG_STOP       = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Arrêter';
 
     async function lireHautVoix(btn, texte) {
-        // Arrêter si déjà en lecture
         if (ttsEnCours) {
             ttsEnCours.audio.pause();
             ttsEnCours.btn.classList.remove('playing');
@@ -667,7 +669,6 @@
             ttsEnCours = null;
         }
 
-        // Nettoyer le markdown pour la synthèse
         const texteNet = texte
             .replace(/#{1,6}\s/g, '')
             .replace(/[*`_~>|]/g, '')
@@ -677,8 +678,9 @@
         btn.innerHTML = SVG_CHARGEMENT;
         btn.disabled = true;
 
+        // MODIF : voice_id = valeur du select (fr-FR ou fr-CA)
         const voixSelectEl = document.getElementById('voixSelect');
-        const voiceId = voixSelectEl ? voixSelectEl.value : '';
+        const voiceId = voixSelectEl ? voixSelectEl.value : 'fr-FR';
 
         try {
             const resp = await fetch("{% url 'core:assistant_tts' %}", {
@@ -695,8 +697,8 @@
                 return;
             }
 
-            const blob = await resp.blob();
-            const url  = URL.createObjectURL(blob);
+            const blob  = await resp.blob();
+            const url   = URL.createObjectURL(blob);
             const audio = new Audio(url);
 
             btn.classList.add('playing');
@@ -720,52 +722,43 @@
 
     // ── Pool de suggestions maçonnerie / BAC PRO Gros Œuvre ──
     const POOL_SUGGESTIONS = [
-        // Maçonnerie - techniques de base
         "Quels sont les différents types de mortier et leurs dosages en maçonnerie ?",
         "Comment réaliser un mur de parpaings : pose, alignement et jointoiement ?",
         "Expliquer les règles d'appareillage des briques en maçonnerie",
         "Comment couler un béton de propreté avant semelle de fondation ?",
         "Quelles sont les étapes pour réaliser une semelle filante ?",
-        // Béton armé
         "Comment lire un plan de ferraillage d'une dalle en béton armé ?",
         "Explique le rôle des armatures longitudinales et des cadres dans un poteau",
         "Quelles sont les règles de mise en œuvre d'un coffrage bois ?",
         "Comment calculer l'enrobage des armatures selon l'exposition ?",
         "Quelles sont les classes d'exposition du béton selon l'environnement ?",
-        // Implantation et lecture de plans
         "Comment effectuer l'implantation d'un ouvrage avec un niveau laser ?",
         "Comment lire les cotes sur un plan de masse ou un plan de fondations ?",
         "Qu'est-ce qu'une charte de niveaux NGF et comment la lire ?",
         "Explication des symboles courants sur un plan de coffrage",
-        // Sécurité et organisation
         "Quels sont les EPI obligatoires sur un chantier de gros œuvre ?",
         "Comment sécuriser un chantier en limite de propriété selon le PPSPS ?",
         "Quelles sont les règles de sécurité pour les travaux en fouilles ou tranchées ?",
         "Comment organiser un poste de travail maçonnerie selon les principes d'économie d'effort ?",
         "Quelles sont les obligations du chef de chantier en matière de sécurité ?",
-        // Matériaux et produits
         "Quelle est la différence entre un béton C20/25 et un C25/30 ?",
         "Quelles sont les caractéristiques des blocs béton creux, pleins et à bancher ?",
         "Comment choisir un liant hydraulique adapté à une fondation en terrain humide ?",
         "Quelles sont les propriétés thermiques des matériaux de maçonnerie courants ?",
         "Qu'est-ce que la résistance à la compression d'un élément de maçonnerie (NF EN 771) ?",
-        // Gros œuvre - structure
         "Quels sont les types de fondations superficielles et comment les choisir ?",
         "Comment réaliser un chaînage horizontal ou vertical dans un mur en maçonnerie ?",
         "Expliquer le principe de la maçonnerie portante versus le poteau-poutre",
         "Quelles sont les pathologies courantes des murs en maçonnerie et leurs causes ?",
         "Comment réaliser un linteau préfabriqué ou coulé en place ?",
-        // Énergies et environnement
         "Quels sont les enjeux de la RE2020 pour les constructions en maçonnerie ?",
         "Comment améliorer l'isolation thermique par l'extérieur (ITE) d'un mur en brique ?",
         "Expliquer le principe du pont thermique et comment l'éviter dans un mur de façade",
         "Quelles sont les pratiques d'éco-responsabilité sur un chantier de gros œuvre ?",
-        // Organisation et communication
         "Comment rédiger un compte-rendu de réunion de chantier ?",
         "Comment quantifier les matériaux nécessaires pour un mur de 50 m² en parpaings 20x20x50 ?",
         "Quels documents consulter avant de commencer des travaux sur un chantier existant ?",
         "Comment communiquer un relevé de malfaçons à un chef d'équipe ?",
-        // CAP Maçon
         "Quelles compétences évalue-t-on pendant une PFMP en CAP Maçon ?",
         "Comment se déroule l'épreuve pratique du CAP Maçon ?",
         "Quelles sont les principales activités professionnelles du CAP Maçon 2021 ?",
@@ -780,20 +773,15 @@
         ).join('');
     }
 
-    // Initialiser les suggestions au chargement
     melangerSuggestions();
 
-    // ── Sélecteur de voix ElevenLabs ──
-    const voixSelect = document.getElementById('voixSelect');
+    // ── Sélecteur de voix — sauvegarde locale ──
+    const voixSelect  = document.getElementById('voixSelect');
     const btnTestVoix = document.getElementById('btnTestVoix');
 
-    // Restaurer la voix sauvegardée
     const voixSauvegardee = localStorage.getItem('tts_voice_id');
-    if (voixSauvegardee && voixSelect) {
-        voixSelect.value = voixSauvegardee;
-    }
+    if (voixSauvegardee && voixSelect) voixSelect.value = voixSauvegardee;
 
-    // Sauvegarder au changement
     if (voixSelect) {
         voixSelect.addEventListener('change', () => {
             localStorage.setItem('tts_voice_id', voixSelect.value);
@@ -804,21 +792,27 @@
     let audioTest = null;
     if (btnTestVoix) {
         btnTestVoix.addEventListener('click', async () => {
-            if (audioTest) { audioTest.pause(); audioTest = null; btnTestVoix.textContent = 'Tester cette voix'; return; }
+            if (audioTest) {
+                audioTest.pause(); audioTest = null;
+                btnTestVoix.innerHTML = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Tester cette voix';
+                return;
+            }
 
-            const voiceId = voixSelect ? voixSelect.value : '';
-            const voiceLabel = voixSelect ? voixSelect.options[voixSelect.selectedIndex].text.split('–')[0].trim() : 'Charlotte';
-            btnTestVoix.textContent = '⏳ Chargement…';
+            const voiceId = voixSelect ? voixSelect.value : 'fr-FR';
+            btnTestVoix.textContent = 'Chargement…';
             btnTestVoix.disabled = true;
 
             try {
                 const resp = await fetch("{% url 'core:assistant_tts' %}", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-                    body: JSON.stringify({ texte: `Bonjour, je suis ${voiceLabel}, votre assistant pédagogique.`, voice_id: voiceId }),
+                    body: JSON.stringify({
+                        texte: 'Bonjour, je suis votre assistant pédagogique pour le bâtiment et la construction.',
+                        voice_id: voiceId
+                    }),
                 });
                 if (!resp.ok) {
-                    btnTestVoix.textContent = '❌ Erreur';
+                    btnTestVoix.textContent = 'Erreur';
                     btnTestVoix.disabled = false;
                     return;
                 }
@@ -827,9 +821,12 @@
                 btnTestVoix.innerHTML = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Arrêter';
                 btnTestVoix.disabled = false;
                 audioTest.play();
-                audioTest.onended = () => { btnTestVoix.innerHTML = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Tester cette voix'; audioTest = null; };
+                audioTest.onended = () => {
+                    btnTestVoix.innerHTML = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Tester cette voix';
+                    audioTest = null;
+                };
             } catch(e) {
-                btnTestVoix.textContent = '❌ Erreur de connexion';
+                btnTestVoix.textContent = 'Erreur de connexion';
                 btnTestVoix.disabled = false;
             }
         });
