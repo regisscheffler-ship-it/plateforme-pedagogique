@@ -5,17 +5,12 @@
 {% block content %}
 
 <style>
-    /* ========================================
-       DOSSIER DETAIL - STYLES COMPLETS
-       ======================================== */
-    
     .dossier-container {
         max-width: 1600px;
         margin: 0 auto;
         padding: 2rem;
     }
 
-    /* BREADCRUMB */
     .breadcrumb {
         display: flex;
         align-items: center;
@@ -45,7 +40,6 @@
         fill: none;
     }
 
-    /* HEADER DU DOSSIER */
     .dossier-header {
         background: white;
         border-radius: 16px;
@@ -143,7 +137,6 @@
         color: #721c24;
     }
 
-    /* ACTIONS HEADER */
     .dossier-actions {
         display: flex;
         gap: 0.75rem;
@@ -214,7 +207,6 @@
         border-color: #adb5bd;
     }
 
-    /* SECTION TITRE */
     .section-header {
         display: flex;
         align-items: center;
@@ -251,9 +243,6 @@
         font-weight: 600;
     }
 
-    /* ========================================
-       LISTE DES FICHIERS
-       ======================================== */
     .fichiers-list {
         display: flex;
         flex-direction: column;
@@ -445,9 +434,6 @@
         color: white;
     }
 
-    /* ========================================
-       CONTAINER IFRAME
-       ======================================== */
     .iframe-wrapper {
         margin-top: 1rem;
         margin-bottom: 1rem;
@@ -497,9 +483,6 @@
         border-radius: 8px;
     }
 
-    /* ========================================
-       ÉTAT VIDE
-       ======================================== */
     .empty-state {
         background: white;
         border-radius: 16px;
@@ -539,9 +522,6 @@
         margin: 0 0 1.5rem 0;
     }
 
-    /* ========================================
-       TRAVAUX LIÉS (optionnel)
-       ======================================== */
     .travaux-section {
         margin-top: 2.5rem;
     }
@@ -599,9 +579,6 @@
         font-weight: 600;
     }
 
-    /* ========================================
-       RESPONSIVE
-       ======================================== */
     @media (max-width: 768px) {
         .dossier-header-content {
             flex-direction: column;
@@ -643,7 +620,7 @@
 <div class="dossier-container">
 
     <!-- BOUTON RETOUR -->
-    <a href="#" class="btn-back-universal"
+    <a href="javascript:history.back()"
        style="display:inline-flex;align-items:center;gap:0.5rem;
               padding:0.6rem 1.2rem;background:white;color:#7c5cbf;
               border:2px solid #7c5cbf;border-radius:8px;
@@ -663,11 +640,23 @@
         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
-        <a href="{% url 'core:classe_detail' dossier.theme.classe.id %}">{{ dossier.theme.classe.nom }}</a>
+
+        {% if dossier.classe and dossier.classe.pk %}
+            <a href="{% url 'core:classe_detail' dossier.classe.pk %}">{{ dossier.classe.nom }}</a>
+        {% else %}
+            <span>Classe</span>
+        {% endif %}
+
         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
-        <a href="{% url 'core:theme_detail' dossier.theme.id %}">{{ dossier.theme.nom }}</a>
+
+        {% if dossier.theme and dossier.theme.pk %}
+            <a href="{% url 'core:theme_detail' dossier.theme.pk %}">{{ dossier.theme.nom }}</a>
+        {% else %}
+            <span>Thème</span>
+        {% endif %}
+
         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
@@ -682,13 +671,13 @@
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
             </div>
-            
+
             <div class="dossier-info">
                 <h1>{{ dossier.nom }}</h1>
                 {% if dossier.description %}
                 <p>{{ dossier.description }}</p>
                 {% endif %}
-                
+
                 <div class="dossier-meta">
                     <div class="meta-item">
                         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -697,7 +686,7 @@
                         </svg>
                         {{ fichiers.count }} ressource{{ fichiers.count|pluralize }}
                     </div>
-                    
+
                     {% if request.user.profil.est_prof %}
                     <span class="visibility-badge {% if dossier.visible_eleves %}visible{% else %}hidden{% endif %}">
                         {% if dossier.visible_eleves %}
@@ -721,7 +710,7 @@
                     </svg>
                     Ajouter une ressource
                 </a>
-                
+
                 <a href="{% url 'core:dossier_update' dossier.id %}" class="btn btn-warning">
                     <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -729,7 +718,7 @@
                     </svg>
                     Modifier
                 </a>
-                
+
                 <a href="{% url 'core:dossier_toggle_visibilite' dossier.id %}" class="btn btn-outline">
                     {% if dossier.visible_eleves %}
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
@@ -760,8 +749,7 @@
     <div class="fichiers-list">
         {% for fichier in fichiers %}
         <div class="fichier-card type-{% if fichier.type_contenu %}{{ fichier.type_contenu }}{% else %}fichier{% endif %}">
-            
-            <!-- Icône selon le type -->
+
             <div class="fichier-icon">
                 {% if fichier.type_contenu == 'lien' %}
                     <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
@@ -771,15 +759,12 @@
                     <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                 {% endif %}
             </div>
-            
-            <!-- Informations -->
+
             <div class="fichier-info">
                 <h4>{{ fichier.nom }}</h4>
                 {% if fichier.description %}
                 <p>{{ fichier.description }}</p>
                 {% endif %}
-                
-                <!-- Badge de type -->
                 <span class="fichier-type-badge {% if fichier.type_contenu %}{{ fichier.type_contenu }}{% else %}fichier{% endif %}">
                     {% if fichier.type_contenu == 'lien' %}
                         Lien externe
@@ -790,8 +775,7 @@
                     {% endif %}
                 </span>
             </div>
-            
-            <!-- Actions -->
+
             <div class="fichier-actions">
                 {% if fichier.type_contenu == 'fichier' or not fichier.type_contenu %}
                     {% if fichier.fichier %}
@@ -815,14 +799,14 @@
                     </button>
                     {% endif %}
                 {% endif %}
-                
+
                 {% if request.user.profil.est_prof %}
                 <a href="{% url 'core:fichier_update' fichier.id %}" class="btn-action btn-edit">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     Modifier
                 </a>
                 <a href="{% url 'core:fichier_delete' fichier.id %}" class="btn-action btn-delete"
-                   onclick="return confirm('\u00cates-vous s\u00fbr de vouloir supprimer cette ressource ?');"> 
+                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette ressource ?');">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
                     Supprimer
                 </a>
@@ -830,7 +814,6 @@
             </div>
         </div>
 
-        <!-- Container iframe (caché par défaut) -->
         {% if fichier.type_contenu == 'iframe' and fichier.code_iframe %}
         <div class="iframe-wrapper" id="iframe-{{ fichier.id }}" style="display: none;">
             <div class="iframe-header">
@@ -846,9 +829,8 @@
         {% endif %}
         {% endfor %}
     </div>
-    
+
     {% else %}
-    <!-- État vide -->
     <div class="empty-state">
         <div class="empty-state-icon">
             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -858,7 +840,7 @@
         </div>
         <h3>Aucune ressource dans ce dossier</h3>
         <p>Ce dossier est vide pour le moment.</p>
-        
+
         {% if request.user.profil.est_prof %}
         <a href="{% url 'core:fichier_upload' dossier.id %}" class="btn btn-primary">
             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -871,7 +853,6 @@
     </div>
     {% endif %}
 
-    <!-- TRAVAUX LIÉS (optionnel) -->
     {% if travaux %}
     <div class="travaux-section">
         <div class="section-header">
@@ -908,38 +889,23 @@
     </div>
     {% endif %}
 
-    <!-- BOUTON RETOUR supprimé - remplacé par btn-back-universal en haut de page -->
-
 </div>
 
 <script>
-    // Toggle pour afficher/masquer les iframes
     function toggleIframe(id) {
-        const container = document.getElementById('iframe-' + id);
+        var container = document.getElementById('iframe-' + id);
         if (container) {
             if (container.style.display === 'none' || container.style.display === '') {
-                // Fermer tous les autres iframes ouverts
-                document.querySelectorAll('.iframe-wrapper').forEach(wrapper => {
+                document.querySelectorAll('.iframe-wrapper').forEach(function(wrapper) {
                     wrapper.style.display = 'none';
                 });
-                // Ouvrir celui-ci
                 container.style.display = 'block';
-                // Scroll vers l'iframe
                 container.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else {
                 container.style.display = 'none';
             }
         }
     }
-
-    // Confirmation avant suppression
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            if (!confirm('Êtes-vous sûr de vouloir supprimer cette ressource ?')) {
-                e.preventDefault();
-            }
-        });
-    });
 </script>
 
 {% endblock %}

@@ -23,7 +23,7 @@ SECRET_KEY = os.environ.get(
     '7eSBcMNOnQlXa3iZQ9az-CKw7PzdCTMmLlRVmyMf7U7JC_AIddbQfqNJ9fIvEdY_Fz4'
 )
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # ===================================================================
 # HOSTS
@@ -110,7 +110,7 @@ if DATABASE_URL:
     # ── Production : Supabase (PostgreSQL) ──
     DATABASES = {
         'default': dj_database_url.config(
-            default=DATABASE_URL,
+            default=os.environ.get('DATABASE_URL'),
             conn_max_age=600,
             conn_health_checks=True,
             ssl_require=True,           # ← OBLIGATOIRE pour Supabase
@@ -147,7 +147,8 @@ USE_TZ = True
 # FICHIERS STATIQUES
 # ===================================================================
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # ===================================================================
@@ -215,7 +216,7 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
-    X_FRAME_OPTIONS = 'DENY'
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
     SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # ===================================================================

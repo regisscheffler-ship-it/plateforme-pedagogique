@@ -4406,47 +4406,32 @@ def assistant_ia_query(request):
 
 
 @login_required
+@user_passes_test(est_professeur)
+@require_http_methods(["POST"])
 def assistant_tts(request):
-    """Endpoint TTS — synthèse vocale via gTTS."""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST requis'}, status=405)
-
+    """Endpoint TTS — synthèse vocale via Edge-TTS."""
     try:
         data = json.loads(request.body)
         texte = data.get('texte', '').strip()
-        voice_id = data.get('voice_id', 'fr-FR')
+        voice_id = data.get('voice_id', '').strip() or 'fr-FR-DeniseNeural'
 
         if not texte:
-            return JsonResponse({'error': 'Texte vide'}, status=400)
+            return JsonResponse({'error': 'Texte vide.'}, status=400)
 
-        audio_bytes = synthetiser_voix(texte, voice_id=voice_id)
+        print(f"[TTS] Requête : voix={voice_id}, texte={texte[:50]}...")
 
-        response = HttpResponse(audio_bytes, content_type='audio/mpeg')
+        from .services import synthetiser_voix
+        audio = synthetiser_voix(texte, voice_id=voice_id)
+
+        if not audio:
+            return JsonResponse({'error': 'Aucun audio généré'}, status=500)
+
+        response = HttpResponse(audio, content_type='audio/mpeg')
         response['Content-Disposition'] = 'inline; filename="tts.mp3"'
         return response
 
     except Exception as e:
-        print(f"[assistant_tts] Erreur : {e}")
+        print(f"[TTS] Erreur : {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
-
-
-@login_required
-@user_passes_test(est_professeur)
-@require_http_methods(["POST"])
-def assistant_tts(request):
-    """AJAX : synthèse vocale ElevenLabs — retourne un fichier audio MP3."""
-    try:
-        data     = json.loads(request.body)
-        texte    = data.get('texte', '').strip()
-        voice_id = data.get('voice_id', '').strip() or None
-        if not texte:
-            return JsonResponse({'error': 'Texte vide.'}, status=400)
-
-        from .services import synthetiser_voix
-        from django.http import HttpResponse
-        audio = synthetiser_voix(texte, voice_id=voice_id)
-        return HttpResponse(audio, content_type='audio/mpeg')
-
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
