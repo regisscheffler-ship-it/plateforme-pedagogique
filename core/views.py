@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.db.models.functions import ExtractYear
+from django.db import connection
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -56,6 +57,11 @@ def est_professeur(user):
     except Exception:
         return False
 
+def keepalive(request):
+    """Ping keep-alive pour éviter la mise en veille de Supabase."""
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1")
+    return JsonResponse({'status': 'ok'})
 
 def est_eleve(user):
     return hasattr(user, 'profil') and user.profil.type_utilisateur == 'eleve'
@@ -4410,3 +4416,4 @@ def assistant_tts(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
