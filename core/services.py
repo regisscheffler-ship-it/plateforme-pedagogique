@@ -463,47 +463,60 @@ def assistant_recherche(question, historique=None, fichier_bytes=None, fichier_m
         return f"Une erreur s'est produite : {str(e)}"
 
 
-# # =====================================================
-# SYNTHÈSE VOCALE — GOOGLE TTS (gTTS)
+# =====================================================
+# SYNTHÈSE VOCALE — MICROSOFT EDGE TTS (gratuit, neural)
 # =====================================================
 
-# Voix disponibles (langues gTTS)
 EL_VOIX_DISPONIBLES = {
-    'fr-FR': 'Français standard',
-    'fr-CA': 'Français canadien',
-    'en-US': 'Anglais américain',
+    'fr-FR-DeniseNeural':   'Denise – Femme, naturelle (France)',
+    'fr-FR-HenriNeural':    'Henri – Homme, posé (France)',
+    'fr-FR-EloiseNeural':   'Éloïse – Femme, jeune (France)',
+    'fr-FR-VivienneMultilingualNeural': 'Vivienne – Femme, multilingue',
+    'fr-FR-RemyMultilingualNeural':     'Rémy – Homme, multilingue',
+    'fr-CA-SylvieNeural':   'Sylvie – Femme (Canada)',
+    'fr-CA-JeanNeural':     'Jean – Homme (Canada)',
+    'fr-CA-AntoineNeural':  'Antoine – Homme, jeune (Canada)',
 }
+
+
+async def _generer_audio_edge(texte, voice):
+    """Génère l'audio via edge-tts (async)."""
+    import edge_tts
+    import io
+
+    communicate = edge_tts.Communicate(texte, voice)
+    buffer = io.BytesIO()
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            buffer.write(chunk["data"])
+    buffer.seek(0)
+    return buffer.read()
+
 
 def synthetiser_voix(texte, voice_id=None):
     """
-    Convertit du texte en audio MP3 via gTTS (Google Translate TTS).
-    Gratuit, sans clé API, sans restriction de datacenter.
+    Convertit du texte en audio MP3 via Microsoft Edge TTS.
+    Gratuit, sans clé API, voix neuronales haute qualité.
 
     Args:
-        texte    (str) : texte à synthétiser
-        voice_id (str) : code langue (défaut : fr-FR)
+        texte    (str) : texte à synthétiser (max 5000 chars)
+        voice_id (str) : identifiant de la voix (défaut : fr-FR-DeniseNeural)
     Returns:
         bytes : données audio MP3
     """
-    from gtts import gTTS
-    import io
+    import asyncio
 
-    texte = texte[:4000]
+    texte = texte[:5000]
+    voice = voice_id if voice_id in EL_VOIX_DISPONIBLES else 'fr-FR-DeniseNeural'
 
-    # Déterminer la langue
-    lang = 'fr'
-    tld = 'fr'  # accent français de France
-    if voice_id == 'fr-CA':
-        tld = 'ca'
-    elif voice_id and voice_id.startswith('en'):
-        lang = 'en'
-        tld = 'com'
+    try:
+        audio_bytes = asyncio.run(_generer_audio_edge(texte, voice))
+    except RuntimeError:
+        # Si un event loop tourne déjà (cas rare avec certains serveurs)
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            future = pool.submit(asyncio.run, _generer_audio_edge(texte, voice))
+            audio_bytes = future.result(timeout=30)
 
-    tts = gTTS(text=texte, lang=lang, tld=tld, slow=False)
-
-    buffer = io.BytesIO()
-    tts.write_to_fp(buffer)
-    buffer.seek(0)
-
-    print(f"[gTTS] Audio généré ({buffer.getbuffer().nbytes} octets), lang={lang}, tld={tld}")
-    return buffer.read()
+    print(f"[Edge-TTS] Audio généré ({len(audio_bytes)} octets), voix={voice}")
+    return audio_bytes

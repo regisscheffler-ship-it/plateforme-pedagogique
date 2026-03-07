@@ -28,11 +28,12 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 # ===================================================================
 # HOSTS
 # ===================================================================
-ALLOWED_HOSTS = os.environ.get(
-    'ALLOWED_HOSTS', 'localhost,127.0.0.1'
-).split(',')
-ALLOWED_HOSTS += ['.onrender.com']
-ALLOWED_HOSTS += ['.pythonanywhere.com']
+ALLOWED_HOSTS = [
+    'plateforme-pedagogique.onrender.com',
+    '.onrender.com',
+    'localhost',
+    '127.0.0.1',
+]
 
 # ===================================================================
 # CSRF — INDISPENSABLE POUR QUE LE LOGIN FONCTIONNE

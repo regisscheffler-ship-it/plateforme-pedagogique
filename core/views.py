@@ -4355,38 +4355,45 @@ def assistant_ia(request):
     return render(request, 'core/assistant_ia.html')
 
 
+import json
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from .services import assistant_recherche, synthetiser_voix
+
+
 @login_required
-@user_passes_test(est_professeur)
-@require_http_methods(["POST"])
 def assistant_ia_query(request):
-    """AJAX : envoie une question à Gemini et retourne la réponse.
-    Supporte JSON (sans fichier) et multipart/form-data (avec fichier).
-    """
+    """Endpoint pour les questions à l'assistant IA."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST requis'}, status=405)
+
     try:
-        # ── Multipart (avec fichier joint) ──
+        # Gestion fichier joint (multipart) ou JSON
         if request.content_type and 'multipart' in request.content_type:
-            import json as _json
-            question   = request.POST.get('question', '').strip()
-            historique = _json.loads(request.POST.get('historique', '[]'))
-            fichier    = request.FILES.get('fichier')
-            fichier_bytes = fichier.read() if fichier else None
-            fichier_mime  = fichier.content_type if fichier else None
-            fichier_nom   = fichier.name if fichier else None
-        else:
-            # ── JSON classique ──
-            data = json.loads(request.body)
-            question      = data.get('question', '').strip()
-            historique    = data.get('historique', [])
+            question = request.POST.get('question', '')
+            historique = json.loads(request.POST.get('historique', '[]'))
+            fichier = request.FILES.get('fichier')
+
             fichier_bytes = None
-            fichier_mime  = None
-            fichier_nom   = None
+            fichier_mime = None
+            fichier_nom = None
 
-        if not question and not fichier_bytes:
-            return JsonResponse({'error': 'Question vide.'}, status=400)
+            if fichier:
+                fichier_bytes = fichier.read()
+                fichier_mime = fichier.content_type
+                fichier_nom = fichier.name
+        else:
+            data = json.loads(request.body)
+            question = data.get('question', '')
+            historique = data.get('historique', [])
+            fichier_bytes = None
+            fichier_mime = None
+            fichier_nom = None
 
-        from .services import assistant_recherche
         reponse = assistant_recherche(
-            question, historique,
+            question=question,
+            historique=historique,
             fichier_bytes=fichier_bytes,
             fichier_mime=fichier_mime,
             fichier_nom=fichier_nom,
@@ -4394,6 +4401,32 @@ def assistant_ia_query(request):
         return JsonResponse({'reponse': reponse})
 
     except Exception as e:
+        print(f"[assistant_ia_query] Erreur : {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def assistant_tts(request):
+    """Endpoint TTS — synthèse vocale via gTTS."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST requis'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        texte = data.get('texte', '').strip()
+        voice_id = data.get('voice_id', 'fr-FR')
+
+        if not texte:
+            return JsonResponse({'error': 'Texte vide'}, status=400)
+
+        audio_bytes = synthetiser_voix(texte, voice_id=voice_id)
+
+        response = HttpResponse(audio_bytes, content_type='audio/mpeg')
+        response['Content-Disposition'] = 'inline; filename="tts.mp3"'
+        return response
+
+    except Exception as e:
+        print(f"[assistant_tts] Erreur : {e}")
         return JsonResponse({'error': str(e)}, status=500)
 
 

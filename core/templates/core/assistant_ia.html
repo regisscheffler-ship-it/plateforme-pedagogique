@@ -279,14 +279,6 @@
         font-size: 1rem; line-height: 1; margin-left: 0.2rem; flex-shrink: 0;
     }
     .file-badge button:hover { color: #dc2626; }
-
-    /* Badge gTTS */
-    .gtts-badge {
-        display: inline-flex; align-items: center; gap: 0.35rem;
-        background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;
-        border-radius: 20px; padding: 0.25rem 0.65rem;
-        font-size: 0.78rem; font-weight: 600; margin-bottom: 0.7rem;
-    }
 </style>
 
 <div class="page-container">
@@ -345,7 +337,7 @@
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                             </svg>
                             <span id="fileName"></span>
-                            <button onclick="retirerFichier()" title="Retirer le fichier">×</button>
+                            <button onclick="retirerFichier()" title="Retirer le fichier">&times;</button>
                         </div>
                         <div class="char-counter" style="margin-left:auto;"><span id="charCount">0</span> / 1000</div>
                     </div>
@@ -395,7 +387,7 @@
                 </div>
             </div>
 
-            <!-- Paramètres vocaux — gTTS -->
+            <!-- Paramètres vocaux -->
             <div class="panel-card">
                 <div class="panel-header">
                     <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -406,18 +398,19 @@
                     Voix de l'assistant
                 </div>
                 <div class="panel-body" style="padding-bottom:0.9rem;">
-                    <!-- Badge gTTS gratuit -->
-                    <div class="gtts-badge">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
-                        Google TTS — Gratuit
-                    </div>
-                    <!-- MODIF : 2 accents gTTS au lieu des voix ElevenLabs -->
-                    <select class="voice-select" id="voixSelect" title="Choisir l'accent">
-                        <option value="fr-FR">Français — France</option>
-                        <option value="fr-CA">Français — Canada</option>
+                    <select class="voice-select" id="voixSelect" title="Choisir la voix">
+                        <optgroup label="🇫🇷 Français (France)">
+                            <option value="fr-FR-DeniseNeural" selected>Denise – Femme, naturelle</option>
+                            <option value="fr-FR-HenriNeural">Henri – Homme, posé</option>
+                            <option value="fr-FR-EloiseNeural">Éloïse – Femme, jeune</option>
+                            <option value="fr-FR-VivienneMultilingualNeural">Vivienne – Femme, multilingue</option>
+                            <option value="fr-FR-RemyMultilingualNeural">Rémy – Homme, multilingue</option>
+                        </optgroup>
+                        <optgroup label="🇨🇦 Français (Canada)">
+                            <option value="fr-CA-SylvieNeural">Sylvie – Femme</option>
+                            <option value="fr-CA-JeanNeural">Jean – Homme</option>
+                            <option value="fr-CA-AntoineNeural">Antoine – Homme, jeune</option>
+                        </optgroup>
                     </select>
                     <button class="btn-test-voix" id="btnTestVoix">
                         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -472,14 +465,12 @@
     let historique = [];
     let fichierJoint = null;
 
-    // Compteur caractères + auto-resize textarea
     userInput.addEventListener('input', function() {
         charCount.textContent = this.value.length;
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 160) + 'px';
     });
 
-    // Envoi avec Entrée (Maj+Entrée = nouvelle ligne)
     userInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -523,7 +514,7 @@
         if (welcomeMsg) welcomeMsg.style.display = 'none';
         const div = document.createElement('div');
         div.className = 'msg-user';
-        div.innerHTML = `<div class="bubble">${escapeHtml(texte).replace(/\n/g, '<br>')}</div>`;
+        div.innerHTML = '<div class="bubble">' + escapeHtml(texte).replace(/\n/g, '<br>') + '</div>';
         chatMessages.appendChild(div);
         scrollBas();
     }
@@ -532,15 +523,7 @@
         const div = document.createElement('div');
         div.className = 'typing';
         div.id = 'typingIndicator';
-        div.innerHTML = `
-            <div class="avatar">
-                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-            </div>
-            <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+        div.innerHTML = '<div class="avatar"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
         chatMessages.appendChild(div);
         scrollBas();
         return div;
@@ -558,36 +541,22 @@
         const div = document.createElement('div');
         div.className = 'msg-ai';
         const html = marked.parse(texte);
+
         const ttsId = 'tts-' + (++ttsIdCounter);
         ttsTextes.set(ttsId, texte);
 
-        div.innerHTML = `
-            <div class="avatar">
-                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-            </div>
-            <div class="bubble">
-                ${html}
-                <button class="tts-btn" data-tts-id="${ttsId}" title="Lire à haute voix">
-                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                    </svg>
-                    Écouter
-                </button>
-            </div>`;
+        div.innerHTML = '<div class="avatar"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="bubble">' + html + '<button class="tts-btn" data-tts-id="' + ttsId + '" title="Lire à haute voix"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Écouter</button></div>';
 
         const btn = div.querySelector('.tts-btn');
-        btn.addEventListener('click', () => lireHautVoix(btn, ttsTextes.get(ttsId)));
+        btn.addEventListener('click', function() { lireHautVoix(btn, ttsTextes.get(ttsId)); });
+
         chatMessages.appendChild(div);
         scrollBas();
     }
 
-    function scrollBas() { chatMessages.scrollTop = chatMessages.scrollHeight; }
+    function scrollBas() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 
     function escapeHtml(text) {
         return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -597,21 +566,21 @@
         const question = userInput.value.trim();
         if ((!question && !fichierJoint) || sendBtn.disabled) return;
 
-        const labelUser = question || `Fichier : ${fichierJoint.name}`;
+        var labelUser = question || ('\uD83D\uDCCE ' + fichierJoint.name);
         ajouterMessageUser(labelUser);
-        historique.push({ role: 'user', texte: question || `[Fichier : ${fichierJoint.name}]` });
+        historique.push({ role: 'user', texte: question || ('[Fichier : ' + fichierJoint.name + ']') });
 
         userInput.value = '';
         userInput.style.height = 'auto';
         charCount.textContent = '0';
         sendBtn.disabled = true;
 
-        ajouterTyping();
+        var typing = ajouterTyping();
 
         try {
-            let resp;
+            var resp;
             if (fichierJoint) {
-                const fd = new FormData();
+                var fd = new FormData();
                 fd.append('question', question);
                 fd.append('historique', JSON.stringify(historique));
                 fd.append('fichier', fichierJoint);
@@ -626,23 +595,23 @@
                 resp = await fetch("{% url 'core:assistant_ia_query' %}", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-                    body: JSON.stringify({ question, historique }),
+                    body: JSON.stringify({ question: question, historique: historique }),
                 });
             }
 
             retirerTyping();
 
             if (!resp.ok) {
-                ajouterMessageAI('Erreur serveur. Réessayez.');
+                ajouterMessageAI('\u274C Erreur serveur. Réessayez.');
             } else {
-                const data = await resp.json();
-                const reponse = data.reponse || data.error || 'Réponse vide.';
+                var data = await resp.json();
+                var reponse = data.reponse || data.error || 'Réponse vide.';
                 ajouterMessageAI(reponse);
                 historique.push({ role: 'assistant', texte: reponse });
             }
         } catch(e) {
             retirerTyping();
-            ajouterMessageAI('Impossible de contacter le serveur.');
+            ajouterMessageAI('\u274C Impossible de contacter le serveur.');
         }
 
         sendBtn.disabled = false;
@@ -650,15 +619,15 @@
     }
 
     function getCsrf() {
-        const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+        var cookie = document.cookie.split(';').find(function(c) { return c.trim().startsWith('csrftoken='); });
         return cookie ? cookie.split('=')[1].trim() : '';
     }
 
-    // ── Lecture à haute voix — gTTS ──
-    let ttsEnCours = null;
-    const SVG_ECOUTER    = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Écouter';
-    const SVG_CHARGEMENT = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Chargement…';
-    const SVG_STOP       = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Arrêter';
+    // ── Lecture à haute voix (gTTS) ──
+    var ttsEnCours = null;
+    var SVG_ECOUTER = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Écouter';
+    var SVG_CHARGEMENT = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Chargement\u2026';
+    var SVG_STOP = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Arrêter';
 
     async function lireHautVoix(btn, texte) {
         if (ttsEnCours) {
@@ -669,7 +638,7 @@
             ttsEnCours = null;
         }
 
-        const texteNet = texte
+        var texteNet = texte
             .replace(/#{1,6}\s/g, '')
             .replace(/[*`_~>|]/g, '')
             .replace(/\n+/g, ' ')
@@ -678,36 +647,35 @@
         btn.innerHTML = SVG_CHARGEMENT;
         btn.disabled = true;
 
-        // MODIF : voice_id = valeur du select (fr-FR ou fr-CA)
-        const voixSelectEl = document.getElementById('voixSelect');
-        const voiceId = voixSelectEl ? voixSelectEl.value : 'fr-FR';
+        var voixSelectEl = document.getElementById('voixSelect');
+        var voiceId = voixSelectEl ? voixSelectEl.value : 'fr-FR';
 
         try {
-            const resp = await fetch("{% url 'core:assistant_tts' %}", {
+            var resp = await fetch("{% url 'core:assistant_tts' %}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
                 body: JSON.stringify({ texte: texteNet, voice_id: voiceId }),
             });
 
             if (!resp.ok) {
-                const err = await resp.json().catch(() => ({}));
+                var err = await resp.json().catch(function() { return {}; });
                 btn.innerHTML = SVG_ECOUTER;
                 btn.disabled = false;
                 alert('Erreur TTS : ' + (err.error || resp.status));
                 return;
             }
 
-            const blob  = await resp.blob();
-            const url   = URL.createObjectURL(blob);
-            const audio = new Audio(url);
+            var blob = await resp.blob();
+            var url  = URL.createObjectURL(blob);
+            var audio = new Audio(url);
 
             btn.classList.add('playing');
             btn.innerHTML = SVG_STOP;
             btn.disabled = false;
-            ttsEnCours = { btn, audio };
+            ttsEnCours = { btn: btn, audio: audio };
 
             audio.play();
-            audio.onended = () => {
+            audio.onended = function() {
                 btn.classList.remove('playing');
                 btn.innerHTML = SVG_ECOUTER;
                 URL.revokeObjectURL(url);
@@ -720,8 +688,8 @@
         }
     }
 
-    // ── Pool de suggestions maçonnerie / BAC PRO Gros Œuvre ──
-    const POOL_SUGGESTIONS = [
+    // ── Pool de suggestions ──
+    var POOL_SUGGESTIONS = [
         "Quels sont les différents types de mortier et leurs dosages en maçonnerie ?",
         "Comment réaliser un mur de parpaings : pose, alignement et jointoiement ?",
         "Expliquer les règles d'appareillage des briques en maçonnerie",
@@ -761,72 +729,75 @@
         "Comment communiquer un relevé de malfaçons à un chef d'équipe ?",
         "Quelles compétences évalue-t-on pendant une PFMP en CAP Maçon ?",
         "Comment se déroule l'épreuve pratique du CAP Maçon ?",
-        "Quelles sont les principales activités professionnelles du CAP Maçon 2021 ?",
+        "Quelles sont les principales activités professionnelles du CAP Maçon 2021 ?"
     ];
 
     function melangerSuggestions() {
-        const shuffled = [...POOL_SUGGESTIONS].sort(() => Math.random() - 0.5);
-        const choix = shuffled.slice(0, 6);
-        const body = document.getElementById('suggestionsBody');
-        body.innerHTML = choix.map(s =>
-            `<button class="suggestion-btn" onclick="envoyerSuggestion(this)">${s}</button>`
-        ).join('');
+        var shuffled = POOL_SUGGESTIONS.slice().sort(function() { return Math.random() - 0.5; });
+        var choix = shuffled.slice(0, 6);
+        var body = document.getElementById('suggestionsBody');
+        var html = '';
+        for (var i = 0; i < choix.length; i++) {
+            html += '<button class="suggestion-btn" onclick="envoyerSuggestion(this)">' + choix[i] + '</button>';
+        }
+        body.innerHTML = html;
     }
 
     melangerSuggestions();
 
-    // ── Sélecteur de voix — sauvegarde locale ──
-    const voixSelect  = document.getElementById('voixSelect');
-    const btnTestVoix = document.getElementById('btnTestVoix');
+    // ── Sélecteur de voix gTTS ──
+    var voixSelect = document.getElementById('voixSelect');
+    var btnTestVoix = document.getElementById('btnTestVoix');
 
-    const voixSauvegardee = localStorage.getItem('tts_voice_id');
-    if (voixSauvegardee && voixSelect) voixSelect.value = voixSauvegardee;
+    var voixSauvegardee = localStorage.getItem('tts_voice_id');
+    if (voixSauvegardee && voixSelect) {
+        voixSelect.value = voixSauvegardee;
+    }
 
     if (voixSelect) {
-        voixSelect.addEventListener('change', () => {
+        voixSelect.addEventListener('change', function() {
             localStorage.setItem('tts_voice_id', voixSelect.value);
         });
     }
 
     // Bouton "Tester cette voix"
-    let audioTest = null;
+    var audioTest = null;
     if (btnTestVoix) {
-        btnTestVoix.addEventListener('click', async () => {
+        btnTestVoix.addEventListener('click', async function() {
             if (audioTest) {
-                audioTest.pause(); audioTest = null;
-                btnTestVoix.innerHTML = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Tester cette voix';
+                audioTest.pause();
+                audioTest = null;
+                btnTestVoix.textContent = 'Tester cette voix';
                 return;
             }
 
-            const voiceId = voixSelect ? voixSelect.value : 'fr-FR';
-            btnTestVoix.textContent = 'Chargement…';
+            var voiceId = voixSelect ? voixSelect.value : 'fr-FR';
+            var voiceLabel = voixSelect ? voixSelect.options[voixSelect.selectedIndex].text : 'Français';
+            btnTestVoix.textContent = '\u23F3 Chargement\u2026';
             btnTestVoix.disabled = true;
 
             try {
-                const resp = await fetch("{% url 'core:assistant_tts' %}", {
+                var resp = await fetch("{% url 'core:assistant_tts' %}", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-                    body: JSON.stringify({
-                        texte: 'Bonjour, je suis votre assistant pédagogique pour le bâtiment et la construction.',
-                        voice_id: voiceId
-                    }),
+                    body: JSON.stringify({ texte: 'Bonjour, je suis votre assistant pédagogique. Comment puis-je vous aider ?', voice_id: voiceId }),
                 });
                 if (!resp.ok) {
-                    btnTestVoix.textContent = 'Erreur';
+                    btnTestVoix.textContent = '\u274C Erreur';
                     btnTestVoix.disabled = false;
                     return;
                 }
-                const blob = await resp.blob();
+                var blob = await resp.blob();
                 audioTest = new Audio(URL.createObjectURL(blob));
                 btnTestVoix.innerHTML = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Arrêter';
                 btnTestVoix.disabled = false;
                 audioTest.play();
-                audioTest.onended = () => {
+                audioTest.onended = function() {
                     btnTestVoix.innerHTML = '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Tester cette voix';
                     audioTest = null;
                 };
             } catch(e) {
-                btnTestVoix.textContent = 'Erreur de connexion';
+                btnTestVoix.textContent = '\u274C Erreur de connexion';
                 btnTestVoix.disabled = false;
             }
         });
