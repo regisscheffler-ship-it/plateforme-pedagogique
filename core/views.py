@@ -1655,51 +1655,32 @@ def _stats_connexions():
 
 def _stats_sorties_detail():
     """
-    Retourne trois listes d'élèves sortis catégorisés :
-    - sorties_decrocheurs    : décrocheurs, exclus, échecs, décès
-    - sorties_diplomes       : diplômes obtenus (CAP / Bac Pro + mention)
-    - sorties_post_formation : post-formation (travail, poursuite, réorientation)
+    Retourne QUATRE listes d'élèves sortis catégorisés :
+    - sorties_decrocheurs    : décrocheurs, exclus, échecs, décès, sans emploi
+    - sorties_diplomes       : diplômes obtenus
+    - sorties_post_formation : post-formation (poursuite BTS/Bac, travail)
+    - sorties_reorientation  : orientation AFB, réorientation interne/externe
     """
-    LABELS = {
-        'cap_mention': 'CAP avec mention',
-        'cap_sans_mention': 'CAP sans mention',
-        'bac_pro_mention': 'Bac Pro avec mention',
-        'bac_pro_sans_mention': 'Bac Pro sans mention',
-        'echec_cap': 'Échec CAP',
-        'echec_bac_pro': 'Échec Bac Pro',
-        'decrocheur': 'Décrocheur (abandon)',
-        'exclusion': 'Exclusion',
-        'deces': 'Décès',
-        'raison_inconnue': 'Raison inconnue',
-        'travail_formation': 'Travaille en lien avec la formation',
-        'travail_hors_formation': 'Travaille hors de sa formation',
-        'apprentissage': 'Apprentissage / Alternance',
-        'sans_emploi': 'Sans emploi',
-        'poursuite_bac_pro': 'Poursuite en Bac Pro',
-        'poursuite_bts': 'Poursuite en BTS',
-        'poursuite_autre': "Autre poursuite d'études",
-        'reorientation_interne': 'Réorientation interne',
-        'reorientation_externe': 'Réorientation externe',
-        'retour_pays': "Retour dans son pays d'origine",
-    }
+    LABELS = dict(ProfilUtilisateur.RAISON_SORTIE)
+    
+    # Nouvelles catégories strictes
     DIPLOMES = {'cap_mention', 'cap_sans_mention', 'bac_pro_mention', 'bac_pro_sans_mention'}
-    DECROCHEURS = {'decrocheur', 'exclusion', 'echec_cap', 'echec_bac_pro', 'deces', 'raison_inconnue'}
+    DECROCHEURS = {'decrocheur', 'exclusion', 'echec_cap', 'echec_bac_pro', 'deces', 'raison_inconnue', 'sans_emploi'}
+    REORIENTATIONS = {'reorientation_interne', 'reorientation_externe', 'orientation_afb', 'retour_pays'}
+    # Tout ce qui n'est pas dans ces 3 listes sera considéré comme "Post-formation" (travail, bts, etc.)
 
     sortis = ProfilUtilisateur.objects.filter(
         type_utilisateur='eleve', est_sorti=True
     ).select_related('user', 'classe', 'etablissement_origine').order_by('-date_sortie', 'user__last_name')
 
     MENTION_LABELS = {'AB': 'Assez Bien', 'B': 'Bien', 'TB': 'Très Bien'}
-    POURSUITE_LABELS = {'bac_pro': 'Bac Pro', 'bts': 'BTS'}
 
-    decrocheurs, diplomes, post_formation = [], [], []
+    decrocheurs, diplomes, post_formation, reorientations = [], [], [], []
+    
     for p in sortis:
         r = p.raison_sortie or ''
-        etab_orig = ''
-        if p.etablissement_origine:
-            etab_orig = p.etablissement_origine.nom
-        elif getattr(p, 'etablissement_origine_autre', ''):
-            etab_orig = p.etablissement_origine_autre
+        etab_orig = p.etablissement_origine.nom if p.etablissement_origine else getattr(p, 'etablissement_origine_autre', '')
+        
         entry = {
             'nom': p.user.last_name.upper(),
             'prenom': p.user.first_name,
@@ -1708,17 +1689,19 @@ def _stats_sorties_detail():
             'raison': LABELS.get(r, r or '—'),
             'commentaire': getattr(p, 'commentaire_sortie', '') or '',
             'mention': MENTION_LABELS.get(getattr(p, 'mention_obtenue', '') or '', ''),
-            'poursuite_type': POURSUITE_LABELS.get(getattr(p, 'type_poursuite', '') or '', ''),
-            'etablissement_orig': etab_orig,
+            'etablissement_orig': etab_orig or 'Non renseigné',
         }
+        
         if r in DIPLOMES:
             diplomes.append(entry)
+        elif r in REORIENTATIONS:
+            reorientations.append(entry)
         elif r in DECROCHEURS:
             decrocheurs.append(entry)
-        else:
+        else: # Post-formation
             post_formation.append(entry)
 
-    return decrocheurs, diplomes, post_formation
+    return decrocheurs, diplomes, post_formation, reorientations
 
 
 def _stats_sorties_charts():
@@ -1968,7 +1951,7 @@ def statistiques(request):
     ages_data    = _stats_ages_par_classe(today)
     sorties_data = _stats_sorties_par_annee()
     connexions_data = _stats_connexions()
-    decrocheurs_data, diplomes_data, postformation_data = _stats_sorties_detail()
+    decrocheurs_data, diplomes_data, postformation_data, reorientation_data = _stats_sorties_detail()
     dec_annee_data, dipl_annee_data, postform_cats_data = _stats_sorties_charts()
     taux_rendu_data    = _stats_taux_rendu_par_classe()
     notes_travaux_data = _stats_notes_par_travail()
@@ -1999,6 +1982,7 @@ def statistiques(request):
         'sorties_decrocheurs': decrocheurs_data,
         'sorties_diplomes': diplomes_data,
         'sorties_post_formation': postformation_data,
+        'sorties_reorientation': reorientation_data,
         'decrocheurs_par_annee_json': dec_annee_data,
         'diplomes_par_annee_json': dipl_annee_data,
         'postformation_cats_json': postform_cats_data,
@@ -3401,21 +3385,19 @@ def contact(request):
 
 @login_required
 @user_passes_test(est_professeur)
-def fiche_revision_create(request, theme_id):
-    theme = get_object_or_404(Theme, id=theme_id)
+def fiche_revision_create(request, dossier_id):  # <-- dossier_id ici
+    dossier = get_object_or_404(Dossier, id=dossier_id) # <-- on récupère le dossier
+    
     if request.method == 'POST':
-        titre = request.POST.get('titre', '').strip()
-        if not titre:
-            messages.error(request, '❌ Le titre est obligatoire.')
-            return render(request, 'core/fiche_revision_create.html', {'theme': theme})
-        fiche = FicheRevision.objects.create(
-            theme=theme,
-            titre=titre,
-            createur=request.user,
-        )
-        messages.success(request, f'✅ Fiche "{fiche.titre}" créée !')
-        return redirect('core:fiche_revision_detail', pk=fiche.id)
-    return render(request, 'core/fiche_revision_create.html', {'theme': theme})
+        titre = request.POST.get('titre')
+        # On attache la fiche au dossier !
+        fiche = FicheRevision.objects.create(titre=titre, dossier=dossier)
+        
+        messages.success(request, "Fiche créée !")
+        # On redirige vers la page du thème auquel appartient ce dossier
+        return redirect('core:theme_detail', pk=dossier.theme.id) 
+        
+    return render(request, 'core/fiche_revision_form.html', {'dossier': dossier})
 
 
 @login_required

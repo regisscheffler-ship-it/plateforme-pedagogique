@@ -4,172 +4,206 @@
 
 {% block content %}
 <style>
-    :root { --ev: #4a9fc1; --ev-light: #eaf4f9; }
-
-    .btn-retour {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 8px 18px; background: white; color: var(--ev);
-        border: 2px solid var(--ev); border-radius: 10px;
-        text-decoration: none; font-weight: 600; font-size: 0.9rem;
-        transition: all 0.2s; margin-top: 1rem; margin-bottom: 1.5rem;
+    /* Harmonisation des couleurs avec le thème du site (Gestion des élèves) */
+    :root { 
+        --ev: #2ab090; 
+        --ev-light: #e6f7f3; 
+        --text-main: #2c3e50;
+        --text-muted: #6c757d;
+        --border-light: #e9ecef;
     }
-    .btn-retour:hover { background: var(--ev); color: white; }
-    .btn-retour svg { transition: transform 0.2s; }
-    .btn-retour:hover svg { transform: translateX(-3px); }
 
+    .page-container {
+        max-width: 1600px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* Bouton retour universel */
+    .btn-back-universal {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: var(--ev);
+        border: 2px solid var(--ev); border-radius: 8px;
+        text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        transition: all 0.3s ease; margin-bottom: 1.5rem;
+    }
+    .btn-back-universal:hover {
+        background: var(--ev); color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(42, 176, 144, 0.2);
+    }
+    .btn-back-universal svg { transition: transform 0.2s; width: 18px; height: 18px; stroke-width: 2.5; }
+
+    /* En-tête de page */
     .page-header {
-        background: white; border-radius: 14px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        background: white; border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
         border-left: 5px solid var(--ev);
-        padding: 1.4rem 1.8rem; margin-bottom: 1.8rem;
-        display: flex; align-items: center; gap: 16px;
+        padding: 2rem; margin-bottom: 2rem;
+        display: flex; align-items: center; gap: 1.5rem;
     }
     .page-header-icon {
-        width: 46px; height: 46px; border-radius: 12px;
+        width: 54px; height: 54px; border-radius: 12px;
         background: var(--ev-light); display: flex;
         align-items: center; justify-content: center; flex-shrink: 0;
         color: var(--ev);
     }
-    .page-header h1 { margin: 0; font-size: 1.5rem; color: #1e293b; }
-    .page-header p  { margin: 4px 0 0; font-size: 0.85rem; color: #64748b; }
+    .page-header h1 { margin: 0; font-size: 1.8rem; font-weight: 700; color: var(--text-main); }
+    .page-header p  { margin: 5px 0 0; font-size: 0.95rem; color: var(--text-muted); }
 
+    /* Top Grid (Vignettes compteurs) */
     .top-grid {
-        display: grid; grid-template-columns: repeat(4, 1fr);
-        gap: 1.2rem; margin-bottom: 1.8rem;
+        display: grid; grid-template-columns: repeat(6, 1fr);
+        gap: 1rem; margin-bottom: 2rem;
     }
+    @media (max-width: 1400px) { .top-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px) { .top-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .top-grid { grid-template-columns: 1fr; } }
+
     .mini-card {
-        background: white; border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        padding: 1.2rem 1.4rem; display: flex;
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        padding: 1.2rem; display: flex;
         align-items: center; gap: 1rem;
-        border-top: 4px solid #e2e8f0;
-        cursor: pointer;
-        transition: transform 0.15s, box-shadow 0.15s;
+        border-top: 4px solid var(--border-light);
+        cursor: pointer; transition: all 0.3s ease;
         text-decoration: none; color: inherit;
     }
-    .mini-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
+    .mini-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
     .mini-card.c-blue   { border-top-color: var(--ev); }
     .mini-card.c-green  { border-top-color: #10b981; }
     .mini-card.c-red    { border-top-color: #e74c3c; }
     .mini-card.c-purple { border-top-color: #8b5cf6; }
+    
     .icon-box {
-        width: 44px; height: 44px; border-radius: 10px;
+        width: 46px; height: 46px; border-radius: 12px;
         display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .icon-box.c-blue   { background: var(--ev-light); color: var(--ev); }
     .icon-box.c-green  { background: #d1fae5; color: #10b981; }
     .icon-box.c-red    { background: #fee2e2; color: #e74c3c; }
     .icon-box.c-purple { background: #ede9fe; color: #8b5cf6; }
+    
     .mini-card .info h3 {
-        font-size: 0.78rem; color: #64748b; margin: 0;
+        font-size: 0.75rem; color: var(--text-muted); margin: 0;
         text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700;
     }
-    .mini-card .info p { font-size: 1.6rem; font-weight: 700; margin: 2px 0 0; color: #0f172a; }
+    .mini-card .info p { font-size: 1.6rem; font-weight: 700; margin: 2px 0 0; color: var(--text-main); }
 
+    /* Titres de sections */
     .section-title {
-        font-size: 1rem; font-weight: 700; color: #2c3e50;
-        margin: 0 0 1.2rem; display: flex; align-items: center; gap: 8px;
-        padding-bottom: 0.6rem; border-bottom: 2px solid var(--ev-light);
+        font-size: 1.3rem; font-weight: 700; color: var(--text-main);
+        margin: 2.5rem 0 1.2rem; display: flex; align-items: center; gap: 10px;
+        padding-bottom: 0.8rem; border-bottom: 2px solid var(--border-light);
     }
-    .section-title svg { color: var(--ev); }
+    .section-title svg { color: var(--section-color, var(--ev)); width: 22px; height: 22px; }
 
+    /* Grille de graphiques */
     .charts-grid {
         display: grid; grid-template-columns: repeat(3, 1fr);
-        gap: 1.4rem; margin-bottom: 1.8rem;
+        gap: 1.5rem; margin-bottom: 2rem;
     }
+    @media (max-width: 1200px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+
     .chart-card {
-        background: white; border-radius: 14px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-        padding: 1.5rem; min-height: 380px;
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        padding: 1.8rem; min-height: 380px;
         display: flex; flex-direction: column;
-        border-left: 4px solid var(--ev);
+        border-left: 5px solid var(--ev);
     }
     .chart-card h2 {
-        font-size: 0.92rem; font-weight: 700; color: #334155;
-        margin: 0 0 1.2rem; display: flex; align-items: center; gap: 6px;
-        text-transform: uppercase; letter-spacing: 0.03em;
+        font-size: 1rem; font-weight: 700; color: var(--text-main);
+        margin: 0 0 1.5rem; display: flex; align-items: center; gap: 8px;
     }
-    .chart-card h2 svg { color: var(--ev); }
+    .chart-card h2 svg { color: inherit; width: 18px; height: 18px; }
     .chart-wrapper { flex-grow: 1; position: relative; min-height: 240px; }
 
+    /* Tableaux (Connexions, PFMP, etc.) */
+    .conn-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .conn-table th {
+        background: #f8f9fa; color: var(--text-main);
+        padding: 12px 16px; text-align: left; font-weight: 700;
+        border-bottom: 2px solid var(--border-light); font-size: 0.9rem;
+    }
+    .conn-table th:first-child { border-radius: 8px 0 0 0; }
+    .conn-table th:last-child  { border-radius: 0 8px 0 0; }
+    .conn-table td { padding: 12px 16px; border-bottom: 1px solid #f8f9fa; color: var(--text-muted); vertical-align: middle; }
+    .conn-table tr:hover td { background: #f8f9fa; }
+
+    /* Barres de progression (Taux, Connexions) */
+    .freq-bar { display: flex; align-items: center; gap: 10px; min-width: 120px; }
+    .freq-track { flex: 1; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
+    .freq-fill  { height: 100%; background: var(--ev); border-radius: 4px; }
+    .freq-num   { font-size: 0.9rem; font-weight: 700; color: var(--ev); min-width: 30px; text-align: right; }
+
+    .badge-jamais {
+        display: inline-block; background: #fee2e2; color: #dc3545;
+        font-size: 0.8rem; padding: 4px 10px; border-radius: 8px; font-weight: 600;
+    }
+    .badge-date { font-size: 0.85rem; color: var(--text-muted); }
+
+    /* Section Connexions (stats haut) */
     .connexions-section {
-        background: white; border-radius: 14px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-        padding: 1.6rem 1.8rem; margin-bottom: 1.8rem;
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        padding: 2rem; margin-bottom: 2rem;
         border-left: 5px solid var(--ev);
     }
     .connexions-grid {
         display: grid; grid-template-columns: repeat(4, 1fr);
-        gap: 1rem; margin-bottom: 1.4rem;
+        gap: 1rem; margin-bottom: 1.5rem;
     }
+    @media (max-width: 768px) { .connexions-grid { grid-template-columns: 1fr 1fr; } }
     .cx-stat {
-        background: var(--ev-light); border-radius: 10px;
-        padding: 1rem 1.2rem; text-align: center;
+        background: var(--ev-light); border-radius: 12px;
+        padding: 1.2rem; text-align: center;
     }
     .cx-stat .val { font-size: 1.8rem; font-weight: 700; color: var(--ev); line-height: 1; }
-    .cx-stat .lbl { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
-    .cx-stat.warn .val { color: #e74c3c; }
+    .cx-stat .lbl { font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; font-weight: 600; }
     .cx-stat.warn { background: #fee2e2; }
+    .cx-stat.warn .val { color: #e74c3c; }
 
-    .conn-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    .conn-table th {
-        background: #1f2d3d; color: white;
-        padding: 8px 12px; text-align: left; font-size: 0.8rem;
+    /* Onglets (Sortis, Profil d'entrée) */
+    .detail-tabs { 
+        display:flex; gap:0.5rem; margin-bottom:1.5rem; background:#f8f9fa; 
+        border-radius:12px; padding:0.5rem; width:fit-content; border: 1px solid var(--border-light); 
+        flex-wrap: wrap;
     }
-    .conn-table th:first-child { border-radius: 6px 0 0 0; }
-    .conn-table th:last-child  { border-radius: 0 6px 0 0; }
-    .conn-table td { padding: 9px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
-    .conn-table tr:hover td { background: #f8fafc; }
-
-    .freq-bar { display: flex; align-items: center; gap: 8px; min-width: 120px; }
-    .freq-track { flex: 1; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
-    .freq-fill  { height: 100%; background: var(--ev); border-radius: 4px; }
-    .freq-num   { font-size: 0.85rem; font-weight: 700; color: var(--ev); min-width: 24px; text-align: right; }
-
-    .badge-jamais {
-        display: inline-block; background: #fee2e2; color: #e74c3c;
-        font-size: 0.72rem; padding: 2px 8px; border-radius: 8px; font-weight: 600;
-    }
-    .badge-date { font-size: 0.82rem; color: #64748b; }
-
-    /* Section sortis tabs */
-    .detail-tabs { display:flex; gap:0; margin-bottom:1.2rem; background:#f1f5f9; border-radius:10px; padding:0.3rem; width:fit-content; }
     .detail-tab {
-        padding:0.55rem 1.3rem; background:none; border:none; border-radius:8px;
-        cursor:pointer; font-size:0.88rem; font-weight:600; color:#64748b; transition:all 0.2s;
+        padding:0.6rem 1.2rem; background:none; border:none; border-radius:8px;
+        cursor:pointer; font-size:0.9rem; font-weight:600; color:var(--text-muted); transition:all 0.3s;
     }
-    .detail-tab.active { background:white; color:#1e293b; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
-    .detail-panel { display:none; }
-    .detail-panel.active { display:block; }
+    .detail-tab.active { background:white; color:var(--text-main); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+    .detail-panel, .orig-panel { display:none; }
+    .detail-panel.active, .orig-panel.active { display:block; }
+
     .filter-annee-bar {
         display:inline-flex; align-items:center; gap:0.7rem; margin-bottom:1rem;
-        padding:0.5rem 0.9rem; background:#f8fafc; border-radius:8px;
-        border:1px solid #e2e8f0; font-size:0.85rem;
+        padding:0.5rem 1rem; background:#f8f9fa; border-radius:8px;
+        border:1px solid var(--border-light); font-size:0.9rem;
     }
-    .filter-annee-bar label { font-weight:600; color:#64748b; white-space:nowrap; }
+    .filter-annee-bar label { font-weight:700; color:var(--text-main); }
     .filter-annee-bar select {
-        padding:0.3rem 0.7rem; border:1.5px solid #e2e8f0;
-        border-radius:6px; font-size:0.85rem; background:white; cursor:pointer; outline:none;
-    }
-    @media (max-width: 768px) {
-        .charts-grid { grid-template-columns: 1fr; }
-        .top-grid    { grid-template-columns: 1fr; }
-        .connexions-grid { grid-template-columns: 1fr; }
+        padding:0.4rem 0.8rem; border:1.5px solid var(--border-light);
+        border-radius:6px; font-size:0.9rem; background:white; cursor:pointer; outline:none;
     }
 </style>
 
-<div class="page-container" style="max-width: 1600px;width:100%;margin:0 auto;padding:2rem;">
+<div class="page-container">
 
-    <a href="{% url 'core:dashboard_professeur' %}" class="btn-retour">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+    <a href="{% url 'core:dashboard_professeur' %}" class="btn-back-universal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
         Retour
     </a>
 
     <div class="page-header">
         <div class="page-header-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         </div>
         <div>
             <h1>Statistiques scolaires</h1>
@@ -181,116 +215,111 @@
     <div class="top-grid">
         <a class="mini-card c-blue" href="#section-overview">
             <div class="icon-box c-blue">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <div class="info"><h3>Total élèves</h3><p>{{ total_eleves|default:"0" }}</p></div>
         </a>
         <a class="mini-card c-green" href="#section-connexions">
             <div class="icon-box c-green">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <div class="info"><h3>Actifs</h3><p>{{ eleves_actifs|default:"0" }}</p></div>
         </a>
         <a class="mini-card c-blue" href="#section-overview">
             <div class="icon-box c-blue">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/><path d="M12 20v-4a4 4 0 0 1 4-4h4"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/><path d="M12 20v-4a4 4 0 0 1 4-4h4"/></svg>
             </div>
             <div class="info"><h3>% filles</h3><p>{{ pc_filles }}%</p></div>
         </a>
         <a class="mini-card c-red" href="#section-sortis">
             <div class="icon-box c-red">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
             </div>
             <div class="info"><h3>Sortis</h3><p>{{ eleves_sortis|default:"0" }}</p></div>
         </a>
         <a class="mini-card c-purple" href="#section-sortis">
             <div class="icon-box c-purple">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
             </div>
             <div class="info"><h3>Diplômés</h3><p>{{ diplomes|default:"0" }}</p></div>
         </a>
-        <a class="mini-card" style="border-left-color:#0ea5e9;" href="#section-origine">
+        <a class="mini-card" style="border-top-color:#0ea5e9;" href="#section-origine">
             <div class="icon-box" style="background:#e0f2fe;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 20.5a9 9 0 0 1 13 0"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 20.5a9 9 0 0 1 13 0"/></svg>
             </div>
-            <div class="info"><h3>Profil d'entrée</h3><p>corrélations</p></div>
+            <div class="info"><h3>Profil d'entrée</h3><p>Corrélations</p></div>
         </a>
     </div>
 
-    <!-- Graphiques généraux (3 colonnes) -->
+    <!-- Graphiques généraux -->
     <div id="section-overview" style="scroll-margin-top:80px;">
-    <div class="section-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        Vue d'ensemble
+        <div class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            Vue d'ensemble
+        </div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h2 style="color:var(--ev)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Répartition par classe</h2>
+                <div class="chart-wrapper"><canvas id="chartClasses"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h2 style="color:var(--ev)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> Inscriptions par année</h2>
+                <div class="chart-wrapper"><canvas id="chartInscriptions"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h2 style="color:var(--ev)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="22" x2="9" y2="2"/><line x1="15" y1="22" x2="15" y2="2"/></svg> Top établissements d'origine</h2>
+                <div class="chart-wrapper"><canvas id="chartEtablissements"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h2 style="color:var(--ev)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> Raisons de sortie</h2>
+                <div class="chart-wrapper"><canvas id="chartDiplomes"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h2 style="color:var(--ev)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> Répartition par niveau</h2>
+                <div class="chart-wrapper"><canvas id="chartNiveaux"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h2 style="color:var(--ev)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Âge moyen par classe</h2>
+                <div class="chart-wrapper"><canvas id="chartAges"></canvas></div>
+            </div>
+        </div>
     </div>
-    <div class="charts-grid" style="margin-bottom:1.8rem;">
-        <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Répartition par classe</h2>
-            <div class="chart-wrapper"><canvas id="chartClasses"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> Inscriptions par année</h2>
-            <div class="chart-wrapper"><canvas id="chartInscriptions"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="22" x2="9" y2="2"/><line x1="15" y1="22" x2="15" y2="2"/></svg> Top établissements d'origine</h2>
-            <div class="chart-wrapper"><canvas id="chartEtablissements"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> Raisons de sortie</h2>
-            <div class="chart-wrapper"><canvas id="chartDiplomes"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> Répartition par niveau</h2>
-            <div class="chart-wrapper"><canvas id="chartNiveaux"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Âge moyen par classe</h2>
-            <div class="chart-wrapper"><canvas id="chartAges"></canvas></div>
-        </div>
-    </div>
-    </div><!-- /section-overview -->
 
-    <!-- Graphiques : suivi des sorties au fil des années -->
-    <div class="section-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-        Suivi des sorties au fil des années
+    <!-- Suivi des sorties -->
+    <div class="section-title" style="--section-color:#e74c3c;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        <span style="color:#e74c3c;">Suivi des sorties au fil des années</span>
     </div>
-    <div class="charts-grid" style="margin-bottom:1.8rem;">
-
+    <div class="charts-grid">
         <div class="chart-card" style="border-left-color:#e74c3c;">
-            <h2 style="color:#e74c3c;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Décrocheurs &amp; Échecs / an</h2>
+            <h2 style="color:#e74c3c;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Décrocheurs &amp; Échecs / an</h2>
             <div class="chart-wrapper"><canvas id="chartDecroch"></canvas></div>
         </div>
-
         <div class="chart-card" style="border-left-color:#10b981;">
-            <h2 style="color:#10b981;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> Diplômés / an &amp; type</h2>
+            <h2 style="color:#10b981;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> Diplômés / an &amp; type</h2>
             <div class="chart-wrapper"><canvas id="chartDipl"></canvas></div>
         </div>
-
-        <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Post-formation par catégorie</h2>
+        <div class="chart-card" style="border-left-color:#8b5cf6;">
+            <h2 style="color:#8b5cf6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Post-formation par catégorie</h2>
             <div class="chart-wrapper"><canvas id="chartPostForm"></canvas></div>
         </div>
-
-        <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg> Toutes sorties par année</h2>
+        <div class="chart-card" style="border-left-color:#f59e0b;">
+            <h2 style="color:#f59e0b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg> Toutes sorties par année</h2>
             <div class="chart-wrapper"><canvas id="chartAbandons"></canvas></div>
         </div>
-
     </div>
 
     <!-- Section Travaux -->
     <div class="section-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         Travaux — Rendus &amp; Notes
     </div>
-    <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:1.8rem;">
+    <div class="charts-grid" style="grid-template-columns: 1fr 1fr;">
         <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Taux de rendu par classe (%)</h2>
+            <h2 style="color:var(--ev)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Taux de rendu par classe (%)</h2>
             {% if taux_rendu_data %}
             <div class="chart-wrapper"><canvas id="chartTauxRendu"></canvas></div>
-            <table class="conn-table" style="margin-top:0.8rem;">
+            <table class="conn-table" style="margin-top:1.5rem;">
                 <thead>
                     <tr><th>Classe</th><th>Travaux</th><th>Attendus</th><th>Rendus</th><th>Taux</th></tr>
                 </thead>
@@ -312,48 +341,128 @@
                 </tbody>
             </table>
             {% else %}
-                <div style="text-align:center;padding:2rem;color:#94a3b8;">Aucun travail actif.</div>
-            {% endif %}
+                    <!-- Tables détaillées -->
+    <div style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:2rem;margin-bottom:2rem;border-left:5px solid #e74c3c;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+            <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:var(--text-main);">Détail par élève sorti</h3>
+            <div class="filter-annee-bar">
+                <label>Année&nbsp;:</label>
+                <select id="filtre-annee-stats" onchange="filtrerTablesStats()">
+                    <option value="">Toutes les années</option>
+                    {% for annee in annees_sortis %}
+                    <option value="{{ annee }}">{{ annee }}</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
 
-        <div class="chart-card">
-            <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Note moyenne par travail</h2>
-            {% if notes_travaux_data %}
-            <table class="conn-table">
-                <thead>
-                    <tr><th>Travail</th><th>Classe</th><th>Notes</th><th>Moyenne</th></tr>
-                </thead>
-                <tbody>
-                    {% for row in notes_travaux_data %}
-                    <tr>
-                        <td>{{ row.titre }}</td>
-                        <td>{{ row.classe }}</td>
-                        <td style="text-align:center;">{{ row.nb_notes }}</td>
-                        <td style="text-align:center;">
-                            {% if row.note_moy is not None %}
-                                <strong style="color:{% if row.note_moy >= 10 %}#10b981{% else %}#e74c3c{% endif %};">{{ row.note_moy }}/20</strong>
-                            {% else %}
-                                <span style="color:#94a3b8;">—</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-                <div style="text-align:center;padding:2rem;color:#94a3b8;">Aucun travail noté.</div>
-            {% endif %}
+        <div class="detail-tabs">
+            <button class="detail-tab active" onclick="showDetailTab('tab-diplomes', this)">🎓 Diplômés ({{ sorties_diplomes|length }})</button>
+            <button class="detail-tab" onclick="showDetailTab('tab-postformation', this)">🏢 Post-formation ({{ sorties_post_formation|length }})</button>
+            <button class="detail-tab" onclick="showDetailTab('tab-reorientation', this)">🔄 Réorientation & Changement ({{ sorties_reorientation|length }})</button>
+            <button class="detail-tab" onclick="showDetailTab('tab-decrocheurs', this)">⚠️ Décrocheurs & Échecs ({{ sorties_decrocheurs|length }})</button>
         </div>
+
+        <!-- 1. DIPLÔMÉS -->
+        <div id="tab-diplomes" class="detail-panel active">
+        {% if sorties_diplomes %}
+        <table class="conn-table">
+            <thead>
+                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Diplôme</th><th>Mention</th></tr>
+            </thead>
+            <tbody id="tbody-diplomes">
+                {% for e in sorties_diplomes %}
+                <tr data-annee="{{ e.annee }}">
+                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                    <td>{{ e.etablissement_orig }}</td><td>{{ e.annee }}</td>
+                    <td><span style="font-weight:600;">{{ e.raison }}</span></td>
+                    <td>{% if e.mention %}<span style="background:#d1fae5;color:#065f46;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.mention }}</span>{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        </div>
+
+        <!-- 2. POST-FORMATION (Ceux qui poursuivent dans le métier ou continuent les études Sup) -->
+        <div id="tab-postformation" class="detail-panel">
+        {% if sorties_post_formation %}
+        <table class="conn-table">
+            <thead>
+                <tr><th>Nom</th><th>Prénom</th><th>Dernière Classe</th><th>Année</th><th>Situation actuelle</th><th>Détails</th></tr>
+            </thead>
+            <tbody id="tbody-postformation">
+                {% for e in sorties_post_formation %}
+                <tr data-annee="{{ e.annee }}">
+                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                    <td>{{ e.annee }}</td>
+                    <td><span style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
+                    <td>{{ e.commentaire|default:'—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        </div>
+
+        <!-- 3. RÉORIENTATION ET CHANGEMENT (La nouvelle catégorie pour les AFB et changements de filière) -->
+        <div id="tab-reorientation" class="detail-panel">
+        {% if sorties_reorientation %}
+        <table class="conn-table">
+            <thead>
+                <tr><th>Nom</th><th>Prénom</th><th>Classe quittée</th><th>Année</th><th>Type de changement</th><th>Commentaire</th></tr>
+            </thead>
+            <tbody id="tbody-reorientation">
+                {% for e in sorties_reorientation %}
+                <tr data-annee="{{ e.annee }}">
+                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                    <td>{{ e.annee }}</td>
+                    <td><span style="background:#fef3c7;color:#b45309;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
+                    <td>{{ e.commentaire|default:'—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucune réorientation enregistrée.</div>
+        {% endif %}
+        </div>
+
+        <!-- 4. DÉCROCHEURS / ÉCHECS -->
+        <div id="tab-decrocheurs" class="detail-panel">
+        {% if sorties_decrocheurs %}
+        <table class="conn-table">
+            <thead>
+                <tr><th>Nom</th><th>Prénom</th><th>Dernière Classe</th><th>Année</th><th>Situation</th><th>Commentaire</th></tr>
+            </thead>
+            <tbody id="tbody-decrocheurs">
+                {% for e in sorties_decrocheurs %}
+                <tr data-annee="{{ e.annee }}">
+                    <td><strong style="color:#e74c3c;">{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                    <td>{{ e.annee }}</td>
+                    <td><span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
+                    <td>{{ e.commentaire|default:'—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        </div>
+
     </div>
 
     <!-- Section Élèves à risque -->
     {% if eleves_risque_data %}
-    <div class="section-title" style="--section-color:#e74c3c;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div class="section-title" style="--section-color:#e74c3c; margin-top:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <span style="color:#e74c3c;">Élèves à risque — 0 connexion &amp; 0 rendu</span>
     </div>
-    <div style="background:#fff;border:1px solid #fecaca;border-left:5px solid #e74c3c;border-radius:10px;padding:1.2rem 1.5rem;margin-bottom:1.8rem;">
-        <p style="font-size:0.85rem;color:#64748b;margin:0 0 0.8rem;">Ces élèves n'ont jamais rendu de travail et ne se sont jamais connectés. Une prise de contact est recommandée.</p>
+    <div style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:1.5rem;margin-bottom:2rem;border-left:5px solid #e74c3c;">
+        <p style="font-size:0.95rem;color:var(--text-muted);margin:0 0 1.5rem;">Ces élèves n'ont jamais rendu de travail et ne se sont jamais connectés. Une prise de contact est recommandée.</p>
         <table class="conn-table">
             <thead>
                 <tr><th>Nom</th><th>Prénom</th><th>Classe</th></tr>
@@ -363,7 +472,7 @@
                 <tr>
                     <td><strong style="color:#e74c3c;">{{ eleve.nom }}</strong></td>
                     <td>{{ eleve.prenom }}</td>
-                    <td>{{ eleve.classe }}</td>
+                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ eleve.classe }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -374,14 +483,16 @@
     <!-- Section PFMP -->
     {% if pfmp_stats %}
     <div class="section-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         PFMP — Présence par élève
     </div>
     {% for groupe in pfmp_stats %}
-    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:1.5rem;overflow:hidden;">
-        <div style="background:#1f2d3d;color:#fff;padding:0.8rem 1.2rem;font-weight:700;font-size:0.95rem;">{{ groupe.classe }}</div>
-        <div style="overflow-x:auto;">
-        <table class="conn-table">
+    <div style="background:white;border:1px solid var(--border-light);border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.04);margin-bottom:1.5rem;overflow:hidden;">
+        <div style="background:#f8f9fa;color:var(--text-main);padding:1rem 1.5rem;font-weight:700;font-size:1.05rem;border-bottom:1px solid var(--border-light);">
+            Classe : {{ groupe.classe }}
+        </div>
+        <div style="overflow-x:auto; padding:0.5rem;">
+        <table class="conn-table" style="border:none;">
             <thead>
                 <tr>
                     <th>Nom</th><th>Prénom</th>
@@ -402,19 +513,19 @@
                         <span title="{{ s.effectues }}j effectués / {{ s.total }}j total">
                             {% if s.taux is not None %}
                                 <span style="font-weight:700;color:{% if s.taux >= 90 %}#10b981{% elif s.taux >= 70 %}#f59e0b{% else %}#e74c3c{% endif %};">{{ s.effectues }}j</span>
-                                <br><small style="color:#64748b;">{{ s.taux }}%</small>
+                                <br><small style="color:var(--text-muted);">{{ s.taux }}%</small>
                             {% else %}
-                                <span style="color:#94a3b8;">{{ s.effectues }}j</span>
+                                <span style="color:var(--text-muted);">{{ s.effectues }}j</span>
                             {% endif %}
                         </span>
                     {% else %}
-                        <span style="color:#cbd5e1;">—</span>
+                        <span>—</span>
                     {% endif %}
                 </td>
                 {% endfor %}
-                <td style="text-align:center;font-weight:700;color:#4a9fc1;">{{ eleve.total_effectues }}j</td>
-                <td style="text-align:center;color:#f59e0b;">{{ eleve.total_justifies }}j</td>
-                <td style="text-align:center;color:#e74c3c;">{{ eleve.total_injustifies }}j</td>
+                <td style="text-align:center;font-weight:700;color:var(--ev);">{{ eleve.total_effectues }}j</td>
+                <td style="text-align:center;color:#f59e0b;font-weight:600;">{{ eleve.total_justifies }}j</td>
+                <td style="text-align:center;color:#e74c3c;font-weight:600;">{{ eleve.total_injustifies }}j</td>
             </tr>
             {% endfor %}
             </tbody>
@@ -427,52 +538,49 @@
     <!-- Section Sortis enrichis -->
     <div id="section-sortis" style="scroll-margin-top:80px;">
     <div class="section-title" style="--section-color:#e74c3c;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>
         <span style="color:#e74c3c;">Parcours des sortis</span>
     </div>
 
-    <!-- Mini-graphiques overview en 3 col -->
-    <div class="charts-grid" style="grid-template-columns:1fr 1fr;margin-bottom:1.4rem;">
+    <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
         <div class="chart-card" style="border-left-color:#8b5cf6;min-height:300px;">
-            <h2 style="color:#8b5cf6;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>
-                Top collèges / lycées d'origine des diplômés</h2>
+            <h2 style="color:#8b5cf6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>
+                Top lycées / collèges d'origine des diplômés</h2>
             {% if top_etabs_diplomes_json %}
             <div class="chart-wrapper" style="min-height:200px;"><canvas id="chartTopEtabs"></canvas></div>
             {% else %}
-            <div style="text-align:center;padding:2rem;color:#94a3b8;">Aucun diplômé avec établissement renseigné.</div>
+            <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucun diplômé avec établissement renseigné.</div>
             {% endif %}
         </div>
         <div class="chart-card" style="border-left-color:#10b981;min-height:300px;">
-            <h2 style="color:#10b981;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
+            <h2 style="color:#10b981;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
                 Poursuite d'études après diplôme</h2>
             {% if poursuite_json %}
             <div class="chart-wrapper" style="min-height:200px;"><canvas id="chartPoursuite"></canvas></div>
-            <div style="display:flex;gap:1rem;margin-top:0.8rem;justify-content:center;">
-                <div style="text-align:center;padding:0.5rem 1rem;background:#d1fae5;border-radius:8px;">
-                    <div style="font-size:1.4rem;font-weight:700;color:#059669;">{{ poursuite_json.0.nb }}</div>
-                    <div style="font-size:0.78rem;color:#047857;">Bac Pro</div>
+            <div style="display:flex;gap:1.5rem;margin-top:1.5rem;justify-content:center;">
+                <div style="text-align:center;padding:0.8rem 1.5rem;background:#d1fae5;border-radius:12px;">
+                    <div style="font-size:1.6rem;font-weight:700;color:#059669;">{{ poursuite_json.0.nb }}</div>
+                    <div style="font-size:0.85rem;color:#047857;font-weight:600;">Bac Pro</div>
                 </div>
-                <div style="text-align:center;padding:0.5rem 1rem;background:#dbeafe;border-radius:8px;">
-                    <div style="font-size:1.4rem;font-weight:700;color:#2563eb;">{{ poursuite_json.1.nb }}</div>
-                    <div style="font-size:0.78rem;color:#1d4ed8;">BTS</div>
+                <div style="text-align:center;padding:0.8rem 1.5rem;background:#dbeafe;border-radius:12px;">
+                    <div style="font-size:1.6rem;font-weight:700;color:#2563eb;">{{ poursuite_json.1.nb }}</div>
+                    <div style="font-size:0.85rem;color:#1d4ed8;font-weight:600;">BTS</div>
                 </div>
             </div>
             {% else %}
-            <div style="text-align:center;padding:2rem;color:#94a3b8;">Aucune poursuite enregistrée.</div>
+            <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucune poursuite enregistrée.</div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Tables détaillées avec filtre année + onglets -->
-    <div style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);padding:1.5rem;margin-bottom:1.8rem;border-left:4px solid #e74c3c;">
-
-        <!-- En-tête avec filtre année -->
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem;margin-bottom:1.2rem;">
-            <h3 style="margin:0;font-size:1rem;font-weight:700;color:#1e293b;">Détail par élève sorti</h3>
+    <!-- Tables détaillées -->
+    <div style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:2rem;margin-bottom:2rem;border-left:5px solid #e74c3c;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+            <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:var(--text-main);">Détail par élève sorti</h3>
             <div class="filter-annee-bar">
                 <label>Année&nbsp;:</label>
                 <select id="filtre-annee-stats" onchange="filtrerTablesStats()">
-                    <option value="">Toutes</option>
+                    <option value="">Toutes les années</option>
                     {% for annee in annees_sortis %}
                     <option value="{{ annee }}">{{ annee }}</option>
                     {% endfor %}
@@ -480,227 +588,128 @@
             </div>
         </div>
 
-        <!-- Onglets -->
         <div class="detail-tabs">
-            <button class="detail-tab active" onclick="showDetailTab('tab-diplomes', this)">
-                🎓 Diplômés ({{ sorties_diplomes|length }})
-            </button>
-            <button class="detail-tab" onclick="showDetailTab('tab-decrocheurs', this)">
-                ⚠️ Décrocheurs / Échecs ({{ sorties_decrocheurs|length }})
-            </button>
-            <button class="detail-tab" onclick="showDetailTab('tab-postformation', this)">
-                🏢 Post-formation ({{ sorties_post_formation|length }})
-            </button>
+            <button class="detail-tab active" onclick="showDetailTab('tab-diplomes', this)">🎓 Diplômés ({{ sorties_diplomes|length }})</button>
+            <button class="detail-tab" onclick="showDetailTab('tab-decrocheurs', this)">⚠️ Décrocheurs / Échecs ({{ sorties_decrocheurs|length }})</button>
+            <button class="detail-tab" onclick="showDetailTab('tab-postformation', this)">🏢 Post-formation ({{ sorties_post_formation|length }})</button>
         </div>
 
-        <!-- Tab Diplômés -->
         <div id="tab-diplomes" class="detail-panel active">
         {% if sorties_diplomes %}
         <table class="conn-table">
             <thead>
-                <tr>
-                    <th>Nom</th><th>Prénom</th><th>Classe</th>
-                    <th>Collège / Lycée d'origine</th>
-                    <th>Année</th><th>Diplôme</th><th>Mention</th><th>Poursuite</th>
-                </tr>
+                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Diplôme</th><th>Mention</th><th>Poursuite</th></tr>
             </thead>
             <tbody id="tbody-diplomes">
                 {% for e in sorties_diplomes %}
                 <tr data-annee="{{ e.annee }}">
-                    <td><strong>{{ e.nom }}</strong></td>
-                    <td>{{ e.prenom }}</td>
-                    <td>{{ e.classe }}</td>
-                    <td style="font-size:0.85rem;">
-                        {% if e.etablissement_orig %}
-                            <span style="color:#1e293b;">{{ e.etablissement_orig }}</span>
-                        {% else %}
-                            <span style="color:#cbd5e1;">Non renseigné</span>
-                        {% endif %}
-                    </td>
-                    <td style="color:#64748b;font-size:0.85rem;">{{ e.annee }}</td>
-                    <td>
-                        <span style="font-weight:600;font-size:0.85rem;">{{ e.raison }}</span>
-                        {% if e.commentaire %}
-                        <div style="font-size:0.77rem;color:#94a3b8;margin-top:2px;">{{ e.commentaire|truncatechars:40 }}</div>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if e.mention %}
-                            <span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:8px;font-size:0.8rem;font-weight:600;">{{ e.mention }}</span>
-                        {% else %}
-                            <span style="color:#cbd5e1;">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if e.poursuite_type %}
-                            <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:8px;font-size:0.8rem;font-weight:600;">→ {{ e.poursuite_type }}</span>
-                        {% else %}
-                            <span style="color:#cbd5e1;">—</span>
-                        {% endif %}
-                    </td>
+                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                    <td>{{ e.etablissement_orig|default:"—" }}</td>
+                    <td>{{ e.annee }}</td>
+                    <td><span style="font-weight:600;">{{ e.raison }}</span></td>
+                    <td>{% if e.mention %}<span style="background:#d1fae5;color:#065f46;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.mention }}</span>{% else %}—{% endif %}</td>
+                    <td>{% if e.poursuite_type %}<span style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">→ {{ e.poursuite_type }}</span>{% else %}—{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        {% else %}
-            <div style="text-align:center;padding:2rem;color:#94a3b8;">Aucun diplômé enregistré.</div>
         {% endif %}
         </div>
 
-        <!-- Tab Décrocheurs -->
         <div id="tab-decrocheurs" class="detail-panel">
         {% if sorties_decrocheurs %}
         <table class="conn-table">
             <thead>
-                <tr>
-                    <th>Nom</th><th>Prénom</th><th>Classe</th>
-                    <th>Collège d'origine</th>
-                    <th>Année</th><th>Situation</th><th>Commentaire</th>
-                </tr>
+                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Situation</th><th>Commentaire</th></tr>
             </thead>
             <tbody id="tbody-decrocheurs">
                 {% for e in sorties_decrocheurs %}
                 <tr data-annee="{{ e.annee }}">
-                    <td><strong style="color:#e74c3c;">{{ e.nom }}</strong></td>
-                    <td>{{ e.prenom }}</td>
-                    <td>{{ e.classe }}</td>
-                    <td style="font-size:0.85rem;">
-                        {% if e.etablissement_orig %}
-                            <span>{{ e.etablissement_orig }}</span>
-                        {% else %}
-                            <span style="color:#cbd5e1;">Non renseigné</span>
-                        {% endif %}
-                    </td>
-                    <td style="color:#64748b;font-size:0.85rem;">{{ e.annee }}</td>
-                    <td><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:8px;font-size:0.8rem;font-weight:600;">{{ e.raison }}</span></td>
-                    <td style="font-size:0.82rem;color:#64748b;">{{ e.commentaire|default:'—' }}</td>
+                    <td><strong style="color:#e74c3c;">{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                    <td>{{ e.etablissement_orig|default:"—" }}</td><td>{{ e.annee }}</td>
+                    <td><span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
+                    <td>{{ e.commentaire|default:'—' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        {% else %}
-            <div style="text-align:center;padding:2rem;color:#94a3b8;">Aucun décrocheur enregistré.</div>
         {% endif %}
         </div>
 
-        <!-- Tab Post-formation -->
         <div id="tab-postformation" class="detail-panel">
         {% if sorties_post_formation %}
         <table class="conn-table">
             <thead>
-                <tr>
-                    <th>Nom</th><th>Prénom</th><th>Classe</th>
-                    <th>Collège d'origine</th>
-                    <th>Année</th><th>Situation</th><th>Poursuite</th>
-                </tr>
+                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Situation</th><th>Détails</th></tr>
             </thead>
             <tbody id="tbody-postformation">
                 {% for e in sorties_post_formation %}
                 <tr data-annee="{{ e.annee }}">
-                    <td><strong>{{ e.nom }}</strong></td>
-                    <td>{{ e.prenom }}</td>
-                    <td>{{ e.classe }}</td>
-                    <td style="font-size:0.85rem;">
-                        {% if e.etablissement_orig %}
-                            <span>{{ e.etablissement_orig }}</span>
-                        {% else %}
-                            <span style="color:#cbd5e1;">Non renseigné</span>
-                        {% endif %}
-                    </td>
-                    <td style="color:#64748b;font-size:0.85rem;">{{ e.annee }}</td>
-                    <td><span style="background:#ede9fe;color:#5b21b6;padding:2px 8px;border-radius:8px;font-size:0.8rem;font-weight:600;">{{ e.raison }}</span></td>
-                    <td>
-                        {% if e.poursuite_type %}
-                            <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:8px;font-size:0.8rem;font-weight:600;">→ {{ e.poursuite_type }}</span>
-                        {% elif e.commentaire %}
-                            <span style="font-size:0.82rem;color:#64748b;">{{ e.commentaire|truncatechars:50 }}</span>
-                        {% else %}
-                            <span style="color:#cbd5e1;">—</span>
-                        {% endif %}
-                    </td>
+                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                    <td>{{ e.etablissement_orig|default:"—" }}</td><td>{{ e.annee }}</td>
+                    <td><span style="background:#ede9fe;color:#5b21b6;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
+                    <td>{{ e.poursuite_type|default:e.commentaire|default:'—' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        {% else %}
-            <div style="text-align:center;padding:2rem;color:#94a3b8;">Aucune post-formation enregistrée.</div>
         {% endif %}
         </div>
-
     </div>
-    </div><!-- /section-sortis -->
+    </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-         Section Profil d'origine → résultats
-    ═══════════════════════════════════════════════════════ -->
+    <!-- Section Profil d'origine -->
     <div id="section-origine" style="scroll-margin-top:80px;">
     <div class="section-title" style="--section-color:#0ea5e9;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 20.5a9 9 0 0 1 13 0"/><path d="M12 11v9"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 20.5a9 9 0 0 1 13 0"/><path d="M12 11v9"/></svg>
         <span style="color:#0ea5e9;">Profil d'entrée → Résultats</span>
     </div>
-    <p style="color:#64748b;font-size:0.88rem;margin:-0.5rem 0 1.2rem;">Corrélations entre l'origine scolaire des élèves et leurs résultats à la sortie (basé sur les élèves sortis avec profil renseigné).</p>
-
-    <!-- Onglets de dimension -->
-    <div class="detail-tabs" style="margin-bottom:1.2rem;">
-        <button class="detail-tab orig-tab active" onclick="showOrigTab('orig-college', this)">🏫 Par collège / lycée</button>
+    
+    <div class="detail-tabs">
+        <button class="detail-tab orig-tab active" onclick="showOrigTab('orig-college', this)">🏫 Par établissement</button>
         <button class="detail-tab orig-tab" onclick="showOrigTab('orig-classe', this)">📋 Par classe d'origine</button>
         <button class="detail-tab orig-tab" onclick="showOrigTab('orig-diplome', this)">🎓 Par diplôme d'entrée</button>
         <button class="detail-tab orig-tab" onclick="showOrigTab('orig-ville', this)">📍 Par ville</button>
     </div>
 
-    {% comment %}4 panneaux de corrélation{% endcomment %}
-
-    <!-- Panneau Collège -->
-    <div id="orig-college" class="orig-panel"
-         style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);padding:1.4rem;margin-bottom:1.8rem;border-left:4px solid #0ea5e9;">
-        <h3 style="margin:0 0 1rem;font-size:1rem;font-weight:700;color:#1e293b;">Collège / Lycée d'origine</h3>
+    <!-- Panneaux Profil -->
+    <div id="orig-college" class="orig-panel active" style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:2rem;margin-bottom:2rem;border-left:5px solid #0ea5e9;">
+        <h3 style="margin:0 0 1.5rem;font-size:1.1rem;font-weight:700;color:var(--text-main);">Établissement d'origine</h3>
         <script type="application/json" id="data-orig-college">{{ orig_college_json|safe }}</script>
-        <div class="chart-wrapper" style="min-height:280px;margin-bottom:1.6rem;">
-            <canvas id="chartOrigCollege"></canvas>
-        </div>
+        <div class="chart-wrapper" style="min-height:280px;margin-bottom:2rem;"><canvas id="chartOrigCollege"></canvas></div>
         {% include 'core/_orig_tableau.html' with donnees=orig_college %}
     </div>
 
-    <!-- Panneau Classe d'origine -->
-    <div id="orig-classe" class="orig-panel"
-         style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);padding:1.4rem;margin-bottom:1.8rem;border-left:4px solid #6366f1;display:none;">
-        <h3 style="margin:0 0 1rem;font-size:1rem;font-weight:700;color:#1e293b;">Classe d'origine</h3>
+    <div id="orig-classe" class="orig-panel" style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:2rem;margin-bottom:2rem;border-left:5px solid #6366f1;">
+        <h3 style="margin:0 0 1.5rem;font-size:1.1rem;font-weight:700;color:var(--text-main);">Classe d'origine</h3>
         <script type="application/json" id="data-orig-classe">{{ orig_classe_json|safe }}</script>
-        <div class="chart-wrapper" style="min-height:220px;margin-bottom:1.6rem;">
-            <canvas id="chartOrigClasse"></canvas>
-        </div>
+        <div class="chart-wrapper" style="min-height:220px;margin-bottom:2rem;"><canvas id="chartOrigClasse"></canvas></div>
         {% include 'core/_orig_tableau.html' with donnees=orig_classe %}
     </div>
 
-    <!-- Panneau Diplôme d'entrée -->
-    <div id="orig-diplome" class="orig-panel"
-         style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);padding:1.4rem;margin-bottom:1.8rem;border-left:4px solid #f59e0b;display:none;">
-        <h3 style="margin:0 0 1rem;font-size:1rem;font-weight:700;color:#1e293b;">Diplôme d'entrée (obtenu en collège)</h3>
+    <div id="orig-diplome" class="orig-panel" style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:2rem;margin-bottom:2rem;border-left:5px solid #f59e0b;">
+        <h3 style="margin:0 0 1.5rem;font-size:1.1rem;font-weight:700;color:var(--text-main);">Diplôme d'entrée</h3>
         <script type="application/json" id="data-orig-diplome">{{ orig_diplome_json|safe }}</script>
-        <div class="chart-wrapper" style="min-height:180px;margin-bottom:1.6rem;">
-            <canvas id="chartOrigDiplome"></canvas>
-        </div>
+        <div class="chart-wrapper" style="min-height:180px;margin-bottom:2rem;"><canvas id="chartOrigDiplome"></canvas></div>
         {% include 'core/_orig_tableau.html' with donnees=orig_diplome %}
     </div>
 
-    <!-- Panneau Ville -->
-    <div id="orig-ville" class="orig-panel"
-         style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);padding:1.4rem;margin-bottom:1.8rem;border-left:4px solid #10b981;display:none;">
-        <h3 style="margin:0 0 1rem;font-size:1rem;font-weight:700;color:#1e293b;">Ville d'origine</h3>
+    <div id="orig-ville" class="orig-panel" style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:2rem;margin-bottom:2rem;border-left:5px solid #10b981;">
+        <h3 style="margin:0 0 1.5rem;font-size:1.1rem;font-weight:700;color:var(--text-main);">Ville d'origine</h3>
         <script type="application/json" id="data-orig-ville">{{ orig_ville_json|safe }}</script>
-        <div class="chart-wrapper" style="min-height:240px;margin-bottom:1.6rem;">
-            <canvas id="chartOrigVille"></canvas>
-        </div>
+        <div class="chart-wrapper" style="min-height:240px;margin-bottom:2rem;"><canvas id="chartOrigVille"></canvas></div>
         {% include 'core/_orig_tableau.html' with donnees=orig_ville %}
     </div>
-
-    </div><!-- /section-origine -->
+    </div>
 
     <!-- Section Connexions élèves -->
     <div id="section-connexions" style="scroll-margin-top:80px;">
     <div class="connexions-section">
         <div class="section-title">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
             Connexions des élèves
         </div>
 
@@ -715,25 +724,18 @@
             </div>
             <div class="cx-stat">
                 <div class="val">{% with connexions_eleves as cx %}{% if cx %}{{ cx.0.nb_connexions }}{% else %}0{% endif %}{% endwith %}</div>
-                <div class="lbl">Record de connexions (1 élève)</div>
+                <div class="lbl">Record de connexions</div>
             </div>
             <div class="cx-stat">
                 <div class="val">{% with connexions_eleves as cx %}{% if cx %}{{ cx.0.nb_jours_actifs }}{% else %}0{% endif %}{% endwith %}</div>
-                <div class="lbl">Record jours actifs (1 élève)</div>
+                <div class="lbl">Record jours actifs</div>
             </div>
         </div>
 
         {% if connexions_eleves %}
-        <table class="conn-table">
+        <table class="conn-table" style="margin-bottom: 2rem;">
             <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Prénom</th>
-                    <th>Classe</th>
-                    <th>Connexions</th>
-                    <th>Jours actifs</th>
-                    <th>Dernière connexion</th>
-                </tr>
+                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Connexions</th><th>Jours actifs</th><th>Dernière connexion</th></tr>
             </thead>
             <tbody>
                 {% for eleve in connexions_eleves %}
@@ -741,57 +743,45 @@
                 <tr>
                     <td><strong>{{ eleve.nom }}</strong></td>
                     <td>{{ eleve.prenom }}</td>
-                    <td>{{ eleve.classe }}</td>
+                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ eleve.classe }}</span></td>
                     <td>
                         {% if eleve.nb_connexions == 0 %}
                             <span class="badge-jamais">Jamais connecté</span>
                         {% else %}
                             <div class="freq-bar">
-                                <div class="freq-track">
-                                    <div class="freq-fill" style="width:{% if max_cx > 0 %}{% widthratio eleve.nb_connexions max_cx 100 %}{% else %}0{% endif %}%"></div>
-                                </div>
+                                <div class="freq-track"><div class="freq-fill" style="width:{% if max_cx > 0 %}{% widthratio eleve.nb_connexions max_cx 100 %}{% else %}0{% endif %}%"></div></div>
                                 <span class="freq-num">{{ eleve.nb_connexions }}</span>
                             </div>
                         {% endif %}
                     </td>
                     <td>
                         {% if eleve.nb_jours_actifs == 0 %}
-                            <span style="color:#94a3b8;">&mdash;</span>
+                            <span>—</span>
                         {% else %}
                             <div class="freq-bar">
-                                <div class="freq-track">
-                                    <div class="freq-fill" style="width:{% if max_jours > 0 %}{% widthratio eleve.nb_jours_actifs max_jours 100 %}{% else %}0{% endif %}%; background:#8b5cf6;"></div>
-                                </div>
+                                <div class="freq-track"><div class="freq-fill" style="width:{% if max_jours > 0 %}{% widthratio eleve.nb_jours_actifs max_jours 100 %}{% else %}0{% endif %}%; background:#8b5cf6;"></div></div>
                                 <span class="freq-num" style="color:#8b5cf6;">{{ eleve.nb_jours_actifs }}j</span>
                             </div>
                         {% endif %}
                     </td>
-                    <td class="badge-date">
-                        {% if eleve.derniere %}{{ eleve.derniere }}{% else %}&mdash;{% endif %}
-                    </td>
+                    <td class="badge-date">{{ eleve.derniere|default:"—" }}</td>
                 </tr>
                 {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
-        {% else %}
-            <div style="text-align:center;padding:2rem;color:#94a3b8;">Aucun élève actif trouvé.</div>
         {% endif %}
 
-        <!-- Courbe connexions 30 derniers jours -->
-        <div style="margin-top:1.5rem;">
-            <h3 style="font-size:0.95rem;font-weight:600;color:#1f2d3d;margin-bottom:0.8rem;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                Connexions sur les 30 derniers jours
-            </h3>
-            <div style="height:180px;"><canvas id="chartConnexions30j"></canvas></div>
+        <div>
+            <h3 style="font-size:1.1rem;font-weight:700;color:var(--text-main);margin-bottom:1rem;">Connexions sur les 30 derniers jours</h3>
+            <div style="height:220px;"><canvas id="chartConnexions30j"></canvas></div>
         </div>
     </div>
-    </div><!-- /section-connexions -->
+    </div>
 
 </div>
 
-<!-- Données JSON -->
+<!-- Données JSON pour Chart.js -->
 {{ eleves_par_classe_json|json_script:"data-classes" }}
 {{ inscriptions_par_annee_json|json_script:"data-inscriptions" }}
 {{ top_etablissements_json|json_script:"data-etablissements" }}
@@ -817,10 +807,10 @@
         return el ? JSON.parse(el.textContent) : [];
     }
 
-    const ev = '#4a9fc1';
-    const colors = ['#4a9fc1','#10b981','#e67e22','#e74c3c','#8b5cf6','#f59e0b','#06b6d4','#ec4899'];
+    const ev = '#2ab090'; /* Vert principal harmonisé */
+    const colors = ['#2ab090','#10b981','#e67e22','#e74c3c','#8b5cf6','#f59e0b','#06b6d4','#ec4899'];
 
-    // 1. Classes (donut)
+    // 1. Classes
     const dClasses = getJson('data-classes');
     if (dClasses.length) {
         new Chart(document.getElementById('chartClasses'), {
@@ -830,17 +820,17 @@
         });
     }
 
-    // 2. Inscriptions (line)
+    // 2. Inscriptions
     const dInsc = getJson('data-inscriptions');
     if (dInsc.length) {
         new Chart(document.getElementById('chartInscriptions'), {
             type: 'line',
-            data: { labels: dInsc.map(x=>x.annee), datasets:[{ label:'Inscriptions', data: dInsc.map(x=>x.nb), borderColor: ev, fill:true, backgroundColor:'rgba(74,159,193,0.07)', tension:0.3, pointBackgroundColor: ev }] },
+            data: { labels: dInsc.map(x=>x.annee), datasets:[{ label:'Inscriptions', data: dInsc.map(x=>x.nb), borderColor: ev, fill:true, backgroundColor:'rgba(42,176,144,0.1)', tension:0.3, pointBackgroundColor: ev }] },
             options: { maintainAspectRatio: false }
         });
     }
 
-    // 3. Établissements (bar horizontal)
+    // 3. Établissements
     const dEtab = getJson('data-etablissements');
     if (dEtab.length) {
         new Chart(document.getElementById('chartEtablissements'), {
@@ -850,7 +840,7 @@
         });
     }
 
-    // 4. Raisons de sortie (pie)
+    // 4. Raisons de sortie
     const dDipl = getJson('data-diplomes');
     if (dDipl.length) {
         new Chart(document.getElementById('chartDiplomes'), {
@@ -860,7 +850,7 @@
         });
     }
 
-    // 5. Niveaux (bar)
+    // 5. Niveaux
     const dNiv = getJson('data-niveaux');
     if (dNiv.length) {
         new Chart(document.getElementById('chartNiveaux'), {
@@ -870,7 +860,7 @@
         });
     }
 
-    // 6. Âges (bar)
+    // 6. Âges
     const dAge = getJson('data-ages');
     if (dAge.length) {
         new Chart(document.getElementById('chartAges'), {
@@ -880,30 +870,27 @@
         });
     }
 
-    // 7. Toutes sorties par année (line)
+    // 7. Toutes sorties
     const dAband = getJson('data-abandons');
     if (dAband.length) {
         new Chart(document.getElementById('chartAbandons'), {
             type: 'line',
-            data: { labels: dAband.map(x=>x.annee), datasets:[{ label:'Sorties', data: dAband.map(x=>x.nb), borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,0.05)', fill:true, tension:0.3 }] },
+            data: { labels: dAband.map(x=>x.annee), datasets:[{ label:'Sorties', data: dAband.map(x=>x.nb), borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,0.1)', fill:true, tension:0.3 }] },
             options: { maintainAspectRatio: false }
         });
     }
 
-    // 8. Décrocheurs & Échecs par an (bar)
+    // 8. Décrocheurs
     const dDec = getJson('data-decrocheurs');
     if (dDec.length) {
         new Chart(document.getElementById('chartDecroch'), {
             type: 'bar',
-            data: {
-                labels: dDec.map(x => x.annee),
-                datasets: [{ label: 'Décrocheurs & Échecs', data: dDec.map(x => x.nb), backgroundColor: 'rgba(231,76,60,0.7)', borderRadius: 6 }]
-            },
+            data: { labels: dDec.map(x => x.annee), datasets: [{ label: 'Décrocheurs & Échecs', data: dDec.map(x => x.nb), backgroundColor: '#e74c3c', borderRadius: 6 }] },
             options: { maintainAspectRatio: false, plugins: { legend: { display: false }}, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }}}}
         });
     }
 
-    // 9. Diplômés par an & type (bar empilé)
+    // 9. Diplômés
     const dDA = getJson('data-diplomes-annee');
     if (dDA.length) {
         new Chart(document.getElementById('chartDipl'), {
@@ -911,151 +898,99 @@
             data: {
                 labels: dDA.map(x => x.annee),
                 datasets: [
-                    { label: 'CAP avec mention',    data: dDA.map(x => x.cap_mention), backgroundColor: '#10b981', borderRadius: 0 },
-                    { label: 'CAP sans mention',     data: dDA.map(x => x.cap_sans),    backgroundColor: '#6ee7b7', borderRadius: 0 },
-                    { label: 'Bac Pro avec mention', data: dDA.map(x => x.bp_mention),  backgroundColor: '#059669', borderRadius: 0 },
-                    { label: 'Bac Pro sans mention', data: dDA.map(x => x.bp_sans),     backgroundColor: '#a7f3d0', borderRadius: 0 },
+                    { label: 'CAP avec mention',    data: dDA.map(x => x.cap_mention), backgroundColor: '#10b981' },
+                    { label: 'CAP sans mention',     data: dDA.map(x => x.cap_sans),    backgroundColor: '#6ee7b7' },
+                    { label: 'Bac Pro avec mention', data: dDA.map(x => x.bp_mention),  backgroundColor: '#059669' },
+                    { label: 'Bac Pro sans mention', data: dDA.map(x => x.bp_sans),     backgroundColor: '#a7f3d0' },
                 ]
             },
-            options: {
-                maintainAspectRatio: false,
-                scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 }}},
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }}}}
-            }
+            options: { maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 }}}, plugins: { legend: { position: 'bottom'}}}
         });
     }
 
-    // 10. Post-formation par catégorie (doughnut)
+    // 10. Post-formation
     const dPF = getJson('data-postformation');
     if (dPF.length) {
         new Chart(document.getElementById('chartPostForm'), {
             type: 'doughnut',
-            data: {
-                labels: dPF.map(x => x.label),
-                datasets: [{ data: dPF.map(x => x.nb), backgroundColor: [ev,'#06b6d4','#8b5cf6','#f59e0b','#10b981','#ec4899','#64748b'] }]
-            },
-            options: { maintainAspectRatio: false, cutout: '55%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }}}}}
+            data: { labels: dPF.map(x => x.label), datasets: [{ data: dPF.map(x => x.nb), backgroundColor: [ev,'#06b6d4','#8b5cf6','#f59e0b','#10b981','#ec4899','#64748b'] }] },
+            options: { maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom'}}}
         });
     }
 
-    // 11. Taux de rendu par classe (bar horizontal)
+    // 11. Taux rendu
     const dTaux = getJson('data-taux-rendu');
     if (dTaux.length) {
         new Chart(document.getElementById('chartTauxRendu'), {
             type: 'bar',
             data: {
                 labels: dTaux.map(x => x.classe),
-                datasets: [{
-                    label: 'Taux de rendu (%)',
-                    data: dTaux.map(x => x.taux),
-                    backgroundColor: dTaux.map(x => x.taux >= 80 ? '#10b981' : x.taux >= 50 ? '#f59e0b' : '#e74c3c'),
-                    borderRadius: 6,
-                }]
+                datasets: [{ label: 'Taux de rendu (%)', data: dTaux.map(x => x.taux), backgroundColor: dTaux.map(x => x.taux >= 80 ? '#10b981' : x.taux >= 50 ? '#f59e0b' : '#e74c3c'), borderRadius: 6 }]
             },
-            options: {
-                maintainAspectRatio: false,
-                indexAxis: 'y',
-                scales: { x: { max: 100, ticks: { callback: v => v + '%' }}},
-                plugins: { legend: { display: false }}
-            }
+            options: { maintainAspectRatio: false, indexAxis: 'y', scales: { x: { max: 100, ticks: { callback: v => v + '%' }}}, plugins: { legend: { display: false }}}
         });
     }
 
-    // 12. Connexions 30 derniers jours (line)
+    // 12. Connexions 30j
     const d30j = getJson('data-connexions-30j');
     if (d30j.length) {
         new Chart(document.getElementById('chartConnexions30j'), {
             type: 'line',
             data: {
                 labels: d30j.map(x => x.date.slice(5)),
-                datasets: [{
-                    label: 'Connexions',
-                    data: d30j.map(x => x.nb),
-                    borderColor: ev,
-                    backgroundColor: 'rgba(74,159,193,0.08)',
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 3,
-                    pointBackgroundColor: ev,
-                }]
+                datasets: [{ label: 'Connexions', data: d30j.map(x => x.nb), borderColor: ev, backgroundColor: 'rgba(42,176,144,0.1)', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: ev }]
             },
-            options: {
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }}},
-                plugins: { legend: { display: false }}
-            }
+            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }}}, plugins: { legend: { display: false }}}
         });
     }
 
-    // 13. Top établissements d'origine des diplômés (bar horizontal)
+    // 13. Top etabs
     const dTopEtabs = getJson('data-top-etabs');
     if (dTopEtabs.length && document.getElementById('chartTopEtabs')) {
         new Chart(document.getElementById('chartTopEtabs'), {
             type: 'bar',
-            data: {
-                labels: dTopEtabs.map(x => x.nom.length > 24 ? x.nom.slice(0,24)+'…' : x.nom),
-                datasets: [{ label: 'Diplômés', data: dTopEtabs.map(x => x.nb), backgroundColor: '#8b5cf6', borderRadius: 5 }]
-            },
-            options: {
-                maintainAspectRatio: false, indexAxis: 'y',
-                scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }}},
-                plugins: { legend: { display: false }}
-            }
+            data: { labels: dTopEtabs.map(x => x.nom.length > 24 ? x.nom.slice(0,24)+'…' : x.nom), datasets: [{ data: dTopEtabs.map(x => x.nb), backgroundColor: '#8b5cf6', borderRadius: 6 }] },
+            options: { maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }}}, plugins: { legend: { display: false }}}
         });
     }
 
-    // 14. Poursuite d'études (bar)
+    // 14. Poursuite
     const dPoursuite = getJson('data-poursuite');
     if (dPoursuite.length && document.getElementById('chartPoursuite')) {
         new Chart(document.getElementById('chartPoursuite'), {
             type: 'bar',
-            data: {
-                labels: dPoursuite.map(x => x.label),
-                datasets: [{ data: dPoursuite.map(x => x.nb),
-                    backgroundColor: ['#10b981','#2563eb'], borderRadius: 6 }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }}},
-                plugins: { legend: { display: false }}
-            }
+            data: { labels: dPoursuite.map(x => x.label), datasets: [{ data: dPoursuite.map(x => x.nb), backgroundColor: ['#10b981','#2563eb'], borderRadius: 6 }] },
+            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }}}, plugins: { legend: { display: false }}}
         });
     }
 
-    // Onglets profil d'origine
+    // Tabs
     function showOrigTab(panelId, btn) {
-        document.querySelectorAll('.orig-panel').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.orig-panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.orig-tab').forEach(b => b.classList.remove('active'));
-        document.getElementById(panelId).style.display = 'block';
+        document.getElementById(panelId).classList.add('active');
         btn.classList.add('active');
     }
-
-    // Onglets détail sortis
     function showDetailTab(tabId, btn) {
         document.querySelectorAll('.detail-panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.detail-tab').forEach(b => b.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         btn.classList.add('active');
     }
-
-    // Filtre année sur les tables de détails (stats)
     function filtrerTablesStats() {
         const val = document.getElementById('filtre-annee-stats').value;
-        ['tbody-diplomes','tbody-decrocheurs','tbody-postformation'].forEach(id => {
+                ['tbody-diplomes','tbody-decrocheurs','tbody-postformation', 'tbody-reorientation'].forEach(id => {
             const tbody = document.getElementById(id);
             if (!tbody) return;
-            tbody.querySelectorAll('tr').forEach(row => {
-                row.style.display = (!val || row.dataset.annee === val) ? '' : 'none';
-            });
+            tbody.querySelectorAll('tr').forEach(row => { row.style.display = (!val || row.dataset.annee === val) ? '' : 'none'; });
         });
     }
 
-    // ── Graphiques "Profil d'entrée → Résultats" ──────────────────────────
+    // Graphiques Profil Origine
     function getOrigData(id) {
         const el = document.getElementById(id);
         try { return el ? JSON.parse(el.textContent) : []; } catch(e) { return []; }
     }
-
     function buildOrigChart(canvasId, dataId, accentColor) {
         const data = getOrigData(dataId);
         if (!data.length) return;
@@ -1063,70 +998,30 @@
         const reussite = data.map(x => x.taux_reussite);
         const decroch  = data.map(x => x.taux_decroch);
         const mention  = data.map(x => x.taux_mention);
-        const nb       = data.length;
-        // Hauteur dynamique : 36px par ligne, minimum 160px
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
-        canvas.parentElement.style.minHeight = Math.max(160, nb * 40) + 'px';
+        canvas.parentElement.style.minHeight = Math.max(160, data.length * 40) + 'px';
 
         new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
-                    {
-                        label: 'Diplômés %',
-                        data: reussite,
-                        backgroundColor: '#10b981',
-                        borderRadius: 4,
-                        borderSkipped: false,
-                    },
-                    {
-                        label: 'Décrocheurs %',
-                        data: decroch,
-                        backgroundColor: '#ef4444',
-                        borderRadius: 4,
-                        borderSkipped: false,
-                    },
-                    {
-                        label: 'Mentions %',
-                        data: mention,
-                        backgroundColor: '#f59e0b',
-                        borderRadius: 4,
-                        borderSkipped: false,
-                    },
+                    { label: 'Diplômés %', data: reussite, backgroundColor: '#10b981', borderRadius: 4 },
+                    { label: 'Décrocheurs %', data: decroch, backgroundColor: '#ef4444', borderRadius: 4 },
+                    { label: 'Mentions %', data: mention, backgroundColor: '#f59e0b', borderRadius: 4 },
                 ]
             },
             options: {
-                maintainAspectRatio: false,
-                indexAxis: 'y',
-                scales: {
-                    x: {
-                        min: 0,
-                        max: 100,
-                        ticks: { callback: v => v + '%', font: { size: 11 } },
-                        grid: { color: 'rgba(0,0,0,0.05)' }
-                    },
-                    y: {
-                        ticks: { font: { size: 11 } }
-                    }
-                },
-                plugins: {
-                    legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => ' ' + ctx.dataset.label + ' : ' + ctx.parsed.x + ' %'
-                        }
-                    }
-                }
+                maintainAspectRatio: false, indexAxis: 'y',
+                scales: { x: { min: 0, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,0.05)' }}},
+                plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ' : ' + ctx.parsed.x + ' %' }}}
             }
         });
     }
-
     buildOrigChart('chartOrigCollege', 'data-orig-college', '#0ea5e9');
     buildOrigChart('chartOrigClasse',  'data-orig-classe',  '#6366f1');
     buildOrigChart('chartOrigDiplome', 'data-orig-diplome', '#f59e0b');
     buildOrigChart('chartOrigVille',   'data-orig-ville',   '#10b981');
-    // ── /Graphiques profil d'entrée ────────────────────────────────────────
 </script>
 {% endblock %}

@@ -78,32 +78,34 @@ class ProfilUtilisateur(models.Model):
     ]
 
     RAISON_SORTIE = [
-        # Diplômes
-        ('cap_mention',           'CAP obtenu avec mention'),
-        ('cap_sans_mention',      'CAP obtenu sans mention'),
-        ('bac_pro_mention',       'Bac Pro obtenu avec mention'),
-        ('bac_pro_sans_mention',  'Bac Pro obtenu sans mention'),
-        # Échecs
-        ('echec_cap',             'Échoué au CAP'),
-        ('echec_bac_pro',         'Échoué au Bac Pro'),
-        # Poursuite d'études
-        ('poursuite_bac_pro',     'Poursuite en Bac Pro'),
-        ('poursuite_bts',         'Poursuite en BTS'),
-        ('poursuite_autre',       "Autre poursuite d'études"),
-        # Vie active
-        ('travail_formation',     'Travaille en lien avec sa formation'),
-        ('travail_hors_formation','Travaille hors de sa formation'),
-        ('apprentissage',         'Apprentissage / Alternance'),
-        ('sans_emploi',           'Sans emploi'),
-        # Réorientations
-        ('reorientation_interne', "Réorienté dans l'établissement"),
-        ('reorientation_externe', 'Réorienté dans un autre établissement'),
-        ('retour_pays',           "Retour dans son pays d'origine"),
-        # Situations particulières
-        ('exclusion',             "Exclu de l'établissement"),
-        ('decrocheur',            'Décrocheur (abandon)'),
-        ('deces',                 'Décès'),
-        ('raison_inconnue',       'Raison inconnue'),
+        # --- Diplômés & Post-Formation ---
+        ('cap_mention', 'Obtention CAP (avec mention)'),
+        ('cap_sans_mention', 'Obtention CAP (sans mention)'),
+        ('bac_pro_mention', 'Obtention Bac Pro (avec mention)'),
+        ('bac_pro_sans_mention', 'Obtention Bac Pro (sans mention)'),
+        ('poursuite_bac_pro', 'Poursuite en Bac Pro (Post-Formation)'),
+        ('poursuite_bts', 'Poursuite en BTS (Post-Formation)'),
+        ('poursuite_autre', "Autre poursuite d'études (Post-Formation)"),
+        ('travail_formation', 'Travaille dans le BTP (Post-Formation)'),
+        ('travail_hors_formation', 'Travaille hors BTP (Post-Formation)'),
+        ('apprentissage', 'Apprentissage / Alternance (Post-Formation)'),
+        
+        # --- Changement de section (Fin de 2nde BTP) ---
+        ('orientation_afb', 'Orientation en 1ère AFB (Reste au lycée)'),
+        
+        # --- Réorientations pures ---
+        ('reorientation_interne', 'Réorientation interne (Autre filière)'),
+        ('reorientation_externe', 'Réorientation externe (Autre lycée/CFA)'),
+        
+        # --- Échecs & Décrochages ---
+        ('echec_cap', 'Échec au CAP'),
+        ('echec_bac_pro', 'Échec au Bac Pro'),
+        ('decrocheur', 'Décrocheur (abandon en cours d\'année)'),
+        ('sans_emploi', 'Sans emploi (Sorti du système)'),
+        ('exclusion', 'Exclusion définitive'),
+        ('retour_pays', "Retour dans le pays d'origine"),
+        ('deces', 'Décès'),
+        ('raison_inconnue', 'Raison inconnue'),
     ]
 
     TYPE_DIPLOME_OBTENU = [
@@ -1225,18 +1227,8 @@ class ConnexionEleve(models.Model):
 # =====================================================
 
 class FicheRevision(models.Model):
-    theme = models.ForeignKey(
-        'Theme',
-        on_delete=models.CASCADE,
-        related_name='fiches_revision'
-    )
-    dossier = models.ForeignKey(
-        'Dossier',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='fiches_revision'
-    )
+    
+    dossier = models.ForeignKey(Dossier, on_delete=models.CASCADE, related_name='fiches_revision', null=True, blank=True)
     titre = models.CharField(max_length=200)
     createur = models.ForeignKey(
         User,

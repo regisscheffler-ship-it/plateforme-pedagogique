@@ -73,7 +73,7 @@ urlpatterns = [
     # ═══════════════════════════════════════
     # FICHES DE RÉVISION
     # ═══════════════════════════════════════
-    path('fiches-revision/creer/<int:theme_id>/',       views.fiche_revision_create,      name='fiche_revision_create'),
+    path('dossiers/<int:dossier_id>/fiche/create/',     views.fiche_revision_create,          name='fiche_revision_create'),
     path('fiches-revision/<int:pk>/',                   views.fiche_revision_detail,      name='fiche_revision_detail'),
     path('fiches-revision/<int:fiche_id>/import-csv/',  views.fiche_revision_import_csv,  name='fiche_revision_import_csv'),
     path('fiches-revision/<int:pk>/supprimer/',         views.fiche_revision_delete,      name='fiche_revision_delete'),
