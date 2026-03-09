@@ -125,8 +125,9 @@ class EvaluationLigneAdmin(admin.ModelAdmin):
 
 @admin.register(FicheRevision)
 class FicheRevisionAdmin(admin.ModelAdmin):
-    list_display = ['titre', 'theme', 'createur', 'actif', 'date_creation']
-    list_filter = ['actif', 'theme']
+    # J'ai rajouté 'actif' ici pour qu'il corresponde à list_editable
+    list_display = ('titre', 'dossier', 'actif', 'nb_cartes') 
+    list_filter = ('dossier',)                       
     search_fields = ['titre']
     list_editable = ['actif']
     readonly_fields = ['date_creation']
