@@ -208,23 +208,24 @@ def dashboard_professeur(request):
         'nb_modes_operatoires':  ModeOperatoire.objects.filter(actif=True).count(),
         'classes_list':          Classe.objects.all().order_by('nom'),
         'themes_list':           Theme.objects.all().order_by('nom'),
-        'fiches_par_theme_json': json.dumps({
-            str(f.theme_id): {'id': f.id, 'titre': f.titre, 'nb': f.nb_cartes}
-            for f in FicheRevision.objects.annotate(nb_cartes=Count('cartes')).order_by('titre')
-            # regroup below
-        }, default=str),
     }
+    
     # Rebuild fiches_par_theme as a proper dict of lists
+    # On passe par le dossier pour retrouver l'ID du thème
     fiches_map = {}
-    for f in FicheRevision.objects.annotate(nb_cartes=Count('cartes')).order_by('titre'):
-        tid = str(f.theme_id)
-        if tid not in fiches_map:
-            fiches_map[tid] = []
-        fiches_map[tid].append({'id': f.id, 'titre': f.titre, 'nb': f.nb_cartes})
+    for f in FicheRevision.objects.select_related('dossier__theme').annotate(nb_cartes=Count('cartes')).order_by('titre'):
+        if f.dossier and f.dossier.theme_id:  # On vérifie que la fiche a bien un dossier
+            tid = str(f.dossier.theme_id)
+            if tid not in fiches_map:
+                fiches_map[tid] = []
+            fiches_map[tid].append({'id': f.id, 'titre': f.titre, 'nb': f.nb_cartes})
+            
     context['fiches_par_theme_json'] = json.dumps(fiches_map)
+    
     total_sexe = context['nb_garcons'] + context['nb_filles']
     context['pc_garcons'] = f"{context['nb_garcons']*100/total_sexe:.0f}" if total_sexe else '0'
     context['pc_filles'] = f"{context['nb_filles']*100/total_sexe:.0f}" if total_sexe else '0'
+    
     return render(request, 'core/dashboard_professeur.html', context)
 
 
