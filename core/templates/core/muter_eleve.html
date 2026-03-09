@@ -1,0 +1,33 @@
+{% extends 'core/base.html' %}
+{% block title %}Mutation d'élève{% endblock %}
+{% block content %}
+<div class="page-container">
+    <div class="form-card">
+        <h2 style="margin-bottom:1.5rem;">Muter l'élève</h2>
+        <p style="color:#64748b;font-size:0.95rem;margin-bottom:1.5rem;">
+            <strong>{{ profil.user.last_name|upper }} {{ profil.user.first_name }}</strong><br>
+            Classe actuelle : <span style="color:#2ab090;">{{ anciennes_classes }}</span>
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="nouvelle_classe">Nouvelle classe</label>
+                <select id="nouvelle_classe" name="nouvelle_classe" required>
+                    <option value="">— Sélectionner une classe —</option>
+                    {% for c in classes %}
+                        <option value="{{ c.id }}">{{ c.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" style="width:18px;height:18px;">
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Valider la mutation
+            </button>
+        </form>
+        <a href="{% url 'core:gestion_eleves' %}" class="btn-annuler">Annuler</a>
+    </div>
+</div>
+{% endblock %}

@@ -152,6 +152,21 @@ class ProfilUtilisateur(models.Model):
     annee_scolaire_sortie = models.CharField(max_length=20, blank=True, default='')
     raison_sortie = models.CharField(max_length=50, choices=RAISON_SORTIE, blank=True, default='')
     commentaire_sortie = models.TextField(blank=True, default='')
+    # Ajout pour la gestion avancée des sorties
+    type_sortie = models.CharField(
+        max_length=30,
+        blank=True,
+        default='',
+        choices=[
+            ('', 'Non renseigné'),
+            ('poursuite_etudes', 'Poursuite d\'études'),
+            ('reorientation_interne', 'Réorientation interne'),
+            ('reorientation_externe', 'Réorientation externe'),
+            ('passage_classe_sup', 'Passage en classe supérieure'),
+            ('autre', 'Autre'),
+        ]
+    )
+    formation_choisie = models.CharField(max_length=100, blank=True, default='')
 
     type_diplome_obtenu = models.CharField(max_length=20, choices=TYPE_DIPLOME_OBTENU, blank=True, default='')
     mention_obtenue = models.CharField(max_length=50, choices=MENTION, blank=True, default='')
@@ -1213,6 +1228,13 @@ class FicheRevision(models.Model):
     theme = models.ForeignKey(
         'Theme',
         on_delete=models.CASCADE,
+        related_name='fiches_revision'
+    )
+    dossier = models.ForeignKey(
+        'Dossier',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='fiches_revision'
     )
     titre = models.CharField(max_length=200)

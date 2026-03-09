@@ -202,7 +202,7 @@ def dashboard_professeur(request):
         'nb_pfmp':               PFMP.objects.filter(actif=True).count(),
         'nb_ateliers':           Atelier.objects.filter(actif=True).count(),
         'nb_evaluations':        FicheContrat.objects.filter(createur=request.user, actif=True).count(),
-        'nb_archives':           ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).count(),
+        'nb_archives':           Archive.objects.filter(actif=True).count(),
         'nb_sorties':            ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).count(),
         'nb_qcm':                QCM.objects.filter(actif=True).count(),
         'nb_modes_operatoires':  ModeOperatoire.objects.filter(actif=True).count(),
@@ -370,6 +370,28 @@ def gestion_eleves(request):
         'pc_garcons': pc_garcons,
     })
 
+# Vue pour muter un élève
+@login_required
+@user_passes_test(est_professeur)
+def muter_eleve(request, pk):
+    profil = get_object_or_404(ProfilUtilisateur, id=pk)
+    anciennes_classes = profil.classe.nom if profil.classe else ''
+    if request.method == 'POST':
+        nouvelle_classe_id = request.POST.get('nouvelle_classe')
+        if nouvelle_classe_id:
+            nouvelle_classe = Classe.objects.get(id=nouvelle_classe_id)
+            # Historique mutation (à adapter pour statistiques)
+            profil.commentaire_sortie += f"\nMutation: {profil.classe.nom if profil.classe else ''} -> {nouvelle_classe.nom} le {timezone.now().strftime('%d/%m/%Y')}"
+            profil.classe = nouvelle_classe
+            profil.save()
+            messages.success(request, f"✅ Élève muté vers {nouvelle_classe.nom} !")
+            return redirect('core:gestion_eleves')
+    return render(request, 'core/muter_eleve.html', {
+        'profil': profil,
+        'classes': Classe.objects.all().order_by('nom'),
+        'anciennes_classes': anciennes_classes,
+    })
+
 
 @login_required
 @user_passes_test(est_professeur)
@@ -445,9 +467,15 @@ def completer_profil_eleve(request, profil_id):
         profil.classe_origine = request.POST.get('classe_origine', '')
         if request.POST.get('classe'):
             profil.classe = Classe.objects.get(id=request.POST.get('classe'))
+        profil.diplome_obtenu = request.POST.get('diplome_obtenu', '')
         profil.save()
         messages.success(request, '✅ Profil complété !')
         return redirect('core:gestion_eleves')
+
+    # Ajout automatique du lycée si absent
+    if not EtablissementOrigine.objects.filter(nom="Lycée Louis Loucheur").exists():
+        EtablissementOrigine.objects.create(nom="Lycée Louis Loucheur", ville="Roubaix", actif=True)
+
     return render(request, 'core/completer_profil_eleve.html', {
         'profil': profil,
         'etablissements': EtablissementOrigine.objects.all().order_by('nom'),

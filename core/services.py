@@ -466,6 +466,9 @@ def assistant_recherche(question, historique=None, fichier_bytes=None, fichier_m
 # =====================================================
 # SYNTHÈSE VOCALE — MICROSOFT EDGE TTS (gratuit, neural)
 # =====================================================
+import os
+import tempfile
+import subprocess
 
 EL_VOIX_DISPONIBLES = {
     'fr-FR-DeniseNeural':   'Denise – Femme, naturelle (France)',
@@ -478,51 +481,51 @@ EL_VOIX_DISPONIBLES = {
     'fr-CA-AntoineNeural':  'Antoine – Homme, jeune (Canada)',
 }
 
-
 def synthetiser_voix(texte, voice_id=None):
     """
-    Convertit du texte en audio MP3 via Microsoft Edge TTS.
-    Utilise un thread séparé pour éviter les conflits asyncio avec Gunicorn.
+    Convertit du texte en audio MP3 via Microsoft Edge TTS en utilisant la CLI.
+    C'est la méthode la plus robuste pour éviter les conflits asyncio dans Django.
     """
-    import asyncio
-    import threading
-    import io
-    import edge_tts
+    texte = texte[:5000].strip()
+    if not texte:
+        return None
 
-    texte = texte[:5000]
     voice = voice_id if voice_id in EL_VOIX_DISPONIBLES else 'fr-FR-DeniseNeural'
+    
+    # On crée un fichier temporaire pour stocker le MP3 généré
+    fd, temp_path = tempfile.mkstemp(suffix='.mp3')
+    os.close(fd) # Fermer le descripteur, on passera juste le chemin à la commande
+    
+    try:
+        # Appel de edge-tts en ligne de commande (comme dans un terminal)
+        commande = [
+            'edge-tts',
+            '--voice', voice,
+            '--text', texte,
+            '--write-media', temp_path
+        ]
+        
+        # Exécuter la commande (timeout de 20 secondes max)
+        process = subprocess.run(commande, capture_output=True, text=True, timeout=20)
+        
+        if process.returncode != 0:
+            print(f"[Edge-TTS] Erreur CLI : {process.stderr}")
+            raise Exception(f"Erreur edge-tts: {process.stderr}")
+            
+        # Lire le fichier MP3 généré
+        with open(temp_path, 'rb') as audio_file:
+            audio_bytes = audio_file.read()
+            
+        print(f"[Edge-TTS] Audio généré avec succès via CLI ({len(audio_bytes)} octets)")
+        return audio_bytes
 
-    resultat = {'audio': None, 'erreur': None}
-
-    async def _generer():
-        communicate = edge_tts.Communicate(texte, voice)
-        buffer = io.BytesIO()
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                buffer.write(chunk["data"])
-        buffer.seek(0)
-        resultat['audio'] = buffer.read()
-
-    def _executer():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(_generer())
-        except Exception as e:
-            resultat['erreur'] = e
-        finally:
-            loop.close()
-
-    thread = threading.Thread(target=_executer)
-    thread.start()
-    thread.join(timeout=30)
-
-    if resultat['erreur']:
-        print(f"[Edge-TTS] Erreur : {resultat['erreur']}")
-        raise resultat['erreur']
-
-    if not resultat['audio']:
-        raise Exception("Edge-TTS : timeout, aucun audio généré.")
-
-    print(f"[Edge-TTS] Audio généré ({len(resultat['audio'])} octets), voix={voice}")
-    return resultat['audio']
+    except subprocess.TimeoutExpired:
+        print("[Edge-TTS] Timeout : la génération a pris trop de temps.")
+        raise Exception("Délai d'attente dépassé pour la synthèse vocale.")
+    except Exception as e:
+        print(f"[Edge-TTS] Erreur inattendue : {e}")
+        raise e
+    finally:
+        # Toujours nettoyer le fichier temporaire pour ne pas saturer le serveur
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
