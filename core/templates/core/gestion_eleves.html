@@ -233,6 +233,8 @@
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
+        background: white;
+        border: 2px solid currentColor;
     }
 
     .btn-action svg {
@@ -244,65 +246,26 @@
     }
 
     /* Boutons outlined sémantiques */
-    .btn-action {
-        background: white;
-        border: 2px solid currentColor;
-    }
+    .btn-action.btn-complete { color: #c9a000; }
+    .btn-action.btn-complete:hover { background: #c9a000; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(201,160,0,0.25); }
 
-    .btn-action.btn-complete {
-        color: #c9a000;
-    }
+    .btn-action.btn-edit { color: #e8922a; }
+    .btn-action.btn-edit:hover { background: #e8922a; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(232,146,42,0.25); }
 
-    .btn-action.btn-complete:hover {
-        background: #c9a000;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(201,160,0,0.25);
-    }
+    .btn-action.btn-sortie { color: #d94f4f; }
+    .btn-action.btn-sortie:hover { background: #d94f4f; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(217,79,79,0.25); }
 
-    .btn-action.btn-edit {
-        color: #e8922a;
-    }
+    .btn-action.btn-classe-sup { color: #8b5cf6; }
+    .btn-action.btn-classe-sup:hover { background: #8b5cf6; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(139,92,246,0.25); }
 
-    .btn-action.btn-edit:hover {
-        background: #e8922a;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(232,146,42,0.25);
-    }
+    .btn-action.btn-redoublement { color: #f97316; }
+    .btn-action.btn-redoublement:hover { background: #f97316; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(249,115,22,0.25); }
 
-    .btn-action.btn-sortie {
-        color: #d94f4f;
-    }
+    .btn-action.btn-muter { color: #059669; }
+    .btn-action.btn-muter:hover { background: #059669; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(5,150,105,0.25); }
 
-    .btn-action.btn-sortie:hover {
-        background: #d94f4f;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(217,79,79,0.25);
-    }
-
-    .btn-action.btn-classe-sup {
-        color: #8b5cf6;
-    }
-
-    .btn-action.btn-classe-sup:hover {
-        background: #8b5cf6;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(139,92,246,0.25);
-    }
-
-    .btn-action.btn-redoublement {
-        color: #f97316;
-    }
-
-    .btn-action.btn-redoublement:hover {
-        background: #f97316;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(249,115,22,0.25);
-    }
+    .btn-action.btn-delete { color: #dc3545; }
+    .btn-action.btn-delete:hover { background: #dc3545; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(220,53,69,0.25); }
 
     /* Stats cards */
     .stats-grid {
@@ -334,13 +297,8 @@
         color: inherit;
     }
 
-    .stat-card.green {
-        border-left: 5px solid #2ab090;
-    }
-
-    .stat-card.red {
-        border-left: 5px solid #dc3545;
-    }
+    .stat-card.green { border-left: 5px solid #2ab090; }
+    .stat-card.red { border-left: 5px solid #dc3545; }
 
     .stat-icon {
         width: 60px;
@@ -359,21 +317,11 @@
         fill: none;
     }
 
-    .green .stat-icon {
-        background: #d1fae5;
-    }
+    .green .stat-icon { background: #d1fae5; }
+    .green .stat-icon svg { stroke: #2ab090; }
 
-    .green .stat-icon svg {
-        stroke: #2ab090;
-    }
-
-    .red .stat-icon {
-        background: #fee2e2;
-    }
-
-    .red .stat-icon svg {
-        stroke: #dc3545;
-    }
+    .red .stat-icon { background: #fee2e2; }
+    .red .stat-icon svg { stroke: #dc3545; }
 
     .stat-info h3 {
         margin: 0 0 0.3rem 0;
@@ -394,13 +342,8 @@
         margin-left: auto;
     }
 
-    .green .stat-number {
-        color: #2ab090;
-    }
-
-    .red .stat-number {
-        color: #dc3545;
-    }
+    .green .stat-number { color: #2ab090; }
+    .red .stat-number { color: #dc3545; }
 
     .empty-state {
         text-align: center;
@@ -591,15 +534,20 @@
                                 </svg>
                                 Sortie
                             </a>
-                                <a href="#" class="btn-action btn-muter" style="background:#f3f4f6;color:#2ab090;border:1px solid #2ab090;">
-                                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                        <polyline points="7 3 7 8 15 8"></polyline>
-                                    </svg>
-                                    Muter
-                                </a>
-                                <a href="{% url 'core:supprimer_eleve' profil.id %}" class="btn-action btn-delete" style="background:#fee2e2;color:#dc3545;border:1px solid #dc3545;">
+                            
+                            <!-- BOUTON MUTER RÉPARÉ -->
+                            <a href="{% url 'core:muter_eleve' profil.id %}" class="btn-action btn-muter">
+                                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                                Muter
+                            </a>
+
+                            <form action="{% url 'core:supprimer_eleve' profil.id %}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-action btn-delete" onclick="return confirm('Supprimer définitivement cet élève ?')">
                                     <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"></path>
@@ -608,7 +556,8 @@
                                         <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
                                     </svg>
                                     Supprimer
-                                </a>
+                                </button>
+                            </form>
                         </div>
                     </td>
                 </tr>
