@@ -23,7 +23,7 @@ SECRET_KEY = os.environ.get(
     '7eSBcMNOnQlXa3iZQ9az-CKw7PzdCTMmLlRVmyMf7U7JC_AIddbQfqNJ9fIvEdY_Fz4'
 )
 
-DEBUG  = True
+DEBUG  = False
 
 # ===================================================================
 # HOSTS

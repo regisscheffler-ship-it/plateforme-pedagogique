@@ -50,7 +50,7 @@ urlpatterns = [
     path('gestion/eleves/approbations/',           views.gestion_approbations, name='gestion_approbations'),
     path('gestion/eleves/<int:pk>/approuver/',     views.approuver_eleve,      name='approuver_eleve'),
     path('gestion/eleves/<int:pk>/refuser/',       views.refuser_eleve,        name='refuser_eleve'),
-
+    path('eleves/<int:pk>/muter/',                 views.muter_eleve,          name='muter_eleve'),
     # ═══════════════════════════════════════
     # GESTION SORTIES
     # ═══════════════════════════════════════
