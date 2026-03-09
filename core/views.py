@@ -555,6 +555,7 @@ def theme_create(request):
 def theme_detail(request, pk):
     theme = get_object_or_404(Theme, id=pk)
     is_prof = est_professeur(request.user)
+    
     if hasattr(request.user, 'profil') and request.user.profil.est_eleve():
         if request.user.profil.classe and not theme.classes.filter(pk=request.user.profil.classe_id).exists():
             messages.error(request, "❌ Vous n'avez pas accès à ce thème.")
@@ -562,20 +563,20 @@ def theme_detail(request, pk):
         dossiers = Dossier.objects.filter(theme=theme, actif=True, visible_eleves=True).order_by('ordre', 'nom')
     else:
         dossiers = Dossier.objects.filter(theme=theme, actif=True).order_by('ordre', 'nom')
+        
     dossiers_avec_fichiers = []
     for dossier in dossiers:
         fichiers = Fichier.objects.filter(dossier=dossier, actif=True).order_by('ordre', 'nom')
+        # On peut pré-charger les fiches de révision directement dans le dossier_avec_fichiers
         dossiers_avec_fichiers.append({'dossier': dossier, 'fichiers': fichiers})
-    fiches_revision = theme.fiches_revision.filter(actif=True).annotate(
-        nb_cartes=Count('cartes')
-    ).order_by('titre')
+        
     qcms = theme.qcms.annotate(nb_questions=Count('questions')).order_by('-date_creation')
     modes_operatoires = ModeOperatoire.objects.filter(theme=theme, actif=True).order_by('-date_creation')
+    
     return render(request, 'core/theme_detail.html', {
         'theme': theme,
         'dossiers_avec_fichiers': dossiers_avec_fichiers,
         'is_prof': is_prof,
-        'fiches_revision': fiches_revision,
         'qcms': qcms,
         'modes_operatoires': modes_operatoires,
     })
