@@ -58,7 +58,7 @@
 
 <div class="form-container">
 
-    <a href="{% url 'core:theme_detail' theme.id %}" class="btn-back-custom">
+    <a href="{% url 'core:theme_detail' dossier.theme.id %}" class="btn-back-custom">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
@@ -82,7 +82,7 @@
                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                 </svg>
-                {{ theme.nom }}
+                {{ dossier.theme.nom }}
             </span>
         </div>
 
