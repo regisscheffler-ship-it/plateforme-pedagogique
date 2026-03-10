@@ -399,18 +399,9 @@
                 </div>
                 <div class="panel-body" style="padding-bottom:0.9rem;">
                     <select class="voice-select" id="voixSelect" title="Choisir la voix">
-                        <optgroup label="🇫🇷 Français (France)">
-                            <option value="fr-FR-DeniseNeural" selected>Denise – Femme, naturelle</option>
-                            <option value="fr-FR-HenriNeural">Henri – Homme, posé</option>
-                            <option value="fr-FR-EloiseNeural">Éloïse – Femme, jeune</option>
-                            <option value="fr-FR-VivienneMultilingualNeural">Vivienne – Femme, multilingue</option>
-                            <option value="fr-FR-RemyMultilingualNeural">Rémy – Homme, multilingue</option>
-                        </optgroup>
-                        <optgroup label="🇨🇦 Français (Canada)">
-                            <option value="fr-CA-SylvieNeural">Sylvie – Femme</option>
-                            <option value="fr-CA-JeanNeural">Jean – Homme</option>
-                            <option value="fr-CA-AntoineNeural">Antoine – Homme, jeune</option>
-                        </optgroup>
+                        <option value="fr-FR" selected>Français (France)</option>
+                        <option value="fr-CA">Français (Canada)</option>
+                        <option value="en-US">Anglais (États-Unis)</option>
                     </select>
                     <button class="btn-test-voix" id="btnTestVoix">
                         <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -654,7 +645,7 @@
             var resp = await fetch("{% url 'core:assistant_tts' %}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
-                body: JSON.stringify({ texte: texteNet, voice_id: voiceId }),
+                body: JSON.stringify({ texte: 'Bonjour ! Je suis votre assistant pédagogique. Comment puis-je vous aider aujourd\'hui ?', voice_id: voiceId }),
             });
 
             if (!resp.ok) {
