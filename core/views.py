@@ -1742,6 +1742,65 @@ def _stats_sorties_detail():
     return decrocheurs, diplomes, post_formation, reorientations
 
 
+def _stats_sorties_charts():
+    """
+    Retourne les données pour les graphiques de suivi des sorties.
+    """
+    from core.models import ProfilUtilisateur
+    
+    DECROCHEURS = {'decrocheur', 'exclusion', 'echec_cap', 'echec_bac_pro', 'deces', 'raison_inconnue', 'sans_emploi'}
+    DIPLOMES = {'cap_mention', 'cap_sans_mention', 'bac_pro_mention', 'bac_pro_sans_mention'}
+
+    sortis = ProfilUtilisateur.objects.filter(
+        type_utilisateur='eleve', est_sorti=True, date_sortie__isnull=False
+    ).values('raison_sortie', 'annee_scolaire_sortie')
+
+    dec_by_year = {}
+    dipl_by_year = {}
+    postform_totals = {}
+
+    POSTFORM_LABELS = {
+        'poursuite_bac_pro': 'Poursuite Bac Pro',
+        'poursuite_bts': 'Poursuite BTS',
+        'poursuite_autre': "Autre poursuite",
+        'travail_formation': 'Travaille (formation)',
+        'travail_hors_formation': 'Travaille (autre)',
+        'apprentissage': 'Apprentissage',
+        'reorientation_interne': 'Réorientation',
+        'reorientation_externe': 'Réorientation',
+        'orientation_afb': '1ère AFB',
+    }
+
+    for s in sortis:
+        r = s['raison_sortie'] or ''
+        annee = s['annee_scolaire_sortie'] or 'Inconnue'
+        
+        if r in DECROCHEURS:
+            dec_by_year[annee] = dec_by_year.get(annee, 0) + 1
+        elif r in DIPLOMES:
+            if annee not in dipl_by_year:
+                dipl_by_year[annee] = {'cap_mention': 0, 'cap_sans': 0, 'bp_mention': 0, 'bp_sans': 0}
+            if r == 'cap_mention':        dipl_by_year[annee]['cap_mention'] += 1
+            elif r == 'cap_sans_mention': dipl_by_year[annee]['cap_sans'] += 1
+            elif r == 'bac_pro_mention':  dipl_by_year[annee]['bp_mention'] += 1
+            elif r == 'bac_pro_sans_mention': dipl_by_year[annee]['bp_sans'] += 1
+        elif r in POSTFORM_LABELS:
+            lbl = POSTFORM_LABELS[r]
+            postform_totals[lbl] = postform_totals.get(lbl, 0) + 1
+
+    all_years = sorted(set(list(dec_by_year.keys()) + list(dipl_by_year.keys())))
+
+    decrocheurs_par_annee = [{'annee': y, 'nb': dec_by_year.get(y, 0)} for y in all_years]
+    diplomes_par_annee    = [{'annee': y,
+                              'cap_mention': dipl_by_year.get(y, {}).get('cap_mention', 0),
+                              'cap_sans':    dipl_by_year.get(y, {}).get('cap_sans', 0),
+                              'bp_mention':  dipl_by_year.get(y, {}).get('bp_mention', 0),
+                              'bp_sans':     dipl_by_year.get(y, {}).get('bp_sans', 0)}
+                             for y in all_years]
+    postformation_cats    = [{'label': k, 'nb': v} for k, v in sorted(postform_totals.items(), key=lambda x: -x[1])]
+
+    return decrocheurs_par_annee, diplomes_par_annee, postformation_cats
+
 # --- VUE PRINCIPALE ---
 @login_required
 @user_passes_test(est_professeur)
@@ -3427,8 +3486,7 @@ def fiche_revision_create(request, dossier_id):  # <-- dossier_id ici
         # On redirige vers la page du thème auquel appartient ce dossier
         return redirect('core:theme_detail', pk=dossier.theme.id) 
         
-    return render(request, 'core/fiche_revision_form.html', {'dossier': dossier})
-
+   return render(request, 'core/fiche_revision_create.html', {'dossier': dossier})
 
 @login_required
 def fiche_revision_detail(request, pk):
