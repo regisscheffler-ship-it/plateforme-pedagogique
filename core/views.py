@@ -1429,6 +1429,8 @@ def _stats_compteurs_eleves():
         type_utilisateur='eleve', est_sorti=True,
         raison_sortie__in=['cap_mention', 'cap_sans_mention', 'bac_pro_mention', 'bac_pro_sans_mention']
     ).count()
+    
+    # 💥 LA LIGNE MAGIQUE POUR CORRIGER LE CRASH :
     return total_eleves, eleves_actifs, eleves_sortis, nb_diplomes
 
 
