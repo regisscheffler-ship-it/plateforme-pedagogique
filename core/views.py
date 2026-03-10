@@ -4418,32 +4418,31 @@ def assistant_ia_query(request):
 
 
 @login_required
-@user_passes_test(est_professeur)
-@require_http_methods(["POST"])
 def assistant_tts(request):
     """Endpoint TTS — synthèse vocale via Edge-TTS."""
+    import json
+    from django.http import JsonResponse, HttpResponse
+    from .services import synthetiser_voix
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST requis'}, status=405)
+
     try:
         data = json.loads(request.body)
         texte = data.get('texte', '').strip()
-        voice_id = data.get('voice_id', '').strip() or 'fr-FR-DeniseNeural'
+        voice_id = data.get('voice_id', 'fr-FR-DeniseNeural')
 
         if not texte:
-            return JsonResponse({'error': 'Texte vide.'}, status=400)
+            return JsonResponse({'error': 'Texte vide'}, status=400)
 
-        print(f"[TTS] Requête : voix={voice_id}, texte={texte[:50]}...")
+        audio_bytes = synthetiser_voix(texte, voice_id=voice_id)
 
-        from .services import synthetiser_voix
-        audio = synthetiser_voix(texte, voice_id=voice_id)
+        if not audio_bytes:
+            return JsonResponse({'error': 'Le serveur n\'a pas pu générer l\'audio. Vérifiez les logs.'}, status=500)
 
-        if not audio:
-            return JsonResponse({'error': 'Aucun audio généré'}, status=500)
-
-        response = HttpResponse(audio, content_type='audio/mpeg')
+        response = HttpResponse(audio_bytes, content_type='audio/mpeg')
         response['Content-Disposition'] = 'inline; filename="tts.mp3"'
         return response
 
     except Exception as e:
-        print(f"[TTS] Erreur : {e}")
-        import traceback
-        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
