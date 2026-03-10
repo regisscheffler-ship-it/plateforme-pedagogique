@@ -73,7 +73,7 @@ urlpatterns = [
     # ═══════════════════════════════════════
     # FICHES DE RÉVISION
     # ═══════════════════════════════════════
-    path('dossiers/<int:dossier_id>/fiche/create/',     views.fiche_revision_create,          name='fiche_revision_create'),
+    path('dossiers/<int:dossier_id>/fiche/create/',     views.fiche_revision_create,      name='fiche_revision_create'),
     path('fiches-revision/<int:pk>/',                   views.fiche_revision_detail,      name='fiche_revision_detail'),
     path('fiches-revision/<int:fiche_id>/import-csv/',  views.fiche_revision_import_csv,  name='fiche_revision_import_csv'),
     path('fiches-revision/<int:pk>/supprimer/',         views.fiche_revision_delete,      name='fiche_revision_delete'),
@@ -82,19 +82,19 @@ urlpatterns = [
     # ═══════════════════════════════════════
     # QCM
     # ═══════════════════════════════════════
-    path('qcm/',                             views.qcm_gestion,                  name='qcm_gestion'),
+    path('qcm/',                            views.qcm_gestion,                  name='qcm_gestion'),
     path('qcm/creer/<int:theme_id>/',       views.qcm_create,                   name='qcm_create'),
-    path('qcm/creer/',                       views.qcm_creer_depuis_dashboard,   name='qcm_creer_depuis_dashboard'),
+    path('qcm/creer/',                      views.qcm_creer_depuis_dashboard,   name='qcm_creer_depuis_dashboard'),
     path('qcm/<int:pk>/editer/',            views.qcm_edit,                     name='qcm_edit'),
-    path('qcm/<int:pk>/activer/',           views.qcm_toggle_actif,  name='qcm_toggle_actif'),
-    path('qcm/<int:pk>/supprimer/',         views.qcm_delete,        name='qcm_delete'),
-    path('questions/<int:pk>/supprimer/',   views.question_delete,    name='question_delete'),
-    path('questions/<int:pk>/editer/',      views.question_edit,      name='question_edit'),
-    path('questions/<int:pk>/regenerer/',   views.question_regenerer, name='question_regenerer'),
-    path('qcm/<int:pk>/passer/',            views.qcm_passer,          name='qcm_passer'),
-    path('qcm/session/<int:pk>/resultats/', views.qcm_resultats,       name='qcm_resultats'),
-    path('qcm/<int:pk>/resultats-classe/',  views.qcm_resultats_prof,  name='qcm_resultats_prof'),
-    path('qcm/<int:pk>/archiver/',           views.qcm_archiver,        name='qcm_archiver'),
+    path('qcm/<int:pk>/activer/',           views.qcm_toggle_actif,             name='qcm_toggle_actif'),
+    path('qcm/<int:pk>/supprimer/',         views.qcm_delete,                   name='qcm_delete'),
+    path('questions/<int:pk>/supprimer/',   views.question_delete,              name='question_delete'),
+    path('questions/<int:pk>/editer/',      views.question_edit,                name='question_edit'),
+    path('questions/<int:pk>/regenerer/',   views.question_regenerer,           name='question_regenerer'),
+    path('qcm/<int:pk>/passer/',            views.qcm_passer,                   name='qcm_passer'),
+    path('qcm/session/<int:pk>/resultats/', views.qcm_resultats,                name='qcm_resultats'),
+    path('qcm/<int:pk>/resultats-classe/',  views.qcm_resultats_prof,           name='qcm_resultats_prof'),
+    path('qcm/<int:pk>/archiver/',          views.qcm_archiver,                 name='qcm_archiver'),
 
     # ═══════════════════════════════════════
     # DOSSIERS
@@ -250,6 +250,5 @@ urlpatterns = [
     path('assistant/',         views.assistant_ia,       name='assistant_ia'),
     path('assistant/query/',   views.assistant_ia_query, name='assistant_ia_query'),
     path('assistant/tts/', views.assistant_tts, name='assistant_tts'),
-
     path('keepalive/', views.keepalive, name='keepalive'),
 ]

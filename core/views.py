@@ -3486,7 +3486,7 @@ def fiche_revision_create(request, dossier_id):  # <-- dossier_id ici
         # On redirige vers la page du thème auquel appartient ce dossier
         return redirect('core:theme_detail', pk=dossier.theme.id) 
         
-   return render(request, 'core/fiche_revision_create.html', {'dossier': dossier})
+    return render(request, 'core/fiche_revision_create.html', {'dossier': dossier})
 
 @login_required
 def fiche_revision_detail(request, pk):
@@ -3584,8 +3584,7 @@ def fiche_revision_delete(request, pk):
     if request.method == 'POST':
         fiche.delete()
         messages.success(request, '🗑️ Fiche et ses cartes supprimées.')
-    return redirect('core:theme_detail', pk=theme_id)
-
+    return redirect('core:theme_detail', pk=dossier.theme.id)
 
 # =====================================================
 # QCM — CRÉATION ET GESTION

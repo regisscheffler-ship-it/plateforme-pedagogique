@@ -341,118 +341,191 @@
                 </tbody>
             </table>
             {% else %}
-                    <!-- Tables détaillées -->
-    <div style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:2rem;margin-bottom:2rem;border-left:5px solid #e74c3c;">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
-            <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:var(--text-main);">Détail par élève sorti</h3>
-            <div class="filter-annee-bar">
-                <label>Année&nbsp;:</label>
-                <select id="filtre-annee-stats" onchange="filtrerTablesStats()">
-                    <option value="">Toutes les années</option>
-                    {% for annee in annees_sortis %}
-                    <option value="{{ annee }}">{{ annee }}</option>
+                <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucun travail actif.</div>
+            {% endif %}
+        </div>
+
+        <div class="chart-card">
+            <h2 style="color:var(--ev)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Note moyenne par travail</h2>
+            {% if notes_travaux_data %}
+            <table class="conn-table">
+                <thead>
+                    <tr><th>Travail</th><th>Classe</th><th style="text-align:center;">Notes</th><th style="text-align:center;">Moyenne</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in notes_travaux_data %}
+                    <tr>
+                        <td>{{ row.titre }}</td>
+                        <td>{{ row.classe }}</td>
+                        <td style="text-align:center;">{{ row.nb_notes }}</td>
+                        <td style="text-align:center;">
+                            {% if row.note_moy is not None %}
+                                <strong style="color:{% if row.note_moy >= 10 %}#10b981{% else %}#e74c3c{% endif %};">{{ row.note_moy }}/20</strong>
+                            {% else %}
+                                <span>—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% endfor %}
-                </select>
+                </tbody>
+            </table>
+            {% else %}
+                <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucun travail noté.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Section Sortis enrichis -->
+    <div id="section-sortis" style="scroll-margin-top:80px;">
+        <div class="section-title" style="--section-color:#e74c3c;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>
+            <span style="color:#e74c3c;">Parcours des sortis</span>
+        </div>
+
+        <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="chart-card" style="border-left-color:#8b5cf6;min-height:300px;">
+                <h2 style="color:#8b5cf6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>
+                    Top lycées / collèges d'origine des diplômés</h2>
+                {% if top_etabs_diplomes_json %}
+                <div class="chart-wrapper" style="min-height:200px;"><canvas id="chartTopEtabs"></canvas></div>
+                {% else %}
+                <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucun diplômé avec établissement renseigné.</div>
+                {% endif %}
+            </div>
+            <div class="chart-card" style="border-left-color:#10b981;min-height:300px;">
+                <h2 style="color:#10b981;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
+                    Poursuite d'études après diplôme</h2>
+                {% if poursuite_json %}
+                <div class="chart-wrapper" style="min-height:200px;"><canvas id="chartPoursuite"></canvas></div>
+                <div style="display:flex;gap:1.5rem;margin-top:1.5rem;justify-content:center;">
+                    <div style="text-align:center;padding:0.8rem 1.5rem;background:#d1fae5;border-radius:12px;">
+                        <div style="font-size:1.6rem;font-weight:700;color:#059669;">{{ poursuite_json.0.nb }}</div>
+                        <div style="font-size:0.85rem;color:#047857;font-weight:600;">Bac Pro</div>
+                    </div>
+                    <div style="text-align:center;padding:0.8rem 1.5rem;background:#dbeafe;border-radius:12px;">
+                        <div style="font-size:1.6rem;font-weight:700;color:#2563eb;">{{ poursuite_json.1.nb }}</div>
+                        <div style="font-size:0.85rem;color:#1d4ed8;font-weight:600;">BTS</div>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucune poursuite enregistrée.</div>
+                {% endif %}
             </div>
         </div>
 
-        <div class="detail-tabs">
-            <button class="detail-tab active" onclick="showDetailTab('tab-diplomes', this)">🎓 Diplômés ({{ sorties_diplomes|length }})</button>
-            <button class="detail-tab" onclick="showDetailTab('tab-postformation', this)">🏢 Post-formation ({{ sorties_post_formation|length }})</button>
-            <button class="detail-tab" onclick="showDetailTab('tab-reorientation', this)">🔄 Réorientation & Changement ({{ sorties_reorientation|length }})</button>
-            <button class="detail-tab" onclick="showDetailTab('tab-decrocheurs', this)">⚠️ Décrocheurs & Échecs ({{ sorties_decrocheurs|length }})</button>
-        </div>
+        <!-- Tables détaillées -->
+        <div style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:2rem;margin-bottom:2rem;border-left:5px solid #e74c3c;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+                <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:var(--text-main);">Détail par élève sorti</h3>
+                <div class="filter-annee-bar">
+                    <label>Année&nbsp;:</label>
+                    <select id="filtre-annee-stats" onchange="filtrerTablesStats()">
+                        <option value="">Toutes les années</option>
+                        {% for annee in annees_sortis %}
+                        <option value="{{ annee }}">{{ annee }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
 
-        <!-- 1. DIPLÔMÉS -->
-        <div id="tab-diplomes" class="detail-panel active">
-        {% if sorties_diplomes %}
-        <table class="conn-table">
-            <thead>
-                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Diplôme</th><th>Mention</th></tr>
-            </thead>
-            <tbody id="tbody-diplomes">
-                {% for e in sorties_diplomes %}
-                <tr data-annee="{{ e.annee }}">
-                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
-                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
-                    <td>{{ e.etablissement_orig }}</td><td>{{ e.annee }}</td>
-                    <td><span style="font-weight:600;">{{ e.raison }}</span></td>
-                    <td>{% if e.mention %}<span style="background:#d1fae5;color:#065f46;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.mention }}</span>{% else %}—{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
-        </div>
+            <div class="detail-tabs">
+                <button class="detail-tab active" onclick="showDetailTab('tab-diplomes', this)">🎓 Diplômés ({{ sorties_diplomes|length }})</button>
+                <button class="detail-tab" onclick="showDetailTab('tab-postformation', this)">🏢 Post-formation ({{ sorties_post_formation|length }})</button>
+                <button class="detail-tab" onclick="showDetailTab('tab-reorientation', this)">🔄 Réorientation & Changement ({{ sorties_reorientation|length }})</button>
+                <button class="detail-tab" onclick="showDetailTab('tab-decrocheurs', this)">⚠️ Décrocheurs & Échecs ({{ sorties_decrocheurs|length }})</button>
+            </div>
 
-        <!-- 2. POST-FORMATION (Ceux qui poursuivent dans le métier ou continuent les études Sup) -->
-        <div id="tab-postformation" class="detail-panel">
-        {% if sorties_post_formation %}
-        <table class="conn-table">
-            <thead>
-                <tr><th>Nom</th><th>Prénom</th><th>Dernière Classe</th><th>Année</th><th>Situation actuelle</th><th>Détails</th></tr>
-            </thead>
-            <tbody id="tbody-postformation">
-                {% for e in sorties_post_formation %}
-                <tr data-annee="{{ e.annee }}">
-                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
-                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
-                    <td>{{ e.annee }}</td>
-                    <td><span style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
-                    <td>{{ e.commentaire|default:'—' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
-        </div>
+            <!-- 1. DIPLÔMÉS -->
+            <div id="tab-diplomes" class="detail-panel active">
+            {% if sorties_diplomes %}
+            <table class="conn-table">
+                <thead>
+                    <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Diplôme</th><th>Mention</th></tr>
+                </thead>
+                <tbody id="tbody-diplomes">
+                    {% for e in sorties_diplomes %}
+                    <tr data-annee="{{ e.annee }}">
+                        <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                        <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                        <td>{{ e.etablissement_orig }}</td><td>{{ e.annee }}</td>
+                        <td><span style="font-weight:600;">{{ e.raison }}</span></td>
+                        <td>{% if e.mention %}<span style="background:#d1fae5;color:#065f46;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.mention }}</span>{% else %}—{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            </div>
 
-        <!-- 3. RÉORIENTATION ET CHANGEMENT (La nouvelle catégorie pour les AFB et changements de filière) -->
-        <div id="tab-reorientation" class="detail-panel">
-        {% if sorties_reorientation %}
-        <table class="conn-table">
-            <thead>
-                <tr><th>Nom</th><th>Prénom</th><th>Classe quittée</th><th>Année</th><th>Type de changement</th><th>Commentaire</th></tr>
-            </thead>
-            <tbody id="tbody-reorientation">
-                {% for e in sorties_reorientation %}
-                <tr data-annee="{{ e.annee }}">
-                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
-                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
-                    <td>{{ e.annee }}</td>
-                    <td><span style="background:#fef3c7;color:#b45309;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
-                    <td>{{ e.commentaire|default:'—' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucune réorientation enregistrée.</div>
-        {% endif %}
-        </div>
+            <!-- 2. POST-FORMATION -->
+            <div id="tab-postformation" class="detail-panel">
+            {% if sorties_post_formation %}
+            <table class="conn-table">
+                <thead>
+                    <tr><th>Nom</th><th>Prénom</th><th>Dernière Classe</th><th>Année</th><th>Situation actuelle</th><th>Détails</th></tr>
+                </thead>
+                <tbody id="tbody-postformation">
+                    {% for e in sorties_post_formation %}
+                    <tr data-annee="{{ e.annee }}">
+                        <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                        <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                        <td>{{ e.annee }}</td>
+                        <td><span style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
+                        <td>{{ e.commentaire|default:'—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            </div>
 
-        <!-- 4. DÉCROCHEURS / ÉCHECS -->
-        <div id="tab-decrocheurs" class="detail-panel">
-        {% if sorties_decrocheurs %}
-        <table class="conn-table">
-            <thead>
-                <tr><th>Nom</th><th>Prénom</th><th>Dernière Classe</th><th>Année</th><th>Situation</th><th>Commentaire</th></tr>
-            </thead>
-            <tbody id="tbody-decrocheurs">
-                {% for e in sorties_decrocheurs %}
-                <tr data-annee="{{ e.annee }}">
-                    <td><strong style="color:#e74c3c;">{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
-                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
-                    <td>{{ e.annee }}</td>
-                    <td><span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
-                    <td>{{ e.commentaire|default:'—' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
-        </div>
+            <!-- 3. RÉORIENTATION ET CHANGEMENT -->
+            <div id="tab-reorientation" class="detail-panel">
+            {% if sorties_reorientation %}
+            <table class="conn-table">
+                <thead>
+                    <tr><th>Nom</th><th>Prénom</th><th>Classe quittée</th><th>Année</th><th>Type de changement</th><th>Commentaire</th></tr>
+                </thead>
+                <tbody id="tbody-reorientation">
+                    {% for e in sorties_reorientation %}
+                    <tr data-annee="{{ e.annee }}">
+                        <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                        <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                        <td>{{ e.annee }}</td>
+                        <td><span style="background:#fef3c7;color:#b45309;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
+                        <td>{{ e.commentaire|default:'—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucune réorientation enregistrée.</div>
+            {% endif %}
+            </div>
 
+            <!-- 4. DÉCROCHEURS / ÉCHECS -->
+            <div id="tab-decrocheurs" class="detail-panel">
+            {% if sorties_decrocheurs %}
+            <table class="conn-table">
+                <thead>
+                    <tr><th>Nom</th><th>Prénom</th><th>Dernière Classe</th><th>Année</th><th>Situation</th><th>Commentaire</th></tr>
+                </thead>
+                <tbody id="tbody-decrocheurs">
+                    {% for e in sorties_decrocheurs %}
+                    <tr data-annee="{{ e.annee }}">
+                        <td><strong style="color:#e74c3c;">{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
+                        <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
+                        <td>{{ e.annee }}</td>
+                        <td><span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
+                        <td>{{ e.commentaire|default:'—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            </div>
+
+        </div>
     </div>
 
     <!-- Section Élèves à risque -->
@@ -534,132 +607,6 @@
     </div>
     {% endfor %}
     {% endif %}
-
-    <!-- Section Sortis enrichis -->
-    <div id="section-sortis" style="scroll-margin-top:80px;">
-    <div class="section-title" style="--section-color:#e74c3c;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>
-        <span style="color:#e74c3c;">Parcours des sortis</span>
-    </div>
-
-    <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
-        <div class="chart-card" style="border-left-color:#8b5cf6;min-height:300px;">
-            <h2 style="color:#8b5cf6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>
-                Top lycées / collèges d'origine des diplômés</h2>
-            {% if top_etabs_diplomes_json %}
-            <div class="chart-wrapper" style="min-height:200px;"><canvas id="chartTopEtabs"></canvas></div>
-            {% else %}
-            <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucun diplômé avec établissement renseigné.</div>
-            {% endif %}
-        </div>
-        <div class="chart-card" style="border-left-color:#10b981;min-height:300px;">
-            <h2 style="color:#10b981;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
-                Poursuite d'études après diplôme</h2>
-            {% if poursuite_json %}
-            <div class="chart-wrapper" style="min-height:200px;"><canvas id="chartPoursuite"></canvas></div>
-            <div style="display:flex;gap:1.5rem;margin-top:1.5rem;justify-content:center;">
-                <div style="text-align:center;padding:0.8rem 1.5rem;background:#d1fae5;border-radius:12px;">
-                    <div style="font-size:1.6rem;font-weight:700;color:#059669;">{{ poursuite_json.0.nb }}</div>
-                    <div style="font-size:0.85rem;color:#047857;font-weight:600;">Bac Pro</div>
-                </div>
-                <div style="text-align:center;padding:0.8rem 1.5rem;background:#dbeafe;border-radius:12px;">
-                    <div style="font-size:1.6rem;font-weight:700;color:#2563eb;">{{ poursuite_json.1.nb }}</div>
-                    <div style="font-size:0.85rem;color:#1d4ed8;font-weight:600;">BTS</div>
-                </div>
-            </div>
-            {% else %}
-            <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucune poursuite enregistrée.</div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Tables détaillées -->
-    <div style="background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.06);padding:2rem;margin-bottom:2rem;border-left:5px solid #e74c3c;">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
-            <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:var(--text-main);">Détail par élève sorti</h3>
-            <div class="filter-annee-bar">
-                <label>Année&nbsp;:</label>
-                <select id="filtre-annee-stats" onchange="filtrerTablesStats()">
-                    <option value="">Toutes les années</option>
-                    {% for annee in annees_sortis %}
-                    <option value="{{ annee }}">{{ annee }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div class="detail-tabs">
-            <button class="detail-tab active" onclick="showDetailTab('tab-diplomes', this)">🎓 Diplômés ({{ sorties_diplomes|length }})</button>
-            <button class="detail-tab" onclick="showDetailTab('tab-decrocheurs', this)">⚠️ Décrocheurs / Échecs ({{ sorties_decrocheurs|length }})</button>
-            <button class="detail-tab" onclick="showDetailTab('tab-postformation', this)">🏢 Post-formation ({{ sorties_post_formation|length }})</button>
-        </div>
-
-        <div id="tab-diplomes" class="detail-panel active">
-        {% if sorties_diplomes %}
-        <table class="conn-table">
-            <thead>
-                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Diplôme</th><th>Mention</th><th>Poursuite</th></tr>
-            </thead>
-            <tbody id="tbody-diplomes">
-                {% for e in sorties_diplomes %}
-                <tr data-annee="{{ e.annee }}">
-                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
-                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
-                    <td>{{ e.etablissement_orig|default:"—" }}</td>
-                    <td>{{ e.annee }}</td>
-                    <td><span style="font-weight:600;">{{ e.raison }}</span></td>
-                    <td>{% if e.mention %}<span style="background:#d1fae5;color:#065f46;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.mention }}</span>{% else %}—{% endif %}</td>
-                    <td>{% if e.poursuite_type %}<span style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">→ {{ e.poursuite_type }}</span>{% else %}—{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
-        </div>
-
-        <div id="tab-decrocheurs" class="detail-panel">
-        {% if sorties_decrocheurs %}
-        <table class="conn-table">
-            <thead>
-                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Situation</th><th>Commentaire</th></tr>
-            </thead>
-            <tbody id="tbody-decrocheurs">
-                {% for e in sorties_decrocheurs %}
-                <tr data-annee="{{ e.annee }}">
-                    <td><strong style="color:#e74c3c;">{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
-                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
-                    <td>{{ e.etablissement_orig|default:"—" }}</td><td>{{ e.annee }}</td>
-                    <td><span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
-                    <td>{{ e.commentaire|default:'—' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
-        </div>
-
-        <div id="tab-postformation" class="detail-panel">
-        {% if sorties_post_formation %}
-        <table class="conn-table">
-            <thead>
-                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Situation</th><th>Détails</th></tr>
-            </thead>
-            <tbody id="tbody-postformation">
-                {% for e in sorties_post_formation %}
-                <tr data-annee="{{ e.annee }}">
-                    <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
-                    <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
-                    <td>{{ e.etablissement_orig|default:"—" }}</td><td>{{ e.annee }}</td>
-                    <td><span style="background:#ede9fe;color:#5b21b6;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
-                    <td>{{ e.poursuite_type|default:e.commentaire|default:'—' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
-        </div>
-    </div>
-    </div>
 
     <!-- Section Profil d'origine -->
     <div id="section-origine" style="scroll-margin-top:80px;">
