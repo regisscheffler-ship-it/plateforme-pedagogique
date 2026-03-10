@@ -1,3 +1,22 @@
+# =====================================================
+# FICHE DE RÉVISION — UPDATE
+# =====================================================
+from django.views.decorators.http import require_POST
+
+@login_required
+@user_passes_test(est_professeur)
+def fiche_revision_update(request, pk):
+    fiche = get_object_or_404(FicheRevision, id=pk)
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '').strip()
+        if titre:
+            fiche.titre = titre
+            fiche.save()
+            messages.success(request, '✅ Fiche de révision modifiée !')
+            return redirect('core:fiche_revision_detail', pk=fiche.id)
+        else:
+            messages.error(request, '❌ Le titre est obligatoire.')
+    return render(request, 'core/fiche_revision_update.html', {'fiche': fiche})
 # core/views.py
 
 from django.shortcuts import render, redirect, get_object_or_404

@@ -77,6 +77,7 @@ urlpatterns = [
     path('fiches-revision/<int:pk>/',                   views.fiche_revision_detail,      name='fiche_revision_detail'),
     path('fiches-revision/<int:fiche_id>/import-csv/',  views.fiche_revision_import_csv,  name='fiche_revision_import_csv'),
     path('fiches-revision/<int:pk>/supprimer/',         views.fiche_revision_delete,      name='fiche_revision_delete'),
+    path('fiches-revision/<int:pk>/modifier/',          views.fiche_revision_update,      name='fiche_revision_update'),
     path('cartes-revision/<int:pk>/supprimer/',         views.carte_revision_delete,      name='carte_revision_delete'),
 
     # ═══════════════════════════════════════
