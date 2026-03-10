@@ -185,13 +185,15 @@
                 <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             Retour
-        </a>
-    {% endif %}
-
-    <!-- Header -->
-    <div class="fiche-header">
-        <div>
-            <h1>{{ fiche.titre }}</h1>
+                {% if fiche.dossier and fiche.dossier.theme %}
+                    <a href="{% url 'core:theme_detail' fiche.dossier.theme.id %}" class="btn-back-custom">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        Retour
+                    </a>
+                {% endif %}
             <div class="fiche-meta">
                 Thème : {{ fiche.theme.nom }}
                 &bull; {{ cartes.count }} carte{{ cartes.count|pluralize }}
