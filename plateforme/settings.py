@@ -28,12 +28,7 @@ DEBUG  = False
 # ===================================================================
 # HOSTS
 # ===================================================================
-ALLOWED_HOSTS = [
-    'plateforme-pedagogique.onrender.com',
-    '.onrender.com',
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = ['*']
 
 # ===================================================================
 # CSRF — INDISPENSABLE POUR QUE LE LOGIN FONCTIONNE
