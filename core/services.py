@@ -464,50 +464,48 @@ def assistant_recherche(question, historique=None, fichier_bytes=None, fichier_m
 
 
 # =====================================================
-# SYNTHÈSE VOCALE — MICROSOFT EDGE TTS (Native Django)
+# SYNTHÈSE VOCALE — GOOGLE TTS (gTTS) - Anti-blocage 403
 # =====================================================
 import io
-import edge_tts
-from asgiref.sync import async_to_sync
+from gtts import gTTS
 
 EL_VOIX_DISPONIBLES = {
-    'fr-FR-DeniseNeural':   'Denise – Femme, naturelle (France)',
-    'fr-FR-HenriNeural':    'Henri – Homme, posé (France)',
-    'fr-FR-EloiseNeural':   'Éloïse – Femme, jeune (France)',
-    'fr-FR-VivienneMultilingualNeural': 'Vivienne – Femme, multilingue',
-    'fr-FR-RemyMultilingualNeural':     'Rémy – Homme, multilingue',
-    'fr-CA-SylvieNeural':   'Sylvie – Femme (Canada)',
-    'fr-CA-JeanNeural':     'Jean – Homme (Canada)',
-    'fr-CA-AntoineNeural':  'Antoine – Homme, jeune (Canada)',
+    'fr-FR': 'Français (France)',
+    'fr-CA': 'Français (Canada)',
+    'en-US': 'Anglais (États-Unis)',
 }
-
-async def _generer_audio_async(texte, voice):
-    """Fonction asynchrone pure pour communiquer avec Edge TTS"""
-    communicate = edge_tts.Communicate(texte, voice)
-    buffer = io.BytesIO()
-    async for chunk in communicate.stream():
-        if chunk["type"] == "audio":
-            buffer.write(chunk["data"])
-    return buffer.getvalue()
 
 def synthetiser_voix(texte, voice_id=None):
     """
-    Fonction synchrone (pour Django) qui appelle la fonction asynchrone
-    en utilisant l'outil officiel de Django : async_to_sync.
+    Génère l'audio via Google TTS.
+    Aucun blocage d'IP (contrairement à Edge-TTS sur Render).
     """
     texte = texte[:5000].strip()
     if not texte:
         return None
 
-    voice = voice_id if voice_id in EL_VOIX_DISPONIBLES else 'fr-FR-DeniseNeural'
+    # Par défaut, français de France
+    lang = 'fr'
+    tld = 'fr'
+    
+    if voice_id == 'fr-CA':
+        tld = 'ca'
+    elif voice_id == 'en-US':
+        lang = 'en'
+        tld = 'com'
 
     try:
-        # L'arme absolue Django : exécute le code asynchrone proprement
-        audio_bytes = async_to_sync(_generer_audio_async)(texte, voice)
+        # Création de l'audio Google
+        tts = gTTS(text=texte, lang=lang, tld=tld, slow=False)
         
-        # Le flush=True force Render à afficher le log immédiatement
-        print(f"✅ [Edge-TTS] Audio généré ({len(audio_bytes)} octets)", flush=True)
+        # Sauvegarde en mémoire RAM (pas besoin de fichier temporaire)
+        buffer = io.BytesIO()
+        tts.write_to_fp(buffer)
+        audio_bytes = buffer.getvalue()
+        
+        print(f"✅ [gTTS] Audio généré ({len(audio_bytes)} octets) en {lang}-{tld}", flush=True)
         return audio_bytes
+        
     except Exception as e:
-        print(f"❌ [Edge-TTS] ERREUR : {str(e)}", flush=True)
+        print(f"❌ [gTTS] ERREUR : {str(e)}", flush=True)
         return None
