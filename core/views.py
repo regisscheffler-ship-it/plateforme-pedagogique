@@ -14,6 +14,8 @@ from django.views.decorators.http import require_http_methods
 from datetime import date, datetime, timedelta
 from collections import OrderedDict
 from itertools import groupby
+from django.db.models import Count, Q, Avg, Sum
+from django.db.models.functions import ExtractYear, TruncDate
 from operator import attrgetter
 from .forms import PFMPForm
 import json
@@ -1657,7 +1659,7 @@ def _stats_connexions():
     return data
 
 
-def _stats_sorties_detail():
+
     """
     Retourne QUATRE listes d'élèves sortis catégorisés :
     - sorties_decrocheurs    : décrocheurs, exclus, échecs, décès, sans emploi
@@ -1706,71 +1708,95 @@ def _stats_sorties_detail():
             post_formation.append(entry)
 
     return decrocheurs, diplomes, post_formation, reorientations
-
-
-def _stats_sorties_charts():
-    """
-    Retourne les données pour les 3 graphiques de suivi des sorties :
-    - decrocheurs_par_annee : [{annee, nb}] (décrocheurs + échecs + exclusion + décès)
-    - diplomes_par_annee    : [{annee, cap_mention, cap_sans, bp_mention, bp_sans}]
-    - postformation_cats    : [{label, nb}] totaux par catégorie post-formation
-    """
-    from core.models import ConnexionEleve
-
-    DECROCHEURS = {'decrocheur', 'exclusion', 'echec_cap', 'echec_bac_pro', 'deces', 'raison_inconnue'}
+# --- FONCTION DE PRÉPARATION ---
+def _stats_sorties_detail():
+    """Retourne 4 listes catégorisées pour les statistiques."""
+    LABELS = dict(ProfilUtilisateur.RAISON_SORTIE)
     DIPLOMES = {'cap_mention', 'cap_sans_mention', 'bac_pro_mention', 'bac_pro_sans_mention'}
+    DECROCHEURS = {'decrocheur', 'exclusion', 'echec_cap', 'echec_bac_pro', 'deces', 'raison_inconnue', 'sans_emploi'}
+    REORIENTATIONS = {'reorientation_interne', 'reorientation_externe', 'orientation_afb', 'retour_pays'}
 
-    sortis = ProfilUtilisateur.objects.filter(
-        type_utilisateur='eleve', est_sorti=True, date_sortie__isnull=False
-    ).values('raison_sortie', 'annee_scolaire_sortie')
+    sortis = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).select_related('user', 'classe', 'etablissement_origine').order_by('-date_sortie', 'user__last_name')
+    MENTION_LABELS = {'AB': 'Assez Bien', 'B': 'Bien', 'TB': 'Très Bien'}
 
-    # --- décrocheurs par année ---
-    dec_by_year = {}
-    dipl_by_year = {}
-    postform_totals = {}
+    decrocheurs, diplomes, post_formation, reorientations = [], [], [], []
+    
+    for p in sortis:
+        r = p.raison_sortie or ''
+        etab_orig = p.etablissement_origine.nom if p.etablissement_origine else getattr(p, 'etablissement_origine_autre', '')
+        entry = {
+            'nom': p.user.last_name.upper(),
+            'prenom': p.user.first_name,
+            'classe': p.classe.nom if p.classe else '—',
+            'annee': p.annee_scolaire_sortie or '—',
+            'raison': LABELS.get(r, r or '—'),
+            'commentaire': getattr(p, 'commentaire_sortie', '') or '',
+            'mention': MENTION_LABELS.get(getattr(p, 'mention_obtenue', '') or '', ''),
+            'etablissement_orig': etab_orig or 'Non renseigné',
+        }
+        if r in DIPLOMES: diplomes.append(entry)
+        elif r in REORIENTATIONS: reorientations.append(entry)
+        elif r in DECROCHEURS: decrocheurs.append(entry)
+        else: post_formation.append(entry)
 
-    POSTFORM_LABELS = {
-        'travail_formation': 'Travaille (formation)',
-        'travail_hors_formation': 'Travaille (autre)',
-        'apprentissage': 'Apprentissage',
-        'sans_emploi': 'Sans emploi',
-        'poursuite_bac_pro': 'Poursuite Bac Pro',
-        'poursuite_bts': 'Poursuite BTS',
-        'poursuite_autre': "Autre poursuite",
-        'reorientation_interne': 'Réorientation interne',
-        'reorientation_externe': 'Réorientation externe',
-        'retour_pays': "Retour pays",
+    return decrocheurs, diplomes, post_formation, reorientations
+
+
+# --- VUE PRINCIPALE ---
+@login_required
+@user_passes_test(est_professeur)
+def statistiques(request):
+    today = date.today()
+    total_eleves, eleves_actifs, eleves_sortis, nb_diplomes = _stats_compteurs_eleves()
+    eleves_par_classe_data, inscriptions_data = _stats_repartition_classes()
+    top_etablissements_data, raisons_data, niveaux_data = _stats_etablissements_raisons_niveaux()
+    
+    # ✅ RÉCEPTION DES 4 LISTES (La correction est ici)
+    decrocheurs_data, diplomes_data, postformation_data, reorientation_data = _stats_sorties_detail()
+    
+    dec_annee_data, dipl_annee_data, postform_cats_data = _stats_sorties_charts()
+    taux_rendu_data = _stats_taux_rendu_par_classe()
+    notes_travaux_data = _stats_notes_par_travail()
+    eleves_risque_data = _stats_eleves_a_risque()
+    connexions_30j = _stats_connexions_30j()
+    pfmp_stats = _stats_pfmp()
+    annees_sortis, top_etabs_diplomes_json, poursuite_json = _stats_sortis_enriched()
+    orig_college, orig_classe, orig_diplome, orig_ville = _stats_profil_origine()
+    
+    nb_garcons = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False, sexe='M').count()
+    nb_filles = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False, sexe='F').count()
+    total_gender = nb_garcons + nb_filles
+    pc_garcons = f"{nb_garcons*100/total_gender:.0f}" if total_gender else '0'
+    pc_filles = f"{nb_filles*100/total_gender:.0f}" if total_gender else '0'
+
+    context = {
+        'total_eleves': total_eleves, 'eleves_actifs': eleves_actifs, 'eleves_sortis': eleves_sortis, 'diplomes': nb_diplomes,
+        'eleves_par_classe_json': eleves_par_classe_data, 'inscriptions_par_annee_json': inscriptions_data,
+        'top_etablissements_json': top_etablissements_data, 'diplomes_par_type_json': raisons_data,
+        'niveaux_json': niveaux_data, 'ages_par_classe_json': _stats_ages_par_classe(today),
+        'abandons_par_annee_json': _stats_sorties_par_annee(), 'connexions_eleves': _stats_connexions(),
+        'nb_jamais_connectes': sum(1 for c in _stats_connexions() if c['nb_connexions'] == 0),
+        
+        # ✅ ENVOI DES 4 LISTES AU TEMPLATE
+        'sorties_decrocheurs': decrocheurs_data,
+        'sorties_diplomes': diplomes_data,
+        'sorties_post_formation': postformation_data,
+        'sorties_reorientation': reorientation_data, 
+        
+        'decrocheurs_par_annee_json': dec_annee_data, 'diplomes_par_annee_json': dipl_annee_data,
+        'postformation_cats_json': postform_cats_data, 'taux_rendu_data': taux_rendu_data,
+        'taux_rendu_json': [{'classe': d['classe'], 'taux': d['taux']} for d in taux_rendu_data],
+        'notes_travaux_data': notes_travaux_data, 'eleves_risque_data': eleves_risque_data,
+        'connexions_30j_json': connexions_30j, 'pfmp_stats': pfmp_stats,
+        'annees_sortis': annees_sortis, 'top_etabs_diplomes_json': top_etabs_diplomes_json, 'poursuite_json': poursuite_json,
+        'orig_college': orig_college, 'orig_classe': orig_classe, 'orig_diplome': orig_diplome, 'orig_ville': orig_ville,
+        'orig_college_json': json.dumps(orig_college, ensure_ascii=False),
+        'orig_classe_json': json.dumps(orig_classe, ensure_ascii=False),
+        'orig_diplome_json': json.dumps(orig_diplome, ensure_ascii=False),
+        'orig_ville_json': json.dumps(orig_ville, ensure_ascii=False),
+        'nb_garcons': nb_garcons, 'nb_filles': nb_filles, 'pc_garcons': pc_garcons, 'pc_filles': pc_filles,
     }
-
-    for s in sortis:
-        r = s['raison_sortie'] or ''
-        annee = s['annee_scolaire_sortie'] or 'Inconnue'
-        if r in DECROCHEURS:
-            dec_by_year[annee] = dec_by_year.get(annee, 0) + 1
-        elif r in DIPLOMES:
-            if annee not in dipl_by_year:
-                dipl_by_year[annee] = {'cap_mention': 0, 'cap_sans': 0, 'bp_mention': 0, 'bp_sans': 0}
-            if r == 'cap_mention':        dipl_by_year[annee]['cap_mention'] += 1
-            elif r == 'cap_sans_mention': dipl_by_year[annee]['cap_sans'] += 1
-            elif r == 'bac_pro_mention':  dipl_by_year[annee]['bp_mention'] += 1
-            elif r == 'bac_pro_sans_mention': dipl_by_year[annee]['bp_sans'] += 1
-        elif r in POSTFORM_LABELS:
-            lbl = POSTFORM_LABELS[r]
-            postform_totals[lbl] = postform_totals.get(lbl, 0) + 1
-
-    all_years = sorted(set(list(dec_by_year.keys()) + list(dipl_by_year.keys())))
-
-    decrocheurs_par_annee = [{'annee': y, 'nb': dec_by_year.get(y, 0)} for y in all_years]
-    diplomes_par_annee    = [{'annee': y,
-                              'cap_mention': dipl_by_year.get(y, {}).get('cap_mention', 0),
-                              'cap_sans':    dipl_by_year.get(y, {}).get('cap_sans', 0),
-                              'bp_mention':  dipl_by_year.get(y, {}).get('bp_mention', 0),
-                              'bp_sans':     dipl_by_year.get(y, {}).get('bp_sans', 0)}
-                             for y in all_years]
-    postformation_cats    = [{'label': k, 'nb': v} for k, v in sorted(postform_totals.items(), key=lambda x: -x[1])]
-
-    return decrocheurs_par_annee, diplomes_par_annee, postformation_cats
-
+    return render(request, 'core/statistiques.html', context)
 
 def _stats_sortis_enriched():
     """
@@ -4374,7 +4400,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .services import assistant_recherche, synthetiser_voix
-
+from datetime import date, timedelta, datetime
 
 @login_required
 def assistant_ia_query(request):
