@@ -3471,20 +3471,22 @@ def contact(request):
 # =====================================================
 # FICHES DE RÉVISION (FLASHCARDS)
 # =====================================================
-
 @login_required
 @user_passes_test(est_professeur)
-def fiche_revision_create(request, dossier_id):  # <-- dossier_id ici
-    dossier = get_object_or_404(Dossier, id=dossier_id) # <-- on récupère le dossier
+def fiche_revision_create(request, dossier_id):
+    dossier = get_object_or_404(Dossier, id=dossier_id)
     
     if request.method == 'POST':
         titre = request.POST.get('titre')
-        # On attache la fiche au dossier !
-        fiche = FicheRevision.objects.create(titre=titre, dossier=dossier)
+        # On ajoute createur=request.user pour satisfaire la base de données !
+        fiche = FicheRevision.objects.create(
+            titre=titre, 
+            dossier=dossier, 
+            createur=request.user
+        )
         
         messages.success(request, "Fiche créée !")
-        # On redirige vers la page du thème auquel appartient ce dossier
-        return redirect('core:theme_detail', pk=dossier.theme.id) 
+        return redirect('core:theme_detail', pk=dossier.theme.id)
         
     return render(request, 'core/fiche_revision_create.html', {'dossier': dossier})
 
