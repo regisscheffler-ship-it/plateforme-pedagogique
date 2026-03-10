@@ -3582,11 +3582,12 @@ def carte_revision_delete(request, pk):
 @user_passes_test(est_professeur)
 def fiche_revision_delete(request, pk):
     fiche = get_object_or_404(FicheRevision, id=pk)
-    theme_id = fiche.theme.id
+    dossier = fiche.dossier
+    theme_id = dossier.theme.id if dossier and dossier.theme else None
     if request.method == 'POST':
         fiche.delete()
         messages.success(request, '🗑️ Fiche et ses cartes supprimées.')
-    return redirect('core:theme_detail', pk=dossier.theme.id)
+    return redirect('core:theme_detail', pk=theme_id)
 
 # =====================================================
 # QCM — CRÉATION ET GESTION
@@ -3603,7 +3604,7 @@ def qcm_gestion(request):
     themes  = Theme.objects.all().order_by('nom')
     fiches_map = {}
     for f in FicheRevision.objects.annotate(nb_cartes=Count('cartes')).order_by('titre'):
-        tid = str(f.theme_id)
+        tid = str(f.dossier.theme_id) if f.dossier and f.dossier.theme_id else 'None'
         if tid not in fiches_map:
             fiches_map[tid] = []
         fiches_map[tid].append({'id': f.id, 'titre': f.titre, 'nb': f.nb_cartes})

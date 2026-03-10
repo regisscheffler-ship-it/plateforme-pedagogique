@@ -316,9 +316,10 @@
                             </a>
                             {% if request.user.is_staff %}
                             <!-- BOUTONS MODIFIER/SUPPRIMER POUR LA FICHE -->
-                            <a href="{% url 'core:fiche_revision_update' fiche_rev.id %}" class="btn-action btn-secondary" style="font-size:0.75rem;padding:0.4rem 0.8rem;" title="Modifier">
+                            <!-- Bouton modifier désactivé car pas de vue update -->
+                            <!-- <a href="{% url 'core:fiche_revision_detail' fiche_rev.id %}" class="btn-action btn-secondary" style="font-size:0.75rem;padding:0.4rem 0.8rem;" title="Modifier">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </a>
+                            </a> -->
                             <form action="{% url 'core:fiche_revision_delete' fiche_rev.id %}" method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette fiche de révision ?');">
                                 {% csrf_token %}
                                 <button type="submit" class="btn-action" style="font-size:0.75rem;padding:0.4rem 0.8rem; background:white; color:#d94f4f; border: 1px solid #d94f4f;" title="Supprimer">
