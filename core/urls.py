@@ -249,7 +249,7 @@ urlpatterns = [
     # ═══════════════════════════════════════
     path('assistant/',         views.assistant_ia,       name='assistant_ia'),
     path('assistant/query/',   views.assistant_ia_query, name='assistant_ia_query'),
-    path('assistant/tts/',     views.assistant_tts,      name='assistant_tts'),
+    path('assistant/tts/', views.assistant_tts, name='assistant_tts'),
 
     path('keepalive/', views.keepalive, name='keepalive'),
 ]

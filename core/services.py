@@ -464,12 +464,11 @@ def assistant_recherche(question, historique=None, fichier_bytes=None, fichier_m
 
 
 # =====================================================
-# SYNTHÈSE VOCALE — MICROSOFT EDGE TTS (Voix Neuronales)
+# SYNTHÈSE VOCALE — MICROSOFT EDGE TTS (Native Django)
 # =====================================================
-import os
-import sys
-import tempfile
-import subprocess
+import io
+import edge_tts
+from asgiref.sync import async_to_sync
 
 EL_VOIX_DISPONIBLES = {
     'fr-FR-DeniseNeural':   'Denise – Femme, naturelle (France)',
@@ -482,52 +481,33 @@ EL_VOIX_DISPONIBLES = {
     'fr-CA-AntoineNeural':  'Antoine – Homme, jeune (Canada)',
 }
 
+async def _generer_audio_async(texte, voice):
+    """Fonction asynchrone pure pour communiquer avec Edge TTS"""
+    communicate = edge_tts.Communicate(texte, voice)
+    buffer = io.BytesIO()
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            buffer.write(chunk["data"])
+    return buffer.getvalue()
+
 def synthetiser_voix(texte, voice_id=None):
     """
-    Génère l'audio en forçant l'utilisation de l'exécutable Python actuel.
-    Cela contourne TOUS les problèmes de PATH et d'environnement sur Render.
+    Fonction synchrone (pour Django) qui appelle la fonction asynchrone
+    en utilisant l'outil officiel de Django : async_to_sync.
     """
     texte = texte[:5000].strip()
     if not texte:
         return None
 
     voice = voice_id if voice_id in EL_VOIX_DISPONIBLES else 'fr-FR-DeniseNeural'
-    
-    # Création d'un fichier MP3 temporaire
-    fd, temp_path = tempfile.mkstemp(suffix='.mp3')
-    os.close(fd)
-    
-    try:
-        # L'arme absolue : sys.executable garantit qu'on utilise le bon Python
-        commande = [
-            sys.executable, '-m', 'edge_tts',
-            '--voice', voice,
-            '--text', texte,
-            '--write-media', temp_path
-        ]
-        
-        # Lancement de la commande (20 secondes max)
-        process = subprocess.run(commande, capture_output=True, text=True, timeout=20)
-        
-        # Si la commande échoue, on affiche l'erreur exacte dans les logs Render
-        if process.returncode != 0:
-            print(f"❌ [Edge-TTS] ERREUR : {process.stderr}")
-            return None
-            
-        # Lecture du fichier audio généré
-        with open(temp_path, 'rb') as f:
-            audio_bytes = f.read()
-            
-        print(f"✅ [Edge-TTS] Audio généré avec succès ! ({len(audio_bytes)} octets)")
-        return audio_bytes
 
-    except subprocess.TimeoutExpired:
-        print("❌ [Edge-TTS] ERREUR : Timeout (trop long)")
-        return None
+    try:
+        # L'arme absolue Django : exécute le code asynchrone proprement
+        audio_bytes = async_to_sync(_generer_audio_async)(texte, voice)
+        
+        # Le flush=True force Render à afficher le log immédiatement
+        print(f"✅ [Edge-TTS] Audio généré ({len(audio_bytes)} octets)", flush=True)
+        return audio_bytes
     except Exception as e:
-        print(f"❌ [Edge-TTS] ERREUR FATALE : {str(e)}")
+        print(f"❌ [Edge-TTS] ERREUR : {str(e)}", flush=True)
         return None
-    finally:
-        # Nettoyage du fichier temporaire
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
