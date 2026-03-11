@@ -187,14 +187,14 @@
     .btn-submit {
         flex: 1;
         padding: 1rem;
-        background: #2ab090;
-        color: white;
-        border: none;
+        background: white;
+        color: #2ab090;
+        border: 2px solid #2ab090;
         border-radius: 10px;
         font-size: 1.05rem;
         font-weight: 700;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.18s;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -202,9 +202,10 @@
     }
 
     .btn-submit:hover {
-        background: #239479;
+        background: #2ab090;
+        color: white;
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(42, 176, 144, 0.3);
+        box-shadow: 0 6px 16px rgba(42, 176, 144, 0.18);
     }
 
     .btn-cancel {
@@ -299,6 +300,18 @@
                     {% endfor %}
                 </select>
             </div>
+
+            {% if show_parcours %}
+            <div class="form-group">
+                <label>Parcours (pour 2BTP) :</label>
+                <div style="display:flex;gap:1rem;align-items:center">
+                    <label style="font-weight:600"><input type="radio" name="parcours" value="ORGO" {% if profil.parcours == 'ORGO' %}checked{% endif %}> ORGO</label>
+                    <label style="font-weight:600"><input type="radio" name="parcours" value="AFB"  {% if profil.parcours == 'AFB' %}checked{% endif %}> AFB</label>
+                    <label style="font-weight:600"><input type="radio" name="parcours" value=""  {% if not profil.parcours %}checked{% endif %}> Aucun</label>
+                </div>
+                <p class="helper-text">Choisissez ORGO si l'élève reste en gros-œuvre, AFB s'il s'oriente ailleurs.</p>
+            </div>
+            {% endif %}
 
             <!-- Actions -->
             <div class="form-actions">

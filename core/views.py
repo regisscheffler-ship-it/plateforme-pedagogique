@@ -378,6 +378,22 @@ def gestion_eleves(request):
     total = nb_garcons + nb_filles
     pc_filles = f"{nb_filles*100/total:.0f}" if total else '0'
     pc_garcons = f"{nb_garcons*100/total:.0f}" if total else '0'
+
+    # Statistiques parcours ORGO / AFB
+    total_orgo = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', parcours='ORGO', est_sorti=False).count()
+    total_afb  = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', parcours='AFB', est_sorti=False).count()
+    total_parcours = total_orgo + total_afb
+    pc_orgo = f"{total_orgo*100/total_parcours:.0f}" if total_parcours else '0'
+    pc_afb  = f"{total_afb*100/total_parcours:.0f}" if total_parcours else '0'
+
+    # Par classe breakdown (nom -> {'orgo':n,'afb':m})
+    parcours_by_class = {}
+    for c in Classe.objects.all():
+        o = ProfilUtilisateur.objects.filter(classe=c, parcours='ORGO', type_utilisateur='eleve', est_sorti=False).count()
+        a = ProfilUtilisateur.objects.filter(classe=c, parcours='AFB', type_utilisateur='eleve', est_sorti=False).count()
+        if o or a:
+            parcours_by_class[c.nom] = {'orgo': o, 'afb': a}
+
     return render(request, 'core/gestion_eleves.html', {
         'eleves': eleves,
         'classes': Classe.objects.all().order_by('nom'),
@@ -386,6 +402,11 @@ def gestion_eleves(request):
         'nb_filles': nb_filles,
         'pc_filles': pc_filles,
         'pc_garcons': pc_garcons,
+        'total_orgo': total_orgo,
+        'total_afb': total_afb,
+        'pc_orgo': pc_orgo,
+        'pc_afb': pc_afb,
+        'parcours_by_class': parcours_by_class,
     })
 
 # Vue pour muter un élève
@@ -401,13 +422,26 @@ def muter_eleve(request, pk):
             # Historique mutation (à adapter pour statistiques)
             profil.commentaire_sortie += f"\nMutation: {profil.classe.nom if profil.classe else ''} -> {nouvelle_classe.nom} le {timezone.now().strftime('%d/%m/%Y')}"
             profil.classe = nouvelle_classe
+            # Si un parcours a été choisi (ORGO/AFB), le sauvegarder
+            parcours_choice = request.POST.get('parcours')
+            if parcours_choice in ('ORGO', 'AFB'):
+                profil.parcours = parcours_choice
             profil.save()
             messages.success(request, f"✅ Élève muté vers {nouvelle_classe.nom} !")
             return redirect('core:gestion_eleves')
+    # Afficher l'option parcours uniquement pour les filières 2BTP (si applicable)
+    show_parcours = False
+    try:
+        if profil.classe and '2BTP' in profil.classe.nom:
+            show_parcours = True
+    except Exception:
+        show_parcours = False
+
     return render(request, 'core/muter_eleve.html', {
         'profil': profil,
         'classes': Classe.objects.all().order_by('nom'),
         'anciennes_classes': anciennes_classes,
+        'show_parcours': show_parcours,
     })
 
 

@@ -176,6 +176,13 @@ class ProfilUtilisateur(models.Model):
     poursuite_etudes = models.BooleanField(default=False)
     type_poursuite = models.CharField(max_length=20, choices=POURSUITE_ETUDES, blank=True, default='')
 
+    # Parcours spécifique pour filières 2BTP : ORGO (gros-oeuvre) ou AFB (autre)
+    PARCOURS_CHOICES = [
+        ('ORGO', 'ORGO'),
+        ('AFB', 'AFB'),
+    ]
+    parcours = models.CharField(max_length=10, choices=PARCOURS_CHOICES, null=True, blank=True)
+
     class Meta:
         verbose_name = "Profil Utilisateur"
         verbose_name_plural = "Profils Utilisateurs"
