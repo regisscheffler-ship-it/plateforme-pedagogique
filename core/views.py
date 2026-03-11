@@ -3542,8 +3542,8 @@ def fiche_revision_create(request, dossier_id):
         else:
             messages.success(request, "Fiche créée !")
 
-        # Rediriger vers la page d'édition de la fiche pour permettre des modifications et uploads supplémentaires
-        return redirect('core:fiche_revision_update', pk=fiche.id)
+        # Rediriger vers la page du thème (comportement souhaité)
+        return redirect('core:theme_detail', pk=dossier.theme.id)
         
     return render(request, 'core/fiche_revision_create.html', {'dossier': dossier})
 

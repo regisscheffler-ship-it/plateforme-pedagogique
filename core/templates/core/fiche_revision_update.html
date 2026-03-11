@@ -7,7 +7,8 @@
     .form-group { margin-bottom: 1.2rem; }
     label { font-weight: 600; display: block; margin-bottom: 0.4rem; }
     input[type="text"] { width: 100%; padding: 0.8rem 1rem; border-radius: 8px; border: 2px solid #e9ecef; }
-    .btn-submit { background:#7c5cbf; color:white; padding:0.7rem 1.2rem; border-radius:8px; border:none; font-weight:600; }
+    .btn-submit { background: white; color: #7c5cbf; padding:0.7rem 1.2rem; border-radius:8px; border:2px solid #7c5cbf; font-weight:600; }
+    .btn-submit:hover { background: #7c5cbf; color: white; }
     .helper-text { font-size:0.86rem; color:#6c757d; margin-top:0.4rem; }
 </style>
 
@@ -21,7 +22,7 @@
                 <input type="text" id="titre" name="titre" value="{{ fiche.titre }}" required>
             </div>
             <button type="submit" class="btn-submit">Enregistrer</button>
-            <a href="{% url 'core:fiche_revision_detail' fiche.id %}" class="btn btn-secondary" style="margin-left:0.6rem;">Annuler</a>
+            <a href="{% url 'core:fiche_revision_detail' fiche.id %}" class="btn-submit" style="margin-left:0.6rem; border-color:#6c757d; color:#6c757d;">Annuler</a>
         </form>
     </div>
 
