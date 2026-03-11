@@ -8,7 +8,9 @@ from django.db.models import Count, Q
 from django.db.models.functions import ExtractYear
 from django.db import connection
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+import zipfile
+import os
 from django.views.decorators.http import require_http_methods
 from datetime import date, datetime, timedelta
 from collections import OrderedDict
@@ -1417,7 +1419,139 @@ def archives(request):
         'examens': toutes_archives.filter(categorie='examens').count(),
         'administratif': toutes_archives.filter(categorie='administratif').count(),
     }
-    return render(request, 'core/archives.html', {'archives_par_categorie': archives_par_categorie, 'stats': stats})
+    # Liste d'années présentes dans les archives (descendante)
+    annees_disponibles = list(Archive.objects.filter(actif=True).values_list('annee_scolaire', flat=True).distinct())
+    # Trier en ordre descendant si les années sont au format 'YYYY-YYYY'
+    try:
+        annees_disponibles = sorted(annees_disponibles, reverse=True)
+    except Exception:
+        pass
+
+    return render(request, 'core/archives.html', {
+        'archives_par_categorie': archives_par_categorie,
+        'stats': stats,
+        'annees_disponibles': annees_disponibles,
+    })
+
+
+@login_required
+@user_passes_test(est_professeur)
+def archives_export(request):
+    """Génère un ZIP téléchargeable contenant les archives filtrées par année scolaire
+    et optionnellement par catégorie. Inclut les fichiers liés et des JSON décrivant
+    les archives et les objets référencés (fiche_contrat / qcm) lorsque présents.
+    """
+    annee = request.GET.get('annee') or request.GET.get('annee_scolaire')
+    categorie = request.GET.get('categorie') or None
+    if not annee:
+        messages.error(request, '❌ Indiquez une année scolaire pour l’export.')
+        return redirect('core:archives')
+
+    qs = Archive.objects.filter(actif=True, annee_scolaire=annee)
+    if categorie and categorie != 'all':
+        qs = qs.filter(categorie=categorie)
+
+    if not qs.exists():
+        messages.warning(request, '⚠️ Aucun document trouvé pour ces critères.')
+        return redirect('core:archives')
+
+    bio = io.BytesIO()
+    with zipfile.ZipFile(bio, 'w', zipfile.ZIP_DEFLATED) as z:
+        meta_list = []
+        for idx, archive in enumerate(qs.order_by('categorie', '-date_creation')):
+            meta = {
+                'id': archive.id,
+                'titre': archive.titre,
+                'description': archive.description,
+                'categorie': archive.categorie,
+                'annee_scolaire': archive.annee_scolaire,
+                'createur': archive.createur.get_full_name() if archive.createur else None,
+                'date_creation': archive.date_creation.isoformat() if archive.date_creation else None,
+            }
+            # Inclure le fichier si présent
+            if archive.fichier:
+                try:
+                    filename = os.path.basename(archive.fichier.name)
+                    arcname = f'files/{idx}_{filename}'
+                    # Essayez d'ouvrir via storage
+                    try:
+                        with archive.fichier.open('rb') as fh:
+                            data = fh.read()
+                            z.writestr(arcname, data)
+                    except Exception:
+                        # Fallback sur path si disponible
+                        try:
+                            with open(archive.fichier.path, 'rb') as fh:
+                                z.writestr(arcname, fh.read())
+                        except Exception:
+                            meta['fichier_inclus'] = False
+                            meta['fichier_nom'] = archive.fichier.name
+                    else:
+                        meta['fichier_inclus'] = True
+                        meta['fichier_nom'] = arcname
+                except Exception:
+                    meta['fichier_inclus'] = False
+            else:
+                meta['fichier_inclus'] = False
+
+            # Si la description référence une fiche_contrat ou un qcm, joindre leur JSON
+            if archive.description and 'fiche_contrat_id:' in archive.description:
+                try:
+                    part = archive.description.split('fiche_contrat_id:')[1].split('|')[0].strip()
+                    fc_id = int(part)
+                    try:
+                        fc = FicheContrat.objects.get(id=fc_id)
+                        # Sérialisation simplifiée
+                        fc_data = {
+                            'id': fc.id,
+                            'titre': fc.titre,
+                            'createur': fc.createur.get_full_name() if fc.createur else None,
+                        }
+                        z.writestr(f'data/fiche_contrat_{fc.id}.json', json.dumps(fc_data, ensure_ascii=False, indent=2))
+                        # Evaluations liées
+                        evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
+                        ev_list = []
+                        for ev in evs:
+                            ev_list.append({'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20})
+                        z.writestr(f'data/fiche_evaluations_{fc.id}.json', json.dumps(ev_list, ensure_ascii=False, indent=2))
+                        meta['fiche_contrat_inclus'] = True
+                        meta['fiche_contrat_id'] = fc.id
+                    except FicheContrat.DoesNotExist:
+                        meta['fiche_contrat_inclus'] = False
+                except Exception:
+                    meta['fiche_contrat_inclus'] = False
+
+            if archive.description and 'qcm_id:' in archive.description:
+                try:
+                    raw = archive.description.split('qcm_id:')[1].split('|')[0].strip()
+                    qcm_id_val = int(raw)
+                    try:
+                        qcm_obj = QCM.objects.get(id=qcm_id_val)
+                        qcm_data = {'id': qcm_obj.id, 'titre': qcm_obj.titre, 'date_creation': qcm_obj.date_creation.isoformat() if qcm_obj.date_creation else None}
+                        z.writestr(f'data/qcm_{qcm_obj.id}.json', json.dumps(qcm_data, ensure_ascii=False, indent=2))
+                        # Sessions terminées
+                        sessions = SessionQCM.objects.filter(qcm=qcm_obj, termine=True).select_related('eleve__user')
+                        sessions_list = []
+                        for s in sessions:
+                            sessions_list.append({'id': s.id, 'eleve': s.eleve.user.get_full_name() if s.eleve and s.eleve.user else None, 'score': s.score})
+                        z.writestr(f'data/qcm_sessions_{qcm_obj.id}.json', json.dumps(sessions_list, ensure_ascii=False, indent=2))
+                        meta['qcm_inclus'] = True
+                        meta['qcm_id'] = qcm_obj.id
+                    except QCM.DoesNotExist:
+                        meta['qcm_inclus'] = False
+                except Exception:
+                    meta['qcm_inclus'] = False
+
+            meta_list.append(meta)
+
+        # Écrire le fichier de métadonnées
+        z.writestr('data/archives_metadata.json', json.dumps(meta_list, ensure_ascii=False, indent=2))
+
+    bio.seek(0)
+    filename = f'archives_{annee}.zip'
+    resp = HttpResponse(bio.read(), content_type='application/zip')
+    resp['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return resp
 
 
 @login_required

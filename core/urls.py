@@ -176,6 +176,7 @@ urlpatterns = [
     # ARCHIVES & STATS
     # ═══════════════════════════════════════
     path('archives/',                    views.archives,          name='archives'),
+    path('archives/export/',             views.archives_export,   name='archives_export'),
     path('archives/<int:pk>/supprimer/', views.supprimer_archive, name='supprimer_archive'),
     path('archives/<int:pk>/',           views.archive_detail,    name='archive_detail'),
     path('statistiques/',                views.statistiques,      name='statistiques'),

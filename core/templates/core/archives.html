@@ -165,6 +165,29 @@
         </div>
     </div>
 
+    <!-- Export ZIP: année + catégorie -->
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:1rem;">
+        <form method="get" action="{% url 'core:archives_export' %}">
+            <label style="font-weight:600;margin-right:6px;">Exporter</label>
+            <select name="annee" class="form-control" style="display:inline-block;width:auto;">
+                {% for annee in annees_disponibles %}
+                    <option value="{{ annee }}">{{ annee }}</option>
+                {% empty %}
+                    <option>2024-2025</option>
+                {% endfor %}
+            </select>
+            <select name="categorie" class="form-control" style="display:inline-block;width:auto;margin-left:6px;">
+                <option value="all">Toutes catégories</option>
+                <option value="evaluations">Évaluations</option>
+                <option value="examens">Examens</option>
+                <option value="administratif">Documents administratifs</option>
+                <option value="ressources">Ressources pédagogiques</option>
+                <option value="autre">Autre</option>
+            </select>
+            <button type="submit" class="btn-submit" style="margin-left:8px;">Télécharger ZIP</button>
+        </form>
+    </div>
+
     <!-- Statistiques -->
     <div class="stats-grid">
         <div class="stat-card">
