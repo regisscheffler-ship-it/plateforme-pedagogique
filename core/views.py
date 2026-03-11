@@ -403,6 +403,17 @@ def gestion_eleves(request):
     passage_afb_bacpro = bacpro_qs.filter(parcours='AFB').count()
     passage_orgo_bacpro = bacpro_qs.filter(parcours='ORGO').count()
 
+    # Détail par classe pour la Seconde Pro
+    bacpro_by_class = {}
+    for c in Classe.objects.filter(niveau__nom='BAC_PRO').order_by('nom'):
+        inscrit = ProfilUtilisateur.objects.filter(classe=c, type_utilisateur='eleve', compte_approuve=True, est_sorti=False).count()
+        aband = ProfilUtilisateur.objects.filter(classe=c, type_utilisateur='eleve', est_sorti=True, raison_sortie='decrocheur').count()
+        reint = ProfilUtilisateur.objects.filter(classe=c, type_utilisateur='eleve', est_sorti=True, raison_sortie='reorientation_interne').count()
+        reext = ProfilUtilisateur.objects.filter(classe=c, type_utilisateur='eleve', est_sorti=True, raison_sortie='reorientation_externe').count()
+        afb = ProfilUtilisateur.objects.filter(classe=c, parcours='AFB', type_utilisateur='eleve', est_sorti=False).count()
+        orgo = ProfilUtilisateur.objects.filter(classe=c, parcours='ORGO', type_utilisateur='eleve', est_sorti=False).count()
+        bacpro_by_class[c.nom] = {'inscrits': inscrit, 'abandons': aband, 'reint': reint, 'reext': reext, 'afb': afb, 'orgo': orgo}
+
     return render(request, 'core/gestion_eleves.html', {
         'eleves': eleves,
         'classes': Classe.objects.all().order_by('nom'),
@@ -422,6 +433,7 @@ def gestion_eleves(request):
         'reorientation_externe_bacpro': reorientation_externe_bacpro,
         'passage_afb_bacpro': passage_afb_bacpro,
         'passage_orgo_bacpro': passage_orgo_bacpro,
+        'bacpro_by_class': bacpro_by_class,
     })
 
 

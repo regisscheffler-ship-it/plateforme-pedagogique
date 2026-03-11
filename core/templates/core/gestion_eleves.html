@@ -672,6 +672,46 @@
         })();
     </script>
 
+    <!-- Tableau détaillé par classe (Seconde Pro) -->
+    <div class="table-card" style="margin-top:1rem;">
+        <h2>
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18M3 12h18M3 18h18"/>
+            </svg>
+            Détail par classe (Seconde Pro)
+        </h2>
+        {% if bacpro_by_class %}
+        <table style="width:100%;margin-top:1rem;">
+            <thead>
+                <tr>
+                    <th>Classe</th>
+                    <th>Inscrits</th>
+                    <th>Abandons</th>
+                    <th>Réor. interne</th>
+                    <th>Réor. externe</th>
+                    <th>Passage AFB</th>
+                    <th>Passage ORGO</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cname, stats in bacpro_by_class.items %}
+                <tr>
+                    <td><strong>{{ cname }}</strong></td>
+                    <td>{{ stats.inscrits }}</td>
+                    <td>{{ stats.abandons }}</td>
+                    <td>{{ stats.reint }}</td>
+                    <td>{{ stats.reext }}</td>
+                    <td>{{ stats.afb }}</td>
+                    <td>{{ stats.orgo }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">Aucune donnée Seconde Pro disponible.</div>
+        {% endif %}
+    </div>
+
 </div>
 
 {% endblock %}
