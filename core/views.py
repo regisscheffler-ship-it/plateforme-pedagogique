@@ -458,26 +458,13 @@ def muter_eleve(request, pk):
             # Historique mutation (à adapter pour statistiques)
             profil.commentaire_sortie += f"\nMutation: {profil.classe.nom if profil.classe else ''} -> {nouvelle_classe.nom} le {timezone.now().strftime('%d/%m/%Y')}"
             profil.classe = nouvelle_classe
-            # Si un parcours a été choisi (ORGO/AFB), le sauvegarder
-            parcours_choice = request.POST.get('parcours')
-            if parcours_choice in ('ORGO', 'AFB'):
-                profil.parcours = parcours_choice
             profil.save()
             messages.success(request, f"✅ Élève muté vers {nouvelle_classe.nom} !")
             return redirect('core:gestion_eleves')
-    # Afficher l'option parcours uniquement pour les filières 2BTP (si applicable)
-    show_parcours = False
-    try:
-        if profil.classe and '2BTP' in profil.classe.nom:
-            show_parcours = True
-    except Exception:
-        show_parcours = False
-
     return render(request, 'core/muter_eleve.html', {
         'profil': profil,
         'classes': Classe.objects.all().order_by('nom'),
         'anciennes_classes': anciennes_classes,
-        'show_parcours': show_parcours,
     })
 
 
@@ -2938,8 +2925,15 @@ def passer_en_classe_superieure(request, eleve_id):
                 messages.success(request, f'✅ {eleve.user.get_full_name()} transféré vers {classe_afb.nom} (parcours AFB). Historique enregistré.')
                 return redirect('core:classe_detail', pk=classe_afb.id)
 
+            # Assignation normale — on accepte aussi un choix de parcours envoyé depuis le formulaire
+            parcours_choice = request.POST.get('parcours')
             eleve.classe_id = nouvelle_classe_id
-            eleve.save(update_fields=['classe'])
+            if parcours_choice in ('ORGO', 'AFB'):
+                eleve.parcours = parcours_choice
+                eleve.save(update_fields=['classe', 'parcours'])
+            else:
+                eleve.save(update_fields=['classe'])
+
             if redoublement:
                 messages.success(request, f'✅ Redoublement enregistré pour {eleve.user.get_full_name()}. Historique mis à jour.')
             else:

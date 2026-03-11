@@ -302,17 +302,7 @@
                 </select>
             </div>
 
-            {% if show_parcours %}
-            <div class="form-group">
-                <label>Parcours (pour 2BTP) :</label>
-                <div style="display:flex;gap:1rem;align-items:center">
-                    <label style="font-weight:600"><input type="radio" name="parcours" value="ORGO" {% if profil.parcours == 'ORGO' %}checked{% endif %}> ORGO</label>
-                    <label style="font-weight:600"><input type="radio" name="parcours" value="AFB"  {% if profil.parcours == 'AFB' %}checked{% endif %}> AFB</label>
-                    <label style="font-weight:600"><input type="radio" name="parcours" value=""  {% if not profil.parcours %}checked{% endif %}> Aucun</label>
-                </div>
-                <p class="helper-text">Choisissez ORGO si l'élève reste en gros-œuvre, AFB s'il s'oriente ailleurs.</p>
-            </div>
-            {% endif %}
+            
 
             <!-- Actions -->
             <div class="form-actions">

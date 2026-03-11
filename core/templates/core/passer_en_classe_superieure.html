@@ -127,6 +127,8 @@
                     {% endif %}
                     {% endif %}
                     {% endfor %}
+                    {% comment %} Option spéciale AFB — création automatique de la classe 1AFB (gestionée côté serveur) {% endcomment %}
+                    <option value="__AFB__">Créer / affecter la classe 1AFB (parcours AFB)</option>
                 </select>
             </div>
             <div class="form-group">
@@ -147,6 +149,17 @@
                     🔁 Redoublement — l'élève reste dans la même année
                 </label>
             </div>
+            {% if eleve.classe and eleve.classe.niveau and eleve.classe.niveau.nom == 'BAC_PRO' %}
+            <div class="form-group" style="margin-top:0.8rem;">
+                <label>Parcours (Seconde Bac Pro) :</label>
+                <div style="display:flex;gap:1rem;align-items:center">
+                    <label style="font-weight:600"><input type="radio" name="parcours" value="ORGO" {% if eleve.parcours == 'ORGO' %}checked{% endif %}> ORGO</label>
+                    <label style="font-weight:600"><input type="radio" name="parcours" value="AFB"  {% if eleve.parcours == 'AFB' %}checked{% endif %}> AFB</label>
+                    <label style="font-weight:600"><input type="radio" name="parcours" value=""  {% if not eleve.parcours %}checked{% endif %}> Aucun</label>
+                </div>
+                <div class="form-hint">Choisissez le parcours pour cet élève lors de son passage (AFB = orientation vers la filière AFB).</div>
+            </div>
+            {% endif %}
             <button type="submit" class="btn-submit">
                 {% if est_redoublement %}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.49"/></svg>
