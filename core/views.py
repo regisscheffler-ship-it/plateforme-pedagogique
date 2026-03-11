@@ -397,13 +397,18 @@ def gestion_eleves(request):
             parcours_by_class[c.nom] = {'orgo': o, 'afb': a}
 
     # Statistiques spécifiques Seconde Pro (niveau Bac Pro)
-    bacpro_qs = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', classe__niveau__nom='BAC_PRO')
-    inscrits_bacpro = bacpro_qs.filter(compte_approuve=True, est_sorti=False).count()
-    abandons_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='decrocheur').count()
-    reorientation_interne_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='reorientation_interne').count()
-    reorientation_externe_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='reorientation_externe').count()
-    passage_afb_bacpro = bacpro_qs.filter(parcours='AFB').count()
-    passage_orgo_bacpro = bacpro_qs.filter(parcours='ORGO').count()
+    bacpro_active_qs = ProfilUtilisateur.objects.filter(
+        type_utilisateur='eleve', classe__niveau__nom='BAC_PRO', compte_approuve=True, est_sorti=False
+    )
+    bacpro_sortis_qs = ProfilUtilisateur.objects.filter(
+        type_utilisateur='eleve', classe__niveau__nom='BAC_PRO', est_sorti=True
+    )
+    inscrits_bacpro = bacpro_active_qs.count()
+    abandons_bacpro = bacpro_sortis_qs.filter(raison_sortie='decrocheur').count()
+    reorientation_interne_bacpro = bacpro_sortis_qs.filter(raison_sortie='reorientation_interne').count()
+    reorientation_externe_bacpro = bacpro_sortis_qs.filter(raison_sortie='reorientation_externe').count()
+    passage_afb_bacpro = bacpro_active_qs.filter(parcours='AFB').count()
+    passage_orgo_bacpro = bacpro_active_qs.filter(parcours='ORGO').count()
 
     # Détail par classe pour la Seconde Pro
     bacpro_by_class = {}
@@ -2261,13 +2266,18 @@ def statistiques(request):
     pc_filles  = f"{nb_filles*100/total_gender:.0f}" if total_gender else '0'
 
     # Statistiques spécifiques Seconde Pro (niveau Bac Pro)
-    bacpro_qs = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', classe__niveau__nom='BAC_PRO')
-    inscrits_bacpro = bacpro_qs.filter(compte_approuve=True, est_sorti=False).count()
-    abandons_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='decrocheur').count()
-    reorientation_interne_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='reorientation_interne').count()
-    reorientation_externe_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='reorientation_externe').count()
-    passage_afb_bacpro = bacpro_qs.filter(parcours='AFB').count()
-    passage_orgo_bacpro = bacpro_qs.filter(parcours='ORGO').count()
+    bacpro_active_qs = ProfilUtilisateur.objects.filter(
+        type_utilisateur='eleve', classe__niveau__nom='BAC_PRO', compte_approuve=True, est_sorti=False
+    )
+    bacpro_sortis_qs = ProfilUtilisateur.objects.filter(
+        type_utilisateur='eleve', classe__niveau__nom='BAC_PRO', est_sorti=True
+    )
+    inscrits_bacpro = bacpro_active_qs.count()
+    abandons_bacpro = bacpro_sortis_qs.filter(raison_sortie='decrocheur').count()
+    reorientation_interne_bacpro = bacpro_sortis_qs.filter(raison_sortie='reorientation_interne').count()
+    reorientation_externe_bacpro = bacpro_sortis_qs.filter(raison_sortie='reorientation_externe').count()
+    passage_afb_bacpro = bacpro_active_qs.filter(parcours='AFB').count()
+    passage_orgo_bacpro = bacpro_active_qs.filter(parcours='ORGO').count()
 
     # Détail par classe pour la Seconde Pro
     bacpro_by_class = {}
