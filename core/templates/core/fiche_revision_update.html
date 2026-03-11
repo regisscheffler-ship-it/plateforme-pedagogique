@@ -1,15 +1,42 @@
 {% extends 'core/base.html' %}
+{% block title %}Modifier — {{ fiche.titre }}{% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Modifier la fiche de révision</h2>
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="titre" class="form-label">Titre</label>
-            <input type="text" class="form-control" id="titre" name="titre" value="{{ fiche.titre }}" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <a href="{% url 'core:fiche_revision_detail' fiche.id %}" class="btn btn-secondary">Annuler</a>
-    </form>
+<style>
+    .page-container { max-width: 1400px; width: 100%; margin: 0 auto; padding: 2rem; }
+    .card { background: white; border-radius: 12px; padding: 1.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border-left: 6px solid #7c5cbf; }
+    .form-group { margin-bottom: 1.2rem; }
+    label { font-weight: 600; display: block; margin-bottom: 0.4rem; }
+    input[type="text"] { width: 100%; padding: 0.8rem 1rem; border-radius: 8px; border: 2px solid #e9ecef; }
+    .btn-submit { background:#7c5cbf; color:white; padding:0.7rem 1.2rem; border-radius:8px; border:none; font-weight:600; }
+    .helper-text { font-size:0.86rem; color:#6c757d; margin-top:0.4rem; }
+</style>
+
+<div class="page-container">
+    <div class="card">
+        <h2>Modifier la fiche de révision</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="titre">Titre</label>
+                <input type="text" id="titre" name="titre" value="{{ fiche.titre }}" required>
+            </div>
+            <button type="submit" class="btn-submit">Enregistrer</button>
+            <a href="{% url 'core:fiche_revision_detail' fiche.id %}" class="btn btn-secondary" style="margin-left:0.6rem;">Annuler</a>
+        </form>
+    </div>
+
+    <div style="height:18px"></div>
+
+    <div class="card">
+        <h3>Importer des cartes (CSV)</h3>
+        <form method="post" action="{% url 'core:fiche_revision_import_csv' fiche.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="file" name="fichier_csv" accept=".csv">
+                <p class="helper-text">Format : question,reponse,image_url (optionnel). Encodage UTF-8 recommandé.</p>
+            </div>
+            <button type="submit" class="btn-submit">Importer</button>
+        </form>
+    </div>
 </div>
 {% endblock %}

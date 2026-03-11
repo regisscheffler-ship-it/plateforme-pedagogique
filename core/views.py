@@ -3499,9 +3499,51 @@ def fiche_revision_create(request, dossier_id):
             dossier=dossier, 
             createur=request.user
         )
-        
-        messages.success(request, "Fiche créée !")
-        return redirect('core:theme_detail', pk=dossier.theme.id)
+        # Si l'utilisateur a envoyé un fichier CSV, l'importer immédiatement
+        fichier_csv = request.FILES.get('fichier_csv')
+        if fichier_csv:
+            contenu_brut = fichier_csv.read()
+            contenu = None
+            for encodage in ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252']:
+                try:
+                    contenu = contenu_brut.decode(encodage)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            if contenu is None:
+                messages.error(request, '❌ Impossible de lire le fichier (encodage non reconnu).')
+            else:
+                try:
+                    reader = csv.reader(io.StringIO(contenu))
+                    nb = 0
+                    ordre_depart = fiche.cartes.count()
+                    for i, row in enumerate(reader):
+                        if len(row) < 2:
+                            continue
+                        question  = row[0].strip()
+                        reponse   = row[1].strip()
+                        image_url = row[2].strip() if len(row) > 2 else ''
+                        if not question or not reponse:
+                            continue
+                        CarteRevision.objects.create(
+                            fiche=fiche,
+                            question=question,
+                            reponse=reponse,
+                            image_url=image_url,
+                            ordre=ordre_depart + i,
+                        )
+                        nb += 1
+                    if nb:
+                        messages.success(request, f'✅ Fiche créée et {nb} carte(s) importée(s).')
+                    else:
+                        messages.success(request, '✅ Fiche créée (aucune carte importée).')
+                except csv.Error as e:
+                    messages.error(request, f'❌ Erreur de lecture CSV : {e}')
+        else:
+            messages.success(request, "Fiche créée !")
+
+        # Rediriger vers la page d'édition de la fiche pour permettre des modifications et uploads supplémentaires
+        return redirect('core:fiche_revision_update', pk=fiche.id)
         
     return render(request, 'core/fiche_revision_create.html', {'dossier': dossier})
 
