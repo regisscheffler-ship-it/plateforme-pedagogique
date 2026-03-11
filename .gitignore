@@ -44,3 +44,6 @@ logs/
 .coverage
 htmlcov/
 .pytest_cache/
+test_archives*.zip
+test_archives_internal*.zip
+test_archives_internal_force*.zip
