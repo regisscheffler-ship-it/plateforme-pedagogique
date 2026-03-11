@@ -418,7 +418,23 @@ def muter_eleve(request, pk):
     if request.method == 'POST':
         nouvelle_classe_id = request.POST.get('nouvelle_classe')
         if nouvelle_classe_id:
-            nouvelle_classe = Classe.objects.get(id=nouvelle_classe_id)
+            # Option spéciale AFB (hors classes)
+            if nouvelle_classe_id == '__AFB__':
+                # Historique mutation
+                profil.commentaire_sortie += f"\nMutation: {profil.classe.nom if profil.classe else ''} -> AFB (hors classes) le {timezone.now().strftime('%d/%m/%Y')}"
+                profil.classe = None
+                profil.parcours = 'AFB'
+                profil.save()
+                messages.success(request, "✅ Élève orienté vers AFB (hors classes) !")
+                return redirect('core:gestion_eleves')
+
+            # Comportement normal : mutation vers une classe existante
+            try:
+                nouvelle_classe = Classe.objects.get(id=nouvelle_classe_id)
+            except (Classe.DoesNotExist, ValueError):
+                messages.error(request, "❌ Classe de destination invalide.")
+                return redirect('core:muter_eleve', pk=profil.id)
+
             # Historique mutation (à adapter pour statistiques)
             profil.commentaire_sortie += f"\nMutation: {profil.classe.nom if profil.classe else ''} -> {nouvelle_classe.nom} le {timezone.now().strftime('%d/%m/%Y')}"
             profil.classe = nouvelle_classe
