@@ -394,6 +394,15 @@ def gestion_eleves(request):
         if o or a:
             parcours_by_class[c.nom] = {'orgo': o, 'afb': a}
 
+    # Statistiques spécifiques Seconde Pro (niveau Bac Pro)
+    bacpro_qs = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', classe__niveau__nom='BAC_PRO')
+    inscrits_bacpro = bacpro_qs.filter(compte_approuve=True, est_sorti=False).count()
+    abandons_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='decrocheur').count()
+    reorientation_interne_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='reorientation_interne').count()
+    reorientation_externe_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='reorientation_externe').count()
+    passage_afb_bacpro = bacpro_qs.filter(parcours='AFB').count()
+    passage_orgo_bacpro = bacpro_qs.filter(parcours='ORGO').count()
+
     return render(request, 'core/gestion_eleves.html', {
         'eleves': eleves,
         'classes': Classe.objects.all().order_by('nom'),
@@ -407,7 +416,14 @@ def gestion_eleves(request):
         'pc_orgo': pc_orgo,
         'pc_afb': pc_afb,
         'parcours_by_class': parcours_by_class,
+        'inscrits_bacpro': inscrits_bacpro,
+        'abandons_bacpro': abandons_bacpro,
+        'reorientation_interne_bacpro': reorientation_interne_bacpro,
+        'reorientation_externe_bacpro': reorientation_externe_bacpro,
+        'passage_afb_bacpro': passage_afb_bacpro,
+        'passage_orgo_bacpro': passage_orgo_bacpro,
     })
+
 
 # Vue pour muter un élève
 @login_required
