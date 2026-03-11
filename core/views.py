@@ -448,16 +448,6 @@ def muter_eleve(request, pk):
     if request.method == 'POST':
         nouvelle_classe_id = request.POST.get('nouvelle_classe')
         if nouvelle_classe_id:
-            # Option spéciale AFB (hors classes)
-            if nouvelle_classe_id == '__AFB__':
-                # Historique mutation
-                profil.commentaire_sortie += f"\nMutation: {profil.classe.nom if profil.classe else ''} -> AFB (hors classes) le {timezone.now().strftime('%d/%m/%Y')}"
-                profil.classe = None
-                profil.parcours = 'AFB'
-                profil.save()
-                messages.success(request, "✅ Élève orienté vers AFB (hors classes) !")
-                return redirect('core:gestion_eleves')
-
             # Comportement normal : mutation vers une classe existante
             try:
                 nouvelle_classe = Classe.objects.get(id=nouvelle_classe_id)
@@ -2283,6 +2273,26 @@ def statistiques(request):
     pc_garcons = f"{nb_garcons*100/total_gender:.0f}" if total_gender else '0'
     pc_filles  = f"{nb_filles*100/total_gender:.0f}" if total_gender else '0'
 
+    # Statistiques spécifiques Seconde Pro (niveau Bac Pro)
+    bacpro_qs = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', classe__niveau__nom='BAC_PRO')
+    inscrits_bacpro = bacpro_qs.filter(compte_approuve=True, est_sorti=False).count()
+    abandons_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='decrocheur').count()
+    reorientation_interne_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='reorientation_interne').count()
+    reorientation_externe_bacpro = bacpro_qs.filter(est_sorti=True, raison_sortie='reorientation_externe').count()
+    passage_afb_bacpro = bacpro_qs.filter(parcours='AFB').count()
+    passage_orgo_bacpro = bacpro_qs.filter(parcours='ORGO').count()
+
+    # Détail par classe pour la Seconde Pro
+    bacpro_by_class = {}
+    for c in Classe.objects.filter(niveau__nom='BAC_PRO').order_by('nom'):
+        inscrit = ProfilUtilisateur.objects.filter(classe=c, type_utilisateur='eleve', compte_approuve=True, est_sorti=False).count()
+        aband = ProfilUtilisateur.objects.filter(classe=c, type_utilisateur='eleve', est_sorti=True, raison_sortie='decrocheur').count()
+        reint = ProfilUtilisateur.objects.filter(classe=c, type_utilisateur='eleve', est_sorti=True, raison_sortie='reorientation_interne').count()
+        reext = ProfilUtilisateur.objects.filter(classe=c, type_utilisateur='eleve', est_sorti=True, raison_sortie='reorientation_externe').count()
+        afb = ProfilUtilisateur.objects.filter(classe=c, parcours='AFB', type_utilisateur='eleve', est_sorti=False).count()
+        orgo = ProfilUtilisateur.objects.filter(classe=c, parcours='ORGO', type_utilisateur='eleve', est_sorti=False).count()
+        bacpro_by_class[c.nom] = {'inscrits': inscrit, 'abandons': aband, 'reint': reint, 'reext': reext, 'afb': afb, 'orgo': orgo}
+
     context = {
         'total_eleves': total_eleves, 'eleves_actifs': eleves_actifs,
         'eleves_sortis': eleves_sortis, 'diplomes': nb_diplomes,
@@ -2323,6 +2333,14 @@ def statistiques(request):
         'nb_filles': nb_filles,
         'pc_garcons': pc_garcons,
         'pc_filles': pc_filles,
+        # Seconde Pro (camembert + détail par classe)
+        'inscrits_bacpro': inscrits_bacpro,
+        'abandons_bacpro': abandons_bacpro,
+        'reorientation_interne_bacpro': reorientation_interne_bacpro,
+        'reorientation_externe_bacpro': reorientation_externe_bacpro,
+        'passage_afb_bacpro': passage_afb_bacpro,
+        'passage_orgo_bacpro': passage_orgo_bacpro,
+        'bacpro_by_class': bacpro_by_class,
         'orig_classe_json':   json.dumps(orig_classe,   ensure_ascii=False),
         'orig_diplome_json':  json.dumps(orig_diplome,  ensure_ascii=False),
         'orig_ville_json':    json.dumps(orig_ville,    ensure_ascii=False),
@@ -2910,6 +2928,16 @@ def passer_en_classe_superieure(request, eleve_id):
                 )
             # Affecter la nouvelle classe (même classe si redoublement)
             ancienne_classe = eleve.classe.nom if eleve.classe else '—'
+            # Si on a choisi l'option spéciale AFB depuis le formulaire, créer/récupérer la classe 1AFB
+            if nouvelle_classe_id == '__AFB__':
+                niveau, _ = Niveau.objects.get_or_create(nom='BAC_PRO', defaults={'description': 'Baccalauréat Professionnel'})
+                classe_afb, created = Classe.objects.get_or_create(nom='1AFB', defaults={'niveau': niveau, 'description': 'Classe 1 AFB (créée automatiquement)'} )
+                eleve.classe = classe_afb
+                eleve.parcours = 'AFB'
+                eleve.save(update_fields=['classe', 'parcours'])
+                messages.success(request, f'✅ {eleve.user.get_full_name()} transféré vers {classe_afb.nom} (parcours AFB). Historique enregistré.')
+                return redirect('core:classe_detail', pk=classe_afb.id)
+
             eleve.classe_id = nouvelle_classe_id
             eleve.save(update_fields=['classe'])
             if redoublement:

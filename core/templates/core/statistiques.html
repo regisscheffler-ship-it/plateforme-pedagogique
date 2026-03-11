@@ -375,6 +375,97 @@
         </div>
     </div>
 
+    <!-- Seconde Pro : répartition (camembert) -->
+    <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+        Seconde Pro — Répartition des parcours / sorties
+    </div>
+    <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 1.5rem;">
+        <div class="chart-card">
+            <h2 style="color:var(--ev)">Seconde Pro — Répartition</h2>
+            <div class="chart-wrapper" style="min-height:220px;">
+                <canvas id="secondeProChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h2 style="color:var(--ev)">Détail & chiffres</h2>
+            <div style="padding-top:0.6rem;">
+                <ul style="list-style:none;padding:0;margin:0;font-size:0.95rem;color:var(--text-muted);">
+                    <li>Inscrits actifs (Bac Pro): <strong>{{ inscrits_bacpro }}</strong></li>
+                    <li>Abandons (décrochage): <strong>{{ abandons_bacpro }}</strong></li>
+                    <li>Réorientation interne: <strong>{{ reorientation_interne_bacpro }}</strong></li>
+                    <li>Réorientation externe: <strong>{{ reorientation_externe_bacpro }}</strong></li>
+                    <li>Passage en 1 AFB: <strong>{{ passage_afb_bacpro }}</strong></li>
+                    <li>Passage en 1 ORGO: <strong>{{ passage_orgo_bacpro }}</strong></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="table-card">
+        <h2>Détail par classe (Seconde Pro)</h2>
+        {% if bacpro_by_class %}
+        <table class="conn-table" style="margin-top:1rem;">
+            <thead>
+                <tr>
+                    <th>Classe</th>
+                    <th>Inscrits</th>
+                    <th>Abandons</th>
+                    <th>Réor. interne</th>
+                    <th>Réor. externe</th>
+                    <th>Passage AFB</th>
+                    <th>Passage ORGO</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cname, stats in bacpro_by_class.items %}
+                <tr>
+                    <td><strong>{{ cname }}</strong></td>
+                    <td>{{ stats.inscrits }}</td>
+                    <td>{{ stats.abandons }}</td>
+                    <td>{{ stats.reint }}</td>
+                    <td>{{ stats.reext }}</td>
+                    <td>{{ stats.afb }}</td>
+                    <td>{{ stats.orgo }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">Aucune donnée Seconde Pro disponible.</div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function(){
+            const data = [
+                {{ inscrits_bacpro }},
+                {{ abandons_bacpro }},
+                {{ reorientation_interne_bacpro }},
+                {{ reorientation_externe_bacpro }},
+                {{ passage_afb_bacpro }},
+                {{ passage_orgo_bacpro }}
+            ];
+            const labels = [
+                'Inscrits actifs',
+                'Abandons',
+                'Réorientation interne',
+                'Réorientation externe',
+                'Passage en 1 AFB',
+                'Passage en 1 ORGO'
+            ];
+            const colors = ['#2ab090','#dc3545','#f59e0b','#8b5cf6','#06b6d4','#f97316'];
+            const ctx = document.getElementById('secondeProChart');
+            if(ctx){
+                new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: labels, datasets: [{ data: data, backgroundColor: colors }] },
+                    options: { plugins: { legend: { position: 'right' } }, responsive: true, maintainAspectRatio: false }
+                });
+            }
+        })();
+    </script>
+
     <!-- Section Sortis enrichis -->
     <div id="section-sortis" style="scroll-margin-top:80px;">
         <div class="section-title" style="--section-color:#e74c3c;">
