@@ -437,6 +437,7 @@ def communication_create(request):
         return HttpResponse(status=405)
     texte = request.POST.get('texte', '').strip()
     annotation_data = request.POST.get('annotation_data', '')
+    remove_image_flag = request.POST.get('remove_image', '0') == '1'
     image = request.FILES.get('image')
     if not profil.classe:
         messages.error(request, '⚠️ Vous devez être assigné à une classe pour envoyer une communication.')
@@ -477,8 +478,26 @@ def communication_create(request):
                 }
             )
 
-        # si une image est fournie, créer/update un rendu élève pour ce travail
+        # si le flag remove_image est envoyé (et aucune nouvelle image), supprimer l'image
         rendu = None
+        if remove_image_flag and not image:
+            last_comm = Communication.objects.filter(eleve=profil).order_by('-date_submitted').first()
+            if last_comm and last_comm.image:
+                try:
+                    last_comm.image.delete(save=False)
+                except Exception:
+                    pass
+                last_comm.image = None
+                # mettre à jour texte/annotation si fournis
+                if annotation_data:
+                    last_comm.annotation_data = annotation_data
+                if texte:
+                    last_comm.texte = texte
+                last_comm.save()
+                messages.success(request, '✅ Photo supprimée de votre dernière communication.')
+                return redirect('core:dashboard_eleve')
+
+        # si une image est fournie, créer/update un rendu élève pour ce travail
         if image:
             # update_or_create le rendu
             rendu, created = RenduEleve.objects.update_or_create(
