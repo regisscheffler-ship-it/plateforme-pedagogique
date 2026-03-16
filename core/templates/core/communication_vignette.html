@@ -45,6 +45,7 @@
                 </div>
                 <div style="margin-top:0.6rem; position:relative;">
                     <div style="position:relative;width:100%;">
+                        <img id="comm-preview" alt="Aperçu photo" style="display:none;width:100%;border-radius:8px;object-fit:contain;background:#fff;" />
                         <canvas id="comm-bg" width="640" height="480" style="width:100%;height:auto;display:block;border-radius:8px;background:#fff;"></canvas>
                         <canvas id="comm-canvas" width="640" height="480" style="position:absolute;left:0;top:0;border-radius:8px;pointer-events:auto;width:100%;height:100%;"></canvas>
                     </div>
@@ -93,6 +94,7 @@
     let strokes = [];
     let eraserMode = false;
     let currentBg = null;
+    const previewImg = document.getElementById('comm-preview');
 
     function drawStroke(points, color, size, mode){ if(points.length<2) return; ctx.save(); if(mode==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='rgba(0,0,0,1)'; } else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle=color; } ctx.lineWidth=size; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y); for(let i=1;i<points.length;i++){ ctx.lineTo(points[i].x,points[i].y); } ctx.stroke(); ctx.restore(); }
 
@@ -115,10 +117,14 @@
     const eraserBtn = document.getElementById('comm-eraser');
     eraserBtn.addEventListener('click', ()=>{ eraserMode = !eraserMode; eraserBtn.style.borderColor = eraserMode ? '#333' : ''; eraserBtn.style.color = eraserMode ? '#333' : ''; eraserBtn.textContent = eraserMode ? 'Gomme (ON)' : 'Gomme'; });
 
-    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
+    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // show preview image element for desktop users
+        previewImg.src = objUrl; previewImg.style.display = 'block'; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
             const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale);
             bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
-            currentBg = img; drawBg(img); redraw(); }; img.src=URL.createObjectURL(f); });
+            // ensure CSS sizing matches pixel size so overlay aligns
+            bgCanvas.style.width = bgCanvas.width + 'px'; bgCanvas.style.height = bgCanvas.height + 'px';
+            canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height;
+            currentBg = img; drawBg(img); redraw(); }; img.src = objUrl; });
 
     // buttons to open camera or gallery
     takePhotoBtn.addEventListener('click', ()=>{ fileInput.setAttribute('capture','environment'); fileInput.click(); });
@@ -130,7 +136,7 @@
             const strokesData = {{ ma_comm.annotation_data|default:'null'|safe }};
             if(strokesData){ try{ strokes = strokesData; }catch(e){ strokes = []; } }
             {% if ma_comm.image %}
-                const img = new Image(); img.onload = ()=>{ const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale); bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h; currentBg = img; drawBg(img); redraw(); }; img.crossOrigin = 'anonymous'; img.src='{{ ma_comm.image.url }}';
+                const img = new Image(); img.onload = ()=>{ const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale); bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h; bgCanvas.style.width = bgCanvas.width + 'px'; bgCanvas.style.height = bgCanvas.height + 'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; previewImg.src='{{ ma_comm.image.url }}'; previewImg.style.display='block'; currentBg = img; drawBg(img); redraw(); }; img.crossOrigin = 'anonymous'; img.src='{{ ma_comm.image.url }}';
             {% else %}
                 redraw();
             {% endif %}
@@ -149,6 +155,16 @@
             const fd=new FormData(); fd.append('texte', document.getElementById('texte').value || ''); fd.append('annotation_data', JSON.stringify(strokes)); fd.append('image', blob, 'communication.png'); const csrf=document.querySelector('input[name=csrfmiddlewaretoken]').value;
             fetch('{% url "core:communication_create" %}', { method:'POST', body:fd, headers:{ 'X-CSRFToken': csrf } }).then(r=>{ if(r.redirected) window.location=r.url; else if(r.ok) window.location='{% url "core:dashboard_eleve" %}'; else r.text().then(t=>alert('Erreur: '+t)); }).catch(e=>alert('Erreur réseau: '+e));
         }, 'image/png');
+    });
+
+    // Keyboard undo (Ctrl/Cmd+Z) when focus is inside the widget
+    document.addEventListener('keydown', (e)=>{
+        const card = document.querySelector('.comm-card');
+        if(!card) return;
+        const active = document.activeElement;
+        const inside = card.contains(active);
+        const isUndo = (e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === 'z';
+        if(isUndo && inside){ e.preventDefault(); if(strokes.length>0){ strokes.pop(); redraw(); } }
     });
 
 })();
