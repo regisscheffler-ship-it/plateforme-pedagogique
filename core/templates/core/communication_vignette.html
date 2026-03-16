@@ -1,0 +1,126 @@
+{# Communication vignette avec canvas d'annotation et styles adaptés #}
+{% load static %}
+<style>
+    /* Couleur vignette (modifiable) */
+    :root{ --comm-color: #ff8a65; }
+    .comm-card{ background: white; border-radius:12px; padding:1rem; border-left:6px solid var(--comm-color); box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+    .comm-header{ display:flex; align-items:center; justify-content:space-between; }
+    .comm-title{ font-size:1.05rem; font-weight:700; color:#1f2937; }
+    .comm-tools{ display:flex; gap:0.6rem; align-items:center; }
+    .comm-btn{ background:transparent; border:2px solid var(--comm-color); color:var(--comm-color); padding:0.45rem 0.8rem; border-radius:8px; cursor:pointer; font-weight:600; }
+    .comm-btn:hover{ background:rgba(255,138,101,0.06); }
+    .comm-body{ display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.8rem; }
+    .comm-left{ flex:1; min-width:240px; }
+    .comm-right{ flex:2; min-width:260px; }
+    canvas{ border-radius:8px; max-width:100%; background:#fff; display:block; }
+    .comm-actions{ margin-top:0.6rem; display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; }
+    @media (max-width:800px){ .comm-body{ flex-direction:column; } }
+</style>
+
+<div class="comm-card">
+    <div class="comm-header">
+        <div class="comm-title">Communication</div>
+        <div class="comm-tools">
+            <button type="button" class="comm-btn" id="comm-clear">Effacer</button>
+            <button type="button" class="comm-btn" id="comm-undo">Annuler</button>
+            <button type="button" class="comm-btn" id="comm-eraser">Gomme</button>
+        </div>
+    </div>
+
+    <form id="comm-form" method="post" action="{% url 'core:communication_create' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="comm-body">
+            <div class="comm-left">
+                <label for="image">Photo (mobile : utilisez l'appareil)</label><br>
+                <input type="file" id="image" name="image" accept="image/*" capture="environment">
+                <div style="margin-top:0.6rem;">
+                    <canvas id="comm-canvas" width="640" height="480" style="max-width:100%;"></canvas>
+                </div>
+                <div class="comm-actions">
+                    <label style="display:flex;align-items:center;gap:0.4rem;">
+                        <input type="color" id="pen-color" value="#ff3b30"> Couleur
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.4rem;">
+                        Taille
+                        <input id="pen-size" type="range" min="1" max="20" value="3" style="width:120px;margin-left:0.4rem;">
+                    </label>
+                </div>
+            </div>
+
+            <div class="comm-right">
+                <label for="texte">Rapport du jour (court)</label>
+                <textarea id="texte" name="texte" rows="6" style="width:100%;padding:0.6rem;border-radius:8px;border:1px solid #e9ecef;"></textarea>
+                <input type="hidden" name="annotation_data" id="annotation_data" />
+                <div style="margin-top:0.8rem;display:flex;gap:0.6rem;align-items:center;">
+                    <button id="comm-submit" class="comm-btn" type="button">Envoyer au professeur</button>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div style="margin-top:0.6rem;color:#94a3b8;font-size:0.9rem;">Astuce : utilisez votre appareil pour prendre une photo, puis annotez avec le doigt.</div>
+</div>
+
+<script>
+(function(){
+    const fileInput = document.getElementById('image');
+    const canvas = document.getElementById('comm-canvas');
+    const ctx = canvas.getContext('2d');
+    const colorInput = document.getElementById('pen-color');
+    const sizeInput = document.getElementById('pen-size');
+    const clearBtn = document.getElementById('comm-clear');
+    const undoBtn = document.getElementById('comm-undo');
+    const submitBtn = document.getElementById('comm-submit');
+
+    let drawing = false;
+    let currentStroke = null;
+    let strokes = [];
+    let eraserMode = false;
+    let currentBg = null;
+
+    function drawStroke(points, color, size, mode){ if(points.length<2) return; ctx.save(); if(mode==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='rgba(0,0,0,1)'; } else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle=color; } ctx.lineWidth=size; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y); for(let i=1;i<points.length;i++){ ctx.lineTo(points[i].x,points[i].y); } ctx.stroke(); ctx.restore(); }
+
+    function redraw(){ ctx.clearRect(0,0,canvas.width,canvas.height); if(currentBg) drawBg(currentBg); strokes.forEach(s=>drawStroke(s.points,s.color,s.size,s.mode||'pen')); }
+
+    function drawBg(img){ const iw=img.width, ih=img.height, cw=canvas.width, ch=canvas.height; const scale=Math.max(cw/iw, ch/ih); const w=iw*scale, h=ih*scale; const x=(cw-w)/2, y=(ch-h)/2; ctx.drawImage(img,x,y,w,h); }
+
+    function getPos(e){ const r=canvas.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top; const rx = x * (canvas.width / r.width); const ry = y * (canvas.height / r.height); return {x:rx,y:ry}; }
+
+    canvas.addEventListener('mousedown', (e)=>{ drawing=true; currentStroke={points:[getPos(e)], color:colorInput.value, size:parseInt(sizeInput.value), mode: eraserMode ? 'eraser' : 'pen'}; });
+    canvas.addEventListener('touchstart', (e)=>{ drawing=true; currentStroke={points:[getPos(e)], color:colorInput.value, size:parseInt(sizeInput.value), mode: eraserMode ? 'eraser' : 'pen'}; e.preventDefault(); });
+    window.addEventListener('mouseup', ()=>{ if(drawing){ drawing=false; strokes.push(currentStroke); currentStroke=null; } });
+    window.addEventListener('touchend', ()=>{ if(drawing){ drawing=false; strokes.push(currentStroke); currentStroke=null; } });
+    canvas.addEventListener('mousemove', (e)=>{ if(!drawing) return; const p=getPos(e); currentStroke.points.push(p); drawStroke(currentStroke.points.slice(-2), currentStroke.color, currentStroke.size, currentStroke.mode); });
+    canvas.addEventListener('touchmove', (e)=>{ if(!drawing) return; const p=getPos(e); currentStroke.points.push(p); drawStroke(currentStroke.points.slice(-2), currentStroke.color, currentStroke.size, currentStroke.mode); e.preventDefault(); });
+
+    undoBtn.addEventListener('click', ()=>{ strokes.pop(); redraw(); });
+    clearBtn.addEventListener('click', ()=>{ strokes=[]; redraw(); });
+    const eraserBtn = document.getElementById('comm-eraser');
+    eraserBtn.addEventListener('click', ()=>{ eraserMode = !eraserMode; eraserBtn.style.borderColor = eraserMode ? '#333' : ''; eraserBtn.style.color = eraserMode ? '#333' : ''; eraserBtn.textContent = eraserMode ? 'Gomme (ON)' : 'Gomme'; });
+
+    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ // resize canvas keeping aspect ratio
+            const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); canvas.width=Math.round(iw*scale); canvas.height=Math.round(ih*scale); currentBg=img; redraw(); }; img.src=URL.createObjectURL(f); });
+
+    // charger annotations et image existantes si fournies par le serveur
+    {% if ma_comm %}
+        (function preload(){
+            const strokesData = {{ ma_comm.annotation_data|default:'null'|safe }};
+            if(strokesData){ try{ strokes = strokesData; }catch(e){ strokes = []; } }
+            {% if ma_comm.image %}
+                const img = new Image(); img.onload = ()=>{ const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); canvas.width=Math.round(iw*scale); canvas.height=Math.round(ih*scale); currentBg = img; redraw(); }; img.src='{{ ma_comm.image.url }}';
+            {% else %}
+                redraw();
+            {% endif %}
+        })();
+    {% endif %}
+
+    submitBtn.addEventListener('click', ()=>{
+        // export canvas
+        canvas.toBlob((blob)=>{
+            if(!blob){ alert('Impossible de générer l\'image.'); return; }
+            const fd=new FormData(); fd.append('texte', document.getElementById('texte').value || ''); fd.append('annotation_data', JSON.stringify(strokes)); fd.append('image', blob, 'communication.png'); const csrf=document.querySelector('input[name=csrfmiddlewaretoken]').value;
+            fetch('{% url "core:communication_create" %}', { method:'POST', body:fd, headers:{ 'X-CSRFToken': csrf } }).then(r=>{ if(r.redirected) window.location=r.url; else if(r.ok) window.location='{% url "core:dashboard_eleve" %}'; else r.text().then(t=>alert('Erreur: '+t)); }).catch(e=>alert('Erreur réseau: '+e));
+        }, 'image/png');
+    });
+
+})();
+</script>

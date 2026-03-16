@@ -8,7 +8,10 @@ from django.db.models import Count, Q
 from django.db.models.functions import ExtractYear
 from django.db import connection
 from django.utils import timezone
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
+from django.urls import reverse
+from django.conf import settings
+from django.db import transaction
 import zipfile
 import os
 from django.views.decorators.http import require_http_methods
@@ -38,7 +41,11 @@ from .models import (
     SuiviPFMP, HistoriqueClasse,
     QCM, QuestionQCM, SessionQCM,
     ModeOperatoire, LigneModeOperatoire,
+    Communication,
 )
+import io
+import fitz
+from PIL import Image
 
 try:
     from .forms import FormulaireSortie, ThemeForm
@@ -117,6 +124,70 @@ def _render_fiche_contrat_pdf_bytes(fiche_contrat, evaluations):
             page.insert_textbox(fitz.Rect(50, 150, 545, 800), body, fontsize=11, fontname="helv", align=0)
         except Exception:
             page.insert_text((50, 150), body, fontsize=11)
+
+        try:
+            pdf_bytes = doc.write()
+        except Exception:
+            try:
+                pdf_bytes = doc.tobytes()
+            except Exception:
+                pdf_bytes = None
+        doc.close()
+        return pdf_bytes
+    except Exception:
+        try:
+            doc.close()
+        except Exception:
+            pass
+        return None
+
+
+def _render_fiche_evaluation_pdf_bytes(fiche_eval):
+    """Génère un PDF (bytes) pour une FicheEvaluation individuelle.
+    Contient les informations de la fiche contrat, élève, note et la liste des lignes d'évaluation.
+    Retourne None si PyMuPDF absent ou erreur.
+    """
+    try:
+        import fitz
+    except Exception:
+        return None
+
+    try:
+        doc = fitz.open()
+        page = doc.new_page(width=595, height=842)
+
+        fc = fiche_eval.fiche_contrat
+        titre = getattr(fc, 'titre', getattr(fc, 'titre_tp', ''))
+        classe_nom = fc.classe.nom if getattr(fc, 'classe', None) else ''
+        eleve_nom = fiche_eval.eleve.user.get_full_name() if getattr(fiche_eval, 'eleve', None) and getattr(fiche_eval.eleve, 'user', None) else ''
+        note = fiche_eval.note_sur_20 if getattr(fiche_eval, 'note_sur_20', None) is not None else '\u2014'
+
+        header = f"{titre}\nClasse: {classe_nom}\nÉlève: {eleve_nom}\nNote /20: {note}\nDate validation: {fiche_eval.date_validation.isoformat() if fiche_eval.date_validation else ''}\n\n"
+        try:
+            page.insert_textbox(fitz.Rect(50, 50, 545, 140), header, fontsize=13, fontname='helv')
+        except Exception:
+            page.insert_text((50, 50), header, fontsize=13)
+
+        # Lignes d'évaluation
+        lignes = fiche_eval.lignes_evaluation.select_related('ligne_contrat', 'ligne_contrat__indicateur').all()
+        y = 150
+        for ln in lignes:
+            texte = f"- {ln.ligne_contrat.indicateur.nom if ln.ligne_contrat and ln.ligne_contrat.indicateur else str(ln.ligne_contrat)} : {ln.get_note_display()}"
+            try:
+                page.insert_textbox(fitz.Rect(60, y, 540, y+20), texte, fontsize=11, fontname='helv')
+            except Exception:
+                page.insert_text((60, y), texte, fontsize=11)
+            y += 18
+            if y > 780:
+                page = doc.new_page()
+                y = 50
+
+        # Compte-rendu
+        if fiche_eval.compte_rendu:
+            try:
+                page.insert_textbox(fitz.Rect(50, y+10, 545, 800), "Compte-rendu:\n" + fiche_eval.compte_rendu, fontsize=11, fontname='helv')
+            except Exception:
+                page.insert_text((50, y+10), "Compte-rendu:\n" + fiche_eval.compte_rendu, fontsize=11)
 
         try:
             pdf_bytes = doc.write()
@@ -333,6 +404,7 @@ def dashboard_eleve(request):
             'mes_pfmp': PFMP.objects.filter(classe=classe, actif=True).order_by('date_debut'),
             'mes_evaluations': FicheEvaluation.objects.filter(eleve=profil, validee=True).select_related('fiche_contrat').order_by('-date_validation'),
             'today': date.today(),
+            'ma_comm': Communication.objects.filter(eleve=profil).order_by('-date_submitted').first(),
         }
         # QCM actifs annotés avec la session de l'élève
         sessions_map = {s.qcm_id: s for s in SessionQCM.objects.filter(qcm__classe=classe, eleve=profil, termine=True)}
@@ -351,6 +423,153 @@ def dashboard_eleve(request):
     except ProfilUtilisateur.DoesNotExist:
         messages.error(request, "⛔ Profil non configuré.")
         return redirect('core:home')
+
+
+@login_required(login_url='core:login_eleve')
+def communication_create(request):
+    try:
+        profil = request.user.profil
+    except ProfilUtilisateur.DoesNotExist:
+        return HttpResponse(status=403)
+    if profil.est_prof():
+        return HttpResponse(status=403)
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+    texte = request.POST.get('texte', '').strip()
+    annotation_data = request.POST.get('annotation_data', '')
+    image = request.FILES.get('image')
+    if not profil.classe:
+        messages.error(request, '⚠️ Vous devez être assigné à une classe pour envoyer une communication.')
+        return redirect('core:dashboard_eleve')
+    with transaction.atomic():
+        # trouver professeurs référents pour la classe
+        prof_ids = list(TravailARendre.objects.filter(classe=profil.classe).values_list('createur', flat=True).distinct())
+        if prof_ids:
+            prof_users = User.objects.filter(id__in=prof_ids)
+        else:
+            prof_users = User.objects.filter(profil__type_utilisateur='professeur')
+
+        # créer (ou récupérer) un travail 'Communications' pour que les profs le voient dans travaux_corriger
+        creator = prof_users.first() if prof_users.exists() else None
+        titre_travail = f"Communications élèves - {profil.classe.nom}"
+        if creator:
+            travail, _ = TravailARendre.objects.get_or_create(
+                classe=profil.classe,
+                titre=titre_travail,
+                defaults={
+                    'description': 'Communications envoyées par les élèves',
+                    'date_limite': timezone.now() + timedelta(days=3650),
+                    'createur': creator,
+                    'actif': True,
+                }
+            )
+        else:
+            # fallback: créer avec le premier user professeur or admin
+            fallback_creator = User.objects.filter(is_superuser=True).first()
+            travail, _ = TravailARendre.objects.get_or_create(
+                classe=profil.classe,
+                titre=titre_travail,
+                defaults={
+                    'description': 'Communications envoyées par les élèves',
+                    'date_limite': timezone.now() + timedelta(days=3650),
+                    'createur': fallback_creator or request.user,
+                    'actif': True,
+                }
+            )
+
+        # si une image est fournie, créer/update un rendu élève pour ce travail
+        rendu = None
+        if image:
+            # update_or_create le rendu
+            rendu, created = RenduEleve.objects.update_or_create(
+                travail=travail,
+                eleve=profil,
+                defaults={'commentaire': texte, 'rendu': True, 'date_rendu': timezone.now()},
+            )
+            # enregistrer le fichier rendu
+            # use a unique name
+            filename = f'communication_{profil.id}_{int(datetime.timestamp(timezone.now()))}.png'
+            rendu.fichier_rendu.save(filename, image, save=True)
+
+        # créer l'entité Communication (garde des métadonnées + image)
+        comm = Communication.objects.create(
+            eleve=profil,
+            classe=profil.classe,
+            image=(rendu.fichier_rendu if rendu else image),
+            annotation_data=annotation_data or None,
+            texte=texte,
+        )
+
+        # notifications aux professeurs
+        for u in prof_users:
+            Notification.objects.create(
+                destinataire=u,
+                titre='Nouvelle communication élève',
+                message=f"Nouvelle communication de {profil.user.get_full_name()} ({profil.classe.nom}).",
+                type_notification='communication',
+                lien=reverse('core:travaux_corriger')
+            )
+    messages.success(request, '✅ Communication envoyée à votre professeur.')
+    return redirect('core:dashboard_eleve')
+
+
+@login_required
+@user_passes_test(est_professeur)
+def communications_list(request):
+    classes_ids = TravailARendre.objects.filter(createur=request.user).values_list('classe_id', flat=True).distinct()
+    if classes_ids:
+        comms = Communication.objects.filter(classe_id__in=classes_ids).select_related('eleve__user')
+    else:
+        comms = Communication.objects.all().select_related('eleve__user')
+    return render(request, 'core/communications_list.html', {'communications': comms})
+
+
+@login_required
+@user_passes_test(est_professeur)
+def communications_export_pdf(request):
+    classes_ids = TravailARendre.objects.filter(createur=request.user).values_list('classe_id', flat=True).distinct()
+    if classes_ids:
+        comms = Communication.objects.filter(classe_id__in=classes_ids).select_related('eleve__user').order_by('-date_submitted')
+    else:
+        comms = Communication.objects.all().select_related('eleve__user').order_by('-date_submitted')
+
+    doc = fitz.open()
+    for c in comms:
+        # page with image (if any)
+        if c.image:
+            try:
+                c.image.open()
+                img_bytes = c.image.read()
+                c.image.close()
+                # load with PIL to get size and convert
+                pil = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+                w, h = pil.size
+                # create page sized to image (limit to A4 width)
+                max_w = 595; max_h = 842  # points for A4 at 72dpi
+                scale = min(max_w / w, max_h / h, 1)
+                pw = int(w * scale); ph = int(h * scale)
+                page = doc.new_page(width=pw, height=ph)
+                img_buf = io.BytesIO()
+                pil.save(img_buf, format='PNG')
+                img_buf.seek(0)
+                page.insert_image(fitz.Rect(0, 0, pw, ph), stream=img_buf.read())
+            except Exception:
+                # fallback: page with text only
+                page = doc.new_page()
+                page.insert_text((72, 72), f"{c.eleve.user.get_full_name()} - {c.classe.nom}\n(Erreur image)")
+        else:
+            page = doc.new_page()
+            page.insert_text((72, 72), f"{c.eleve.user.get_full_name()} - {c.classe.nom}\n(Aucune image)")
+
+        # add a second small page with the texte
+        if c.texte:
+            tpage = doc.new_page()
+            text = f"{c.eleve.user.get_full_name()} — {c.classe.nom}\n\n{c.texte}"
+            tpage.insert_textbox(fitz.Rect(72,72,523,770), text, fontsize=12)
+
+    pdf_bytes = doc.write()
+    doc.close()
+    return HttpResponse(pdf_bytes, content_type='application/pdf')
 
 
 # =====================================================
@@ -1051,7 +1270,7 @@ def travail_create(request, classe_id):
                     type_notification='nouveau_cours',
                     titre=f'Nouveau travail : {titre}',
                     message=f'Un nouveau travail vous a été attribué pour le {dl_str}.',
-                    lien=f'/travaux/rendre/{travail.id}/'
+                    lien=reverse('core:rendre_travail', args=[travail.id])
                 )
             messages.success(request, f'Travail « {titre} » publié et {eleves.count()} élève(s) notifié(s).')
             return redirect('core:travaux_par_classe')
@@ -1633,12 +1852,19 @@ def archives_export(request):
                             if pdf_bytes:
                                 z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.pdf', pdf_bytes)
                             else:
-                                # Fallback JSON
+                                # Fallback JSON for fiche_contrat
                                 ev_list = []
                                 for ev in evs:
                                     ev_list.append({'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20})
                                 z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.json', json.dumps(fc_data, ensure_ascii=False, indent=2))
-                                z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluations_{fc.id}.json', json.dumps(ev_list, ensure_ascii=False, indent=2))
+                                # Tenter de générer un PDF par élève; sinon écrire JSON
+                                for ev in evs:
+                                    pdf_ev = _render_fiche_evaluation_pdf_bytes(ev)
+                                    safe_nom = (ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else f'eleve_{ev.id}').replace(' ', '_')
+                                    if pdf_ev:
+                                        z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluation_{ev.id}_{safe_nom}.pdf', pdf_ev)
+                                    else:
+                                        z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluation_{ev.id}_{safe_nom}.json', json.dumps({'id': ev.id, 'eleve': safe_nom, 'note': ev.note_sur_20}, ensure_ascii=False, indent=2))
                         except Exception:
                             # Si PyMuPDF absent ou erreur, écrire JSON dans le dossier de la classe
                             evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
@@ -1646,7 +1872,14 @@ def archives_export(request):
                             for ev in evs:
                                 ev_list.append({'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20})
                             z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.json', json.dumps(fc_data, ensure_ascii=False, indent=2))
-                            z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluations_{fc.id}.json', json.dumps(ev_list, ensure_ascii=False, indent=2))
+                            # Générer PDF individuel par élève si possible
+                            for ev in evs:
+                                pdf_ev = _render_fiche_evaluation_pdf_bytes(ev)
+                                safe_nom = (ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else f'eleve_{ev.id}').replace(' ', '_')
+                                if pdf_ev:
+                                    z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluation_{ev.id}_{safe_nom}.pdf', pdf_ev)
+                                else:
+                                    z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluation_{ev.id}_{safe_nom}.json', json.dumps({'id': ev.id, 'eleve': safe_nom, 'note': ev.note_sur_20}, ensure_ascii=False, indent=2))
                         meta['fiche_contrat_inclus'] = True
                         meta['fiche_contrat_id'] = fc.id
                     except FicheContrat.DoesNotExist:
@@ -2584,6 +2817,47 @@ def atelier_detail(request, pk):
         'nb_eleves': nb_eleves, 'is_eleve': is_eleve,
         'modes_operatoires': modes_operatoires,
     })
+
+
+@login_required
+def atelier_fichier_download(request, pk):
+    fichier = get_object_or_404(FichierAtelier, pk=pk)
+    is_eleve = hasattr(request.user, 'profil') and request.user.profil.est_eleve()
+    # Permission checks for élèves
+    if is_eleve:
+        if not fichier.visible_eleves or fichier.dossier.atelier.classe != request.user.profil.classe:
+            messages.error(request, "❌ Vous n'avez pas accès à ce fichier.")
+            return redirect('core:atelier_detail', pk=fichier.dossier.atelier.id)
+
+    # External link
+    if fichier.type_contenu == 'lien' and fichier.lien_externe:
+        return redirect(fichier.lien_externe)
+
+    # Iframe: redirect back to detail (iframe is displayed in page)
+    if fichier.type_contenu == 'iframe' and fichier.code_iframe:
+        return redirect('core:atelier_detail', pk=fichier.dossier.atelier.id)
+
+    # File stored in storage
+    if fichier.type_contenu == 'fichier' and fichier.fichier:
+        storage = fichier.fichier.storage
+        name = fichier.fichier.name
+        try:
+            if hasattr(storage, 'url'):
+                url = storage.url(name)
+                return redirect(url)
+            else:
+                # Fallback: try local MEDIA_ROOT
+                file_path = os.path.join(settings.MEDIA_ROOT, name)
+                if os.path.exists(file_path):
+                    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=os.path.basename(name))
+                messages.error(request, "❌ Fichier introuvable sur le serveur.")
+                return redirect('core:atelier_detail', pk=fichier.dossier.atelier.id)
+        except Exception:
+            messages.error(request, "❌ Impossible d'accéder au fichier.")
+            return redirect('core:atelier_detail', pk=fichier.dossier.atelier.id)
+
+    messages.error(request, "❌ Fichier invalide.")
+    return redirect('core:atelier_detail', pk=fichier.dossier.atelier.id)
 
 
 @login_required

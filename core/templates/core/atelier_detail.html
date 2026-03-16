@@ -416,6 +416,7 @@
             </svg>
             Dossiers et fichiers
         </h2>
+        {% if not is_eleve %}
         <a href="{% url 'core:atelier_dossier_create' atelier.id %}" class="btn-add">
             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -423,6 +424,7 @@
             </svg>
             Nouveau dossier
         </a>
+        {% endif %}
     </div>
 
     {% if dossiers_avec_fichiers %}
@@ -519,7 +521,7 @@
                     <div class="dossier-actions">
                         <!-- ACTIONS D'AFFICHAGE SELON LE TYPE DE FICHIER -->
                         {% if fichier.type_contenu == 'fichier' and fichier.fichier %}
-                            <a href="{{ fichier.fichier.url }}" target="_blank" class="btn-voir">
+                            <a href="{% url 'core:atelier_fichier_download' fichier.id %}" target="_blank" class="btn-voir">
                                 <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>

@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Communications à corriger{% endblock %}
+
+{% block content %}
+<style>
+    :root{ --comm-color: #ff8a65; }
+    .page-wrap{ max-width:1200px; margin:1.5rem auto; padding:1rem; }
+    .comm-list-card{ background:white; border-radius:12px; padding:1rem; border-left:6px solid var(--comm-color); box-shadow:0 6px 18px rgba(0,0,0,0.04); }
+    .comm-item{ display:flex; gap:1rem; padding:0.8rem; border-radius:10px; border:1px solid #edf2f7; margin-bottom:0.8rem; align-items:flex-start; }
+    .comm-meta{ color:#374151; font-weight:700; }
+    .comm-date{ color:#94a3b8; font-size:0.9rem; }
+    .btn-outline{ background:transparent; border:2px solid var(--comm-color); color:var(--comm-color); padding:0.45rem 0.8rem; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem; }
+    .back-row{ margin-bottom:0.8rem; }
+    @media (max-width:800px){ .comm-item{ flex-direction:column; } }
+</style>
+
+<div class="page-wrap">
+    <div class="back-row">
+        <a href="javascript:history.back()" class="btn-outline">← Retour</a>
+        <a href="{% url 'core:communications_export_pdf' %}" class="btn-outline" style="margin-left:0.6rem;">Exporter PDF</a>
+    </div>
+
+    <div class="comm-list-card">
+        <h1 style="margin-top:0;">Communications envoyées par les élèves</h1>
+        {% if communications %}
+            <div>
+                {% for c in communications %}
+                    <div class="comm-item">
+                        <div style="flex:1;min-width:220px;">
+                            <div class="comm-meta">{{ c.eleve.user.get_full_name }}</div>
+                            <div class="comm-date">{{ c.classe.nom }} — {{ c.date_submitted|date:'d/m/Y H:i' }}</div>
+                        </div>
+                        <div style="flex:2;">
+                            {% if c.image %}
+                                <img src="{{ c.image.url }}" style="max-width:100%;border-radius:8px;display:block;margin-bottom:0.5rem;"/>
+                            {% endif %}
+                            <div style="color:#6c757d;">{{ c.texte|linebreaksbr }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">Aucune communication pour le moment.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

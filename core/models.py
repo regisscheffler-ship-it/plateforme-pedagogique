@@ -400,6 +400,25 @@ class Notification(models.Model):
         ordering = ['-date_creation']
 
 
+# =====================================================
+# COMMUNICATIONS ÉLÈVE → PROFESSEUR
+# =====================================================
+class Communication(models.Model):
+    eleve = models.ForeignKey(ProfilUtilisateur, on_delete=models.CASCADE, related_name='communications')
+    classe = models.ForeignKey(Classe, on_delete=models.CASCADE, related_name='communications')
+    image = models.ImageField(upload_to='communications/', null=True, blank=True)
+    annotation_data = models.TextField(blank=True, null=True, help_text="JSON ou SVG de l'annotation côté client")
+    texte = models.TextField(blank=True)
+    date_submitted = models.DateTimeField(auto_now_add=True)
+    statut = models.CharField(max_length=30, default='nouveau')
+
+    class Meta:
+        ordering = ['-date_submitted']
+
+    def __str__(self):
+        return f"Communication de {self.eleve.user.get_full_name()} ({self.classe})"
+
+
 
 # =====================================================
 # ARCHIVE

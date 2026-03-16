@@ -165,6 +165,11 @@ urlpatterns = [
     path('travaux/<int:pk>/corriger/',        views.corriger_rendu,    name='corriger_rendu'),
     path('travaux/<int:pk>/marquer-corrige/', views.marquer_corrige,   name='marquer_corrige'),
 
+    # COMMUNICATIONS (ÉLÈVE → PROFESSEUR)
+    path('communication/creer/',              views.communication_create, name='communication_create'),
+    path('communications/',                   views.communications_list,  name='communications_list'),
+    path('communications/export-pdf/',        views.communications_export_pdf, name='communications_export_pdf'),
+
     # ═══════════════════════════════════════
     # NOTIFICATIONS
     # ═══════════════════════════════════════
@@ -229,6 +234,7 @@ urlpatterns = [
     path('gestion/atelier/fichier/<int:pk>/modifier/',                views.atelier_fichier_update, name='atelier_fichier_update'),
     path('gestion/atelier/fichier/<int:pk>/supprimer/',               views.atelier_fichier_delete, name='atelier_fichier_delete'),
     path('gestion/atelier/fichier/<int:pk>/toggle-visibilite/',       views.atelier_fichier_toggle_visibilite, name='atelier_fichier_toggle_visibilite'),
+    path('ateliers/fichier/<int:pk>/telecharger/',                    views.atelier_fichier_download, name='atelier_fichier_download'),
 
     # ═══════════════════════════════════════
     # MODES OPÉRATOIRES
