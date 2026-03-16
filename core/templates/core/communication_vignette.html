@@ -45,9 +45,9 @@
                 </div>
                 <div style="margin-top:0.6rem; position:relative;">
                     <div style="position:relative;width:100%;">
-                        <img id="comm-preview" alt="Aperçu photo" style="display:none;width:100%;border-radius:8px;object-fit:contain;background:#fff;" />
-                        <canvas id="comm-bg" width="640" height="480" style="width:100%;height:auto;display:block;border-radius:8px;background:#fff;"></canvas>
-                        <canvas id="comm-canvas" width="640" height="480" style="position:absolute;left:0;top:0;border-radius:8px;pointer-events:auto;width:100%;height:100%;"></canvas>
+                        <img id="comm-preview" alt="Aperçu photo" style="display:none;position:absolute;left:0;top:0;width:100%;height:100%;border-radius:8px;object-fit:contain;background:#fff;pointer-events:none;z-index:0;" />
+                        <canvas id="comm-bg" width="640" height="480" style="position:relative;z-index:0;width:100%;height:auto;display:block;border-radius:8px;background:#fff;"></canvas>
+                        <canvas id="comm-canvas" width="640" height="480" style="position:absolute;left:0;top:0;border-radius:8px;pointer-events:auto;width:100%;height:100%;z-index:1;"></canvas>
                     </div>
                 </div>
                 <div class="comm-actions">
@@ -117,8 +117,8 @@
     const eraserBtn = document.getElementById('comm-eraser');
     eraserBtn.addEventListener('click', ()=>{ eraserMode = !eraserMode; eraserBtn.style.borderColor = eraserMode ? '#333' : ''; eraserBtn.style.color = eraserMode ? '#333' : ''; eraserBtn.textContent = eraserMode ? 'Gomme (ON)' : 'Gomme'; });
 
-    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // show preview image element for desktop users
-        previewImg.src = objUrl; previewImg.style.display = 'block'; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
+    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // preload image and draw into bg canvas (preview element is hidden to avoid overlay issues)
+        previewImg.src = objUrl; previewImg.style.display = 'none'; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
             const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale);
             bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
             // ensure CSS sizing matches pixel size so overlay aligns
@@ -136,7 +136,7 @@
             const strokesData = {{ ma_comm.annotation_data|default:'null'|safe }};
             if(strokesData){ try{ strokes = strokesData; }catch(e){ strokes = []; } }
             {% if ma_comm.image %}
-                const img = new Image(); img.onload = ()=>{ const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale); bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h; bgCanvas.style.width = bgCanvas.width + 'px'; bgCanvas.style.height = bgCanvas.height + 'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; previewImg.src='{{ ma_comm.image.url }}'; previewImg.style.display='block'; currentBg = img; drawBg(img); redraw(); }; img.crossOrigin = 'anonymous'; img.src='{{ ma_comm.image.url }}';
+                const img = new Image(); img.onload = ()=>{ const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale); bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h; bgCanvas.style.width = bgCanvas.width + 'px'; bgCanvas.style.height = bgCanvas.height + 'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; previewImg.src='{{ ma_comm.image.url }}'; previewImg.style.display='none'; currentBg = img; drawBg(img); redraw(); }; img.crossOrigin = 'anonymous'; img.src='{{ ma_comm.image.url }}';
             {% else %}
                 redraw();
             {% endif %}
