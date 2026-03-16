@@ -207,6 +207,10 @@
     .btn-telecharger  { color: #059669; }
     .btn-telecharger:hover { background: #059669; color: white; box-shadow: 0 4px 12px rgba(5,150,105,0.25); }
 
+    /* Voir (view-only) button */
+    .btn-voir { color: #0d6efd; }
+    .btn-voir:hover { background: #0d6efd; color: white; box-shadow: 0 4px 12px rgba(13,110,253,0.25); }
+
     .btn-corriger     { color: #007bff; }
     .btn-corriger:hover { background: #007bff; color: white; box-shadow: 0 4px 12px rgba(0,123,255,0.25); }
 
@@ -305,9 +309,9 @@
 
                 <div class="rendu-actions">
                     {% if rendu.fichier_rendu %}
-                        <a href="{{ rendu.fichier_rendu.url }}" class="btn-action btn-telecharger" download>
-                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Télécharger
+                        <a href="{{ rendu.fichier_rendu.url }}" class="btn-action btn-voir" target="_blank" rel="noopener noreferrer">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            Voir
                         </a>
                     {% else %}
                         <span class="btn-action btn-disabled">
