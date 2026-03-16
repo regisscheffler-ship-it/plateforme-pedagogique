@@ -121,8 +121,9 @@
     const eraserBtn = document.getElementById('comm-eraser');
     eraserBtn.addEventListener('click', ()=>{ eraserMode = !eraserMode; eraserBtn.style.borderColor = eraserMode ? '#333' : ''; eraserBtn.style.color = eraserMode ? '#333' : ''; eraserBtn.textContent = eraserMode ? 'Gomme (ON)' : 'Gomme'; });
 
-    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // preload image and draw into bg canvas (preview element is hidden to avoid overlay issues)
-        previewImg.src = objUrl; previewImg.style.display = 'none'; removeInput.value = '0'; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
+    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // preload image and draw into bg canvas
+        console.log('comm: file selected', f && f.name);
+        previewImg.src = objUrl; previewImg.style.display = 'block'; previewImg.style.zIndex = '0'; previewImg.style.pointerEvents = 'none'; removeInput.value = '0'; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
             const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale);
             bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
                 img.onerror = ()=>{ console.warn('Preview image failed to load (desktop file).'); const w=640, h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = w+'px'; bgCanvas.style.height = h+'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } currentBg = null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); URL.revokeObjectURL(objUrl); };
@@ -131,7 +132,9 @@
             canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height;
             // ensure parent container has explicit height so absolute canvases are visible
             const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; }
-            currentBg = img; drawBg(img); redraw(); }; img.src = objUrl; });
+            currentBg = img; drawBg(img); redraw(); console.log('comm: image drawn', w, h); try{ URL.revokeObjectURL(objUrl); }catch(e){} };
+        img.onerror = ()=>{ console.warn('comm: preview image failed to load (desktop file).'); const w=640, h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = w+'px'; bgCanvas.style.height = h+'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } currentBg = null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); try{ URL.revokeObjectURL(objUrl); }catch(e){} };
+        img.src = objUrl; });
 
     // buttons to open camera or gallery
     takePhotoBtn.addEventListener('click', ()=>{ fileInput.setAttribute('capture','environment'); fileInput.click(); });
