@@ -145,6 +145,12 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+# Pendant les tests, éviter l'utilisation du manifest staticfiles (collectstatic
+# n'est pas exécuté dans l'environnement de test). Utiliser le storage simple.
+import sys
+if 'test' in sys.argv:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
 # ===================================================================
 # FICHIERS MEDIA — Cloudinary en prod, local en dev
 # ===================================================================

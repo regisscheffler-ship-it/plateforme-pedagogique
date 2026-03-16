@@ -70,6 +70,71 @@ def est_eleve(user):
     return hasattr(user, 'profil') and user.profil.type_utilisateur == 'eleve'
 
 
+def _render_fiche_contrat_pdf_bytes(fiche_contrat, evaluations):
+    """Génère un PDF lisible (bytes) pour une fiche_contrat et sa liste d'évaluations.
+    Utilise PyMuPDF (fitz) si disponible. Retourne None en cas d'erreur.
+    """
+    try:
+        import fitz
+    except Exception:
+        return None
+
+    try:
+        doc = fitz.open()
+        # A4 page
+        page = doc.new_page(width=595, height=842)
+
+        titre = getattr(fiche_contrat, 'titre', getattr(fiche_contrat, 'titre_tp', ''))
+        classe_nom = fiche_contrat.classe.nom if getattr(fiche_contrat, 'classe', None) else ''
+        createur = fiche_contrat.createur.get_full_name() if getattr(fiche_contrat, 'createur', None) else ''
+        date_creation = fiche_contrat.date_creation.isoformat() if getattr(fiche_contrat, 'date_creation', None) else ''
+
+        header = f"{titre}\nClasse: {classe_nom}\nCréateur: {createur}\nDate: {date_creation}\n\n"
+        # Header box
+        try:
+            page.insert_textbox(fitz.Rect(50, 50, 545, 140), header, fontsize=14, fontname="helv", align=0)
+        except Exception:
+            page.insert_text((50, 50), header, fontsize=14)
+
+        # Body: consigne, problématique, savoirs associés
+        body_parts = []
+        if getattr(fiche_contrat, 'consigne', None):
+            body_parts.append("Consigne:\n" + fiche_contrat.consigne + "\n\n")
+        if getattr(fiche_contrat, 'problematique', None):
+            body_parts.append("Problématique:\n" + fiche_contrat.problematique + "\n\n")
+        if getattr(fiche_contrat, 'savoirs_associes', None):
+            body_parts.append("Savoirs associés:\n" + fiche_contrat.savoirs_associes + "\n\n")
+
+        # Liste des évaluations (nom - note)
+        body_parts.append("Évaluations:\n")
+        for ev in evaluations:
+            nom = ev.eleve.user.get_full_name() if getattr(ev, 'eleve', None) and getattr(ev.eleve, 'user', None) else ''
+            note = ev.note_sur_20 if getattr(ev, 'note_sur_20', None) is not None else '\u2014'
+            body_parts.append(f"- {nom}: {note}\n")
+
+        body = "".join(body_parts)
+        try:
+            page.insert_textbox(fitz.Rect(50, 150, 545, 800), body, fontsize=11, fontname="helv", align=0)
+        except Exception:
+            page.insert_text((50, 150), body, fontsize=11)
+
+        try:
+            pdf_bytes = doc.write()
+        except Exception:
+            try:
+                pdf_bytes = doc.tobytes()
+            except Exception:
+                pdf_bytes = None
+        doc.close()
+        return pdf_bytes
+    except Exception:
+        try:
+            doc.close()
+        except Exception:
+            pass
+        return None
+
+
 @login_required
 @user_passes_test(est_professeur)
 def fiche_revision_update(request, pk):
@@ -1450,33 +1515,88 @@ def archives_export(request):
                 'createur': archive.createur.get_full_name() if archive.createur else None,
                 'date_creation': archive.date_creation.isoformat() if archive.date_creation else None,
             }
+            # Déterminer la classe cible pour cet archive (par défaut Sans_classe)
+            safe_classe = 'Sans_classe'
+            # Tentative: extraire fiche_contrat_id pour associer la classe
+            try:
+                if archive.description and 'fiche_contrat_id:' in archive.description:
+                    part_try = archive.description.split('fiche_contrat_id:')[1].split('|')[0].strip()
+                    fc_try = int(part_try)
+                    fc_obj_try = FicheContrat.objects.filter(id=fc_try).first()
+                    if fc_obj_try and fc_obj_try.classe:
+                        safe_classe = fc_obj_try.classe.nom.replace(' ', '_')
+            except Exception:
+                pass
+
             # Inclure le fichier si présent
             if archive.fichier:
                 try:
                     filename = os.path.basename(archive.fichier.name)
-                    arcname = f'files/{idx}_{filename}'
+                    # Placer dans <Classe>/<categorie>/
+                    cat = archive.categorie or 'autre'
+                    arc_folder = f"{safe_classe}/{cat}"
                     # Essayez d'ouvrir via storage
                     try:
                         with archive.fichier.open('rb') as fh:
                             data = fh.read()
-                            z.writestr(arcname, data)
                     except Exception:
                         # Fallback sur path si disponible
                         try:
                             with open(archive.fichier.path, 'rb') as fh:
-                                z.writestr(arcname, fh.read())
+                                data = fh.read()
+                        except Exception:
+                            data = None
+                    if data:
+                        # Si déjà PDF, laisser tel quel
+                        lower = filename.lower()
+                        try:
+                            if data[:4] == b'%PDF':
+                                out_name = f"{arc_folder}/{idx}_{os.path.splitext(filename)[0]}.pdf"
+                                z.writestr(out_name, data)
+                            elif lower.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                                try:
+                                    import fitz
+                                    img_stream = data
+                                    doc_img = fitz.open()
+                                    # Créer page à taille de l'image
+                                    img = fitz.Pixmap(fitz.open('png' if lower.endswith('.png') else 'jpeg', img_stream))
+                                    rect = fitz.Rect(0, 0, img.width, img.height)
+                                    page = doc_img.new_page(width=img.width, height=img.height)
+                                    page.insert_image(rect, stream=img_stream)
+                                    try:
+                                        pdf_bytes = doc_img.write()
+                                    except Exception:
+                                        try:
+                                            pdf_bytes = doc_img.tobytes()
+                                        except Exception:
+                                            pdf_bytes = None
+                                    doc_img.close()
+                                    if pdf_bytes:
+                                        out_name = f"{arc_folder}/{idx}_{os.path.splitext(filename)[0]}.pdf"
+                                        z.writestr(out_name, pdf_bytes)
+                                    else:
+                                        # fallback: write original file
+                                        out_name = f"{arc_folder}/{idx}_{filename}"
+                                        z.writestr(out_name, data)
+                                except Exception:
+                                    out_name = f"{arc_folder}/{idx}_{filename}"
+                                    z.writestr(out_name, data)
+                            else:
+                                # Autres types: on essaye d'inclure tel quel (métadonnées indiquent non-PDF)
+                                out_name = f"{arc_folder}/{idx}_{filename}"
+                                z.writestr(out_name, data)
                         except Exception:
                             meta['fichier_inclus'] = False
                             meta['fichier_nom'] = archive.fichier.name
-                    else:
-                        meta['fichier_inclus'] = True
-                        meta['fichier_nom'] = arcname
+                        else:
+                            meta['fichier_inclus'] = True
+                            meta['fichier_nom'] = out_name
                 except Exception:
                     meta['fichier_inclus'] = False
             else:
                 meta['fichier_inclus'] = False
 
-            # Si la description référence une fiche_contrat ou un qcm, joindre leur JSON
+            # Si la description référence une fiche_contrat ou un qcm, joindre leur export.
             if archive.description and 'fiche_contrat_id:' in archive.description:
                 try:
                     part = archive.description.split('fiche_contrat_id:')[1].split('|')[0].strip()
@@ -1486,16 +1606,47 @@ def archives_export(request):
                         # Sérialisation simplifiée
                         fc_data = {
                             'id': fc.id,
-                            'titre': fc.titre,
+                            'titre': getattr(fc, 'titre', getattr(fc, 'titre_tp', '')),
                             'createur': fc.createur.get_full_name() if fc.createur else None,
                         }
-                        z.writestr(f'data/fiche_contrat_{fc.id}.json', json.dumps(fc_data, ensure_ascii=False, indent=2))
-                        # Evaluations liées
-                        evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
-                        ev_list = []
-                        for ev in evs:
-                            ev_list.append({'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20})
-                        z.writestr(f'data/fiche_evaluations_{fc.id}.json', json.dumps(ev_list, ensure_ascii=False, indent=2))
+                        # Organiser par dossier de classe dans le ZIP
+                        classe_nom = fc.classe.nom if fc.classe else 'Sans_classe'
+                        safe_classe = classe_nom.replace(' ', '_')
+                        # Tentative de générer un PDF résumé via PyMuPDF (si disponible)
+                        try:
+                            import fitz
+                            doc = fitz.open()
+                            page = doc.new_page()
+                            ftitre = getattr(fc, 'titre', getattr(fc, 'titre_tp', ''))
+                            header = f"Fiche contrat: {ftitre}\nClasse: {classe_nom}\nCreateur: {fc.createur.get_full_name() if fc.createur else ''}\n\n"
+                            evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
+                            body = json.dumps({
+                                'fiche': fc_data,
+                                'evaluations': [
+                                    {'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20}
+                                    for ev in evs
+                                ]
+                            }, ensure_ascii=False, indent=2)
+                            # Générer un PDF plus lisible via le helper
+                            evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
+                            pdf_bytes = _render_fiche_contrat_pdf_bytes(fc, evs)
+                            if pdf_bytes:
+                                z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.pdf', pdf_bytes)
+                            else:
+                                # Fallback JSON
+                                ev_list = []
+                                for ev in evs:
+                                    ev_list.append({'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20})
+                                z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.json', json.dumps(fc_data, ensure_ascii=False, indent=2))
+                                z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluations_{fc.id}.json', json.dumps(ev_list, ensure_ascii=False, indent=2))
+                        except Exception:
+                            # Si PyMuPDF absent ou erreur, écrire JSON dans le dossier de la classe
+                            evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
+                            ev_list = []
+                            for ev in evs:
+                                ev_list.append({'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20})
+                            z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.json', json.dumps(fc_data, ensure_ascii=False, indent=2))
+                            z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluations_{fc.id}.json', json.dumps(ev_list, ensure_ascii=False, indent=2))
                         meta['fiche_contrat_inclus'] = True
                         meta['fiche_contrat_id'] = fc.id
                     except FicheContrat.DoesNotExist:
@@ -2443,6 +2594,13 @@ def atelier_update(request, pk):
         atelier.titre = request.POST.get('titre')
         atelier.description = request.POST.get('description', '')
         atelier.visible_eleves = request.POST.get('visible_eleves') == 'on'
+        # Permettre de changer la classe associée à l'atelier
+        classe_id = request.POST.get('classe')
+        if classe_id:
+            try:
+                atelier.classe = Classe.objects.get(id=classe_id)
+            except Classe.DoesNotExist:
+                pass
         atelier.save()
         messages.success(request, '✅ Atelier modifié !')
         return redirect('core:gestion_ateliers')
@@ -2973,8 +3131,17 @@ def evaluations_home(request):
         createur=request.user, actif=False
     ).order_by('-date_modification')
     nb_fiches_contrat = fiches_actives.count()
-    nb_evaluations = FicheEvaluation.objects.filter(fiche_contrat__createur=request.user).count()
-    nb_validees = FicheEvaluation.objects.filter(fiche_contrat__createur=request.user, validee=True).count()
+    # Compter une évaluation par fiche-contrat (indépendamment du nombre d'élèves)
+    nb_evaluations = nb_fiches_contrat
+    # Compter les fiches-contrat entièrement validées (toutes les évaluations élèves validées)
+    nb_validees = 0
+    for fc in fiches_actives:
+        total_ev = FicheEvaluation.objects.filter(fiche_contrat=fc).count()
+        if total_ev == 0:
+            continue
+        validees = FicheEvaluation.objects.filter(fiche_contrat=fc, validee=True).count()
+        if validees >= total_ev:
+            nb_validees += 1
     qcms = QCM.objects.annotate(nb_questions=Count('questions')).select_related('theme', 'classe').order_by('-date_creation')
     return render(request, 'core/evaluations_home.html', {
         'nb_fiches_contrat': nb_fiches_contrat,
@@ -3795,7 +3962,9 @@ def fiche_revision_create(request, dossier_id):
 def fiche_revision_detail(request, pk):
     fiche = get_object_or_404(FicheRevision, id=pk)
     if hasattr(request.user, 'profil') and request.user.profil.est_eleve():
-        if fiche.theme.classe != request.user.profil.classe:
+        classe_eleve = request.user.profil.classe
+        # La fiche est liée à un dossier -> thème -> classes. Vérifier l'appartenance de la classe.
+        if not classe_eleve or not fiche.dossier or not fiche.dossier.theme.classes.filter(pk=classe_eleve.id).exists():
             messages.error(request, "❌ Vous n'avez pas accès à cette fiche.")
             return redirect('core:dashboard_eleve')
     cartes = fiche.cartes.all()
