@@ -17,7 +17,7 @@
 
 <div class="page-wrap">
     <div class="back-row">
-        <a href="javascript:history.back()" class="btn-outline">← Retour</a>
+        <a href="{% url 'core:dashboard_professeur' %}" class="btn-outline">← Retour au tableau</a>
         <a href="{% url 'core:communications_export_pdf' %}" class="btn-outline" style="margin-left:0.6rem;">Exporter PDF</a>
     </div>
 
@@ -36,6 +36,12 @@
                                 <img src="{{ c.image.url }}" style="max-width:100%;border-radius:8px;display:block;margin-bottom:0.5rem;"/>
                             {% endif %}
                             <div style="color:#6c757d;">{{ c.texte|linebreaksbr }}</div>
+                            <div style="margin-top:0.6rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                {% if c.image %}
+                                    <a href="{{ c.image.url }}" target="_blank" class="btn-outline">Consulter</a>
+                                    <a href="{{ c.image.url }}" download class="btn-outline">Télécharger</a>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
