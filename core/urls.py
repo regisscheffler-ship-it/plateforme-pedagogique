@@ -259,4 +259,5 @@ urlpatterns = [
     path('assistant/query/',   views.assistant_ia_query, name='assistant_ia_query'),
     path('assistant/tts/', views.assistant_tts, name='assistant_tts'),
     path('keepalive/', views.keepalive, name='keepalive'),
+    path('health/', views.health, name='health'),
 ]

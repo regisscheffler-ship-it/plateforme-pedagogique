@@ -73,6 +73,11 @@ def keepalive(request):
         cursor.execute("SELECT 1")
     return JsonResponse({'status': 'ok'})
 
+
+def health(request):
+    """Simple health endpoint returning 200 without DB dependency."""
+    return HttpResponse('ok', status=200)
+
 def est_eleve(user):
     return hasattr(user, 'profil') and user.profil.type_utilisateur == 'eleve'
 
