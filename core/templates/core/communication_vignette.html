@@ -140,12 +140,26 @@
     takePhotoBtn.addEventListener('click', ()=>{ fileInput.setAttribute('capture','environment'); fileInput.click(); });
     choosePhotoBtn.addEventListener('click', ()=>{ fileInput.removeAttribute('capture'); fileInput.click(); });
     removeBtn.addEventListener('click', ()=>{
-        // clear any loaded image and mark for removal
+        // clear any loaded image locally
         try{ previewImg.src=''; previewImg.style.display='none'; }catch(e){}
         currentBg = null;
         bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
         removeInput.value = '1';
         redraw();
+        // send AJAX request to delete server-side image immediately
+        try{
+            const fd = new FormData();
+            fd.append('remove_image', '1');
+            fd.append('annotation_data', JSON.stringify(strokes || []));
+            fd.append('texte', document.getElementById('texte').value || '');
+            const csrf = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+            fetch('{% url "core:communication_create" %}', { method: 'POST', body: fd, headers: { 'X-CSRFToken': csrf } })
+            .then(r=>{
+                if(r.redirected){ window.location = r.url; }
+                else if(r.ok){ window.location = '{% url "core:dashboard_eleve" %}'; }
+                else { r.text().then(t=>alert('Erreur suppression: '+t)); }
+            }).catch(e=>{ console.warn('Erreur réseau suppression:', e); alert('Erreur réseau lors de la suppression.'); });
+        }catch(e){ console.warn('Suppression non envoyée', e); }
     });
 
     // charger annotations et image existantes si fournies par le serveur
