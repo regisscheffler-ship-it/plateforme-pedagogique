@@ -38,7 +38,7 @@
                             <div style="color:#6c757d;">{{ c.texte|linebreaksbr }}</div>
                             <div style="margin-top:0.6rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
                                 {% if c.image %}
-                                    <a href="{{ c.image.url }}" target="_blank" class="btn-outline">Consulter</a>
+                                    <button type="button" class="btn-outline consult-btn" data-img-url="{{ c.image.url }}" data-texte="{{ c.texte|escapejs }}">Consulter</button>
                                     <a href="{{ c.image.url }}" download class="btn-outline">Télécharger</a>
                                 {% endif %}
                             </div>
@@ -53,3 +53,39 @@
 </div>
 
 {% endblock %}
+
+    <!-- Modal for viewing communication image -->
+    <div id="comm-modal" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);">
+        <div style="background:white;border-radius:12px;max-width:920px;width:95%;max-height:90vh;overflow:auto;padding:1rem;position:relative;">
+            <button id="comm-modal-close" style="position:absolute;right:12px;top:12px;border:none;background:transparent;font-size:1.2rem;cursor:pointer;">✕</button>
+            <div id="comm-modal-body">
+                <img id="comm-modal-img" src="" alt="Communication image" style="max-width:100%;display:block;border-radius:8px;margin-bottom:0.6rem;"/>
+                <div id="comm-modal-text" style="color:#374151;white-space:pre-wrap;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const modal = document.getElementById('comm-modal');
+        const modalImg = document.getElementById('comm-modal-img');
+        const modalText = document.getElementById('comm-modal-text');
+        const closeBtn = document.getElementById('comm-modal-close');
+
+        document.querySelectorAll('.consult-btn').forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+                const url = btn.getAttribute('data-img-url');
+                const texte = btn.getAttribute('data-texte') || '';
+                modalImg.src = url;
+                modalText.textContent = texte;
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        function closeModal(){ modal.style.display='none'; modalImg.src=''; modalText.textContent=''; document.body.style.overflow=''; }
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+        document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
+    });
+    </script>
