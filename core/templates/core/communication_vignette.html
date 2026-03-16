@@ -43,8 +43,11 @@
                     <button type="button" id="take-photo" class="comm-btn">Prendre une photo</button>
                     <button type="button" id="choose-photo" class="comm-btn">Choisir une photo</button>
                 </div>
-                <div style="margin-top:0.6rem;">
-                    <canvas id="comm-canvas" width="640" height="480" style="max-width:100%;"></canvas>
+                <div style="margin-top:0.6rem; position:relative;">
+                    <div style="position:relative;width:100%;">
+                        <canvas id="comm-bg" width="640" height="480" style="width:100%;height:auto;display:block;border-radius:8px;background:#fff;"></canvas>
+                        <canvas id="comm-canvas" width="640" height="480" style="position:absolute;left:0;top:0;border-radius:8px;pointer-events:auto;width:100%;height:100%;"></canvas>
+                    </div>
                 </div>
                 <div class="comm-actions">
                     <label style="display:flex;align-items:center;gap:0.4rem;">
@@ -75,6 +78,8 @@
     const fileInput = document.getElementById('image');
     const takePhotoBtn = document.getElementById('take-photo');
     const choosePhotoBtn = document.getElementById('choose-photo');
+    const bgCanvas = document.getElementById('comm-bg');
+    const bgCtx = bgCanvas.getContext('2d');
     const canvas = document.getElementById('comm-canvas');
     const ctx = canvas.getContext('2d');
     const colorInput = document.getElementById('pen-color');
@@ -91,26 +96,29 @@
 
     function drawStroke(points, color, size, mode){ if(points.length<2) return; ctx.save(); if(mode==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='rgba(0,0,0,1)'; } else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle=color; } ctx.lineWidth=size; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y); for(let i=1;i<points.length;i++){ ctx.lineTo(points[i].x,points[i].y); } ctx.stroke(); ctx.restore(); }
 
-    function redraw(){ ctx.clearRect(0,0,canvas.width,canvas.height); if(currentBg) drawBg(currentBg); strokes.forEach(s=>drawStroke(s.points,s.color,s.size,s.mode||'pen')); }
+    function redraw(){ ctx.clearRect(0,0,canvas.width,canvas.height); strokes.forEach(s=>drawStroke(s.points,s.color,s.size,s.mode||'pen')); }
 
-    function drawBg(img){ const iw=img.width, ih=img.height, cw=canvas.width, ch=canvas.height; const scale=Math.max(cw/iw, ch/ih); const w=iw*scale, h=ih*scale; const x=(cw-w)/2, y=(ch-h)/2; ctx.drawImage(img,x,y,w,h); }
+    function drawBg(img){ const iw=img.width, ih=img.height, cw=bgCanvas.width, ch=bgCanvas.height; const scale=Math.max(cw/iw, ch/ih); const w=iw*scale, h=ih*scale; const x=(cw-w)/2, y=(ch-h)/2; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); bgCtx.drawImage(img,x,y,w,h); }
 
-    function getPos(e){ const r=canvas.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top; const rx = x * (canvas.width / r.width); const ry = y * (canvas.height / r.height); return {x:rx,y:ry}; }
+    function getPos(e){ const r=canvas.getBoundingClientRect(); const touch = e.touches ? e.touches[0] : null; const clientX = touch ? touch.clientX : e.clientX; const clientY = touch ? touch.clientY : e.clientY; const x=clientX - r.left; const y=clientY - r.top; const rx = x * (canvas.width / r.width); const ry = y * (canvas.height / r.height); return {x:rx,y:ry}; }
 
     canvas.addEventListener('mousedown', (e)=>{ drawing=true; currentStroke={points:[getPos(e)], color:colorInput.value, size:parseInt(sizeInput.value), mode: eraserMode ? 'eraser' : 'pen'}; });
     canvas.addEventListener('touchstart', (e)=>{ drawing=true; currentStroke={points:[getPos(e)], color:colorInput.value, size:parseInt(sizeInput.value), mode: eraserMode ? 'eraser' : 'pen'}; e.preventDefault(); });
-    window.addEventListener('mouseup', ()=>{ if(drawing){ drawing=false; strokes.push(currentStroke); currentStroke=null; } });
-    window.addEventListener('touchend', ()=>{ if(drawing){ drawing=false; strokes.push(currentStroke); currentStroke=null; } });
+    window.addEventListener('mouseup', ()=>{ if(drawing){ drawing=false; strokes.push(currentStroke); currentStroke=null; redraw(); } });
+    window.addEventListener('touchend', ()=>{ if(drawing){ drawing=false; strokes.push(currentStroke); currentStroke=null; redraw(); } });
     canvas.addEventListener('mousemove', (e)=>{ if(!drawing) return; const p=getPos(e); currentStroke.points.push(p); drawStroke(currentStroke.points.slice(-2), currentStroke.color, currentStroke.size, currentStroke.mode); });
     canvas.addEventListener('touchmove', (e)=>{ if(!drawing) return; const p=getPos(e); currentStroke.points.push(p); drawStroke(currentStroke.points.slice(-2), currentStroke.color, currentStroke.size, currentStroke.mode); e.preventDefault(); });
 
-    undoBtn.addEventListener('click', ()=>{ strokes.pop(); redraw(); });
+    // Undo last stroke
+    undoBtn.addEventListener('click', ()=>{ if(strokes.length>0){ strokes.pop(); redraw(); } });
     clearBtn.addEventListener('click', ()=>{ strokes=[]; redraw(); });
     const eraserBtn = document.getElementById('comm-eraser');
     eraserBtn.addEventListener('click', ()=>{ eraserMode = !eraserMode; eraserBtn.style.borderColor = eraserMode ? '#333' : ''; eraserBtn.style.color = eraserMode ? '#333' : ''; eraserBtn.textContent = eraserMode ? 'Gomme (ON)' : 'Gomme'; });
 
-    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ // resize canvas keeping aspect ratio
-            const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); canvas.width=Math.round(iw*scale); canvas.height=Math.round(ih*scale); currentBg=img; redraw(); }; img.src=URL.createObjectURL(f); });
+    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
+            const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale);
+            bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
+            currentBg = img; drawBg(img); redraw(); }; img.src=URL.createObjectURL(f); });
 
     // buttons to open camera or gallery
     takePhotoBtn.addEventListener('click', ()=>{ fileInput.setAttribute('capture','environment'); fileInput.click(); });
@@ -122,7 +130,7 @@
             const strokesData = {{ ma_comm.annotation_data|default:'null'|safe }};
             if(strokesData){ try{ strokes = strokesData; }catch(e){ strokes = []; } }
             {% if ma_comm.image %}
-                const img = new Image(); img.onload = ()=>{ const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); canvas.width=Math.round(iw*scale); canvas.height=Math.round(ih*scale); currentBg = img; redraw(); }; img.src='{{ ma_comm.image.url }}';
+                const img = new Image(); img.onload = ()=>{ const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale); bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h; currentBg = img; drawBg(img); redraw(); }; img.crossOrigin = 'anonymous'; img.src='{{ ma_comm.image.url }}';
             {% else %}
                 redraw();
             {% endif %}
@@ -130,8 +138,13 @@
     {% endif %}
 
     submitBtn.addEventListener('click', ()=>{
-        // export canvas
-        canvas.toBlob((blob)=>{
+        // composite bg + overlay into an export canvas
+        const exportCanvas = document.createElement('canvas'); exportCanvas.width = Math.max(bgCanvas.width, canvas.width); exportCanvas.height = Math.max(bgCanvas.height, canvas.height); const ec = exportCanvas.getContext('2d');
+        // draw bg then overlay
+        ec.clearRect(0,0,exportCanvas.width, exportCanvas.height);
+        ec.drawImage(bgCanvas, 0, 0);
+        ec.drawImage(canvas, 0, 0);
+        exportCanvas.toBlob((blob)=>{
             if(!blob){ alert('Impossible de générer l\'image.'); return; }
             const fd=new FormData(); fd.append('texte', document.getElementById('texte').value || ''); fd.append('annotation_data', JSON.stringify(strokes)); fd.append('image', blob, 'communication.png'); const csrf=document.querySelector('input[name=csrfmiddlewaretoken]').value;
             fetch('{% url "core:communication_create" %}', { method:'POST', body:fd, headers:{ 'X-CSRFToken': csrf } }).then(r=>{ if(r.redirected) window.location=r.url; else if(r.ok) window.location='{% url "core:dashboard_eleve" %}'; else r.text().then(t=>alert('Erreur: '+t)); }).catch(e=>alert('Erreur réseau: '+e));

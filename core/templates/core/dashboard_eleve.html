@@ -303,7 +303,6 @@
     </div>
 
     <!-- ═══ 2. MES PFMP ═══ -->
-    {% include 'core/communication_vignette.html' %}
     {% if mes_pfmp %}
     <div class="pfmp-container">
         <h2 class="section-title">
@@ -659,3 +658,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 {% endblock %}
+
+{# Include communication vignette at the very bottom of the dashboard so it's reachable on mobile #}
+{% include 'core/communication_vignette.html' %}
