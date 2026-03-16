@@ -152,7 +152,22 @@
             if(strokesData){ try{ strokes = strokesData; }catch(e){ strokes = []; } }
             {% if ma_comm.image %}
                 const img = new Image(); img.onload = ()=>{ const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale); bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h; bgCanvas.style.width = bgCanvas.width + 'px'; bgCanvas.style.height = bgCanvas.height + 'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } previewImg.src='{{ ma_comm.image.url }}'; previewImg.style.display='none'; currentBg = img; drawBg(img); redraw(); }; img.crossOrigin = 'anonymous'; img.src='{{ ma_comm.image.url }}';
-                    const img = new Image(); img.onload = ()=>{ const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale); bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h; bgCanvas.style.width = bgCanvas.width + 'px'; bgCanvas.style.height = bgCanvas.height + 'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } previewImg.src='{{ ma_comm.image.url }}'; previewImg.style.display='none'; currentBg = img; drawBg(img); redraw(); }; img.crossOrigin = 'anonymous'; img.onerror = ()=>{ console.warn('Failed to load server image: {{ ma_comm.image.url }}'); const w=640,h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = w+'px'; bgCanvas.style.height = h+'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } previewImg.style.display='none'; currentBg=null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); }; img.src='{{ ma_comm.image.url }}';
+                    const img = new Image();
+                    img.onload = ()=>{
+                        const maxW=1200, maxH=900;
+                        let iw=img.width, ih=img.height;
+                        const scale=Math.min(maxW/iw, maxH/ih, 1);
+                        const w=Math.round(iw*scale);
+                        const h=Math.round(ih*scale);
+                        bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
+                        bgCanvas.style.width = bgCanvas.width + 'px'; bgCanvas.style.height = bgCanvas.height + 'px';
+                        canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height;
+                        const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; }
+                        previewImg.src='{{ ma_comm.image.url }}'; previewImg.style.display='none'; currentBg = img; drawBg(img); redraw();
+                    };
+                    img.crossOrigin = 'anonymous';
+                    img.onerror = ()=>{ console.warn('Failed to load server image: {{ ma_comm.image.url }}'); const w=640,h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = w+'px'; bgCanvas.style.height = h+'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } previewImg.style.display='none'; currentBg=null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); };
+                    img.src='{{ ma_comm.image.url }}';
             {% else %}
                 redraw();
             {% endif %}
