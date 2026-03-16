@@ -42,6 +42,7 @@
                 <div class="file-actions">
                     <button type="button" id="take-photo" class="comm-btn">Prendre une photo</button>
                     <button type="button" id="choose-photo" class="comm-btn">Choisir une photo</button>
+                    <button type="button" id="remove-photo" class="comm-btn">Supprimer la photo</button>
                 </div>
                 <div style="margin-top:0.6rem; position:relative;">
                     <div style="position:relative;width:100%;">
@@ -65,6 +66,7 @@
                 <label for="texte">Rapport du jour (court)</label>
                 <textarea id="texte" name="texte" rows="6" style="width:100%;padding:0.6rem;border-radius:8px;border:1px solid #e9ecef;"></textarea>
                 <input type="hidden" name="annotation_data" id="annotation_data" />
+                <input type="hidden" name="remove_image" id="remove_image" value="0" />
                 <div style="margin-top:0.8rem;display:flex;gap:0.6rem;align-items:center;">
                     <button id="comm-submit" class="comm-btn" type="button">Envoyer au professeur</button>
                 </div>
@@ -88,6 +90,8 @@
     const clearBtn = document.getElementById('comm-clear');
     const undoBtn = document.getElementById('comm-undo');
     const submitBtn = document.getElementById('comm-submit');
+    const removeBtn = document.getElementById('remove-photo');
+    const removeInput = document.getElementById('remove_image');
 
     let drawing = false;
     let currentStroke = null;
@@ -118,7 +122,7 @@
     eraserBtn.addEventListener('click', ()=>{ eraserMode = !eraserMode; eraserBtn.style.borderColor = eraserMode ? '#333' : ''; eraserBtn.style.color = eraserMode ? '#333' : ''; eraserBtn.textContent = eraserMode ? 'Gomme (ON)' : 'Gomme'; });
 
     fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // preload image and draw into bg canvas (preview element is hidden to avoid overlay issues)
-        previewImg.src = objUrl; previewImg.style.display = 'none'; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
+        previewImg.src = objUrl; previewImg.style.display = 'none'; removeInput.value = '0'; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
             const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale);
             bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
                 img.onerror = ()=>{ console.warn('Preview image failed to load (desktop file).'); const w=640, h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = w+'px'; bgCanvas.style.height = h+'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } currentBg = null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); URL.revokeObjectURL(objUrl); };
@@ -132,6 +136,14 @@
     // buttons to open camera or gallery
     takePhotoBtn.addEventListener('click', ()=>{ fileInput.setAttribute('capture','environment'); fileInput.click(); });
     choosePhotoBtn.addEventListener('click', ()=>{ fileInput.removeAttribute('capture'); fileInput.click(); });
+    removeBtn.addEventListener('click', ()=>{
+        // clear any loaded image and mark for removal
+        try{ previewImg.src=''; previewImg.style.display='none'; }catch(e){}
+        currentBg = null;
+        bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+        removeInput.value = '1';
+        redraw();
+    });
 
     // charger annotations et image existantes si fournies par le serveur
     {% if ma_comm %}
