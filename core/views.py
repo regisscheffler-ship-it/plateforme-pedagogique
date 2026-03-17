@@ -162,7 +162,6 @@ from .models import (
     SuiviPFMP, HistoriqueClasse,
     QCM, QuestionQCM, SessionQCM,
     ModeOperatoire, LigneModeOperatoire,
-    Communication,
 )
 import io
 import fitz
@@ -542,7 +541,6 @@ def dashboard_eleve(request):
             # n'afficher que les 6 dernières évaluations validées
             'mes_evaluations': FicheEvaluation.objects.filter(eleve=profil, validee=True).select_related('fiche_contrat').order_by('-date_validation')[:6],
             'today': date.today(),
-            'ma_comm': Communication.objects.filter(eleve=profil).order_by('-date_submitted').first(),
         }
         # QCM actifs annotés avec la session de l'élève
         sessions_map = {s.qcm_id: s for s in SessionQCM.objects.filter(qcm__classe=classe, eleve=profil, termine=True)}
@@ -563,142 +561,6 @@ def dashboard_eleve(request):
         return redirect('core:home')
 
 
-@login_required(login_url='core:login_eleve')
-def communication_create(request):
-    try:
-        profil = request.user.profil
-    except ProfilUtilisateur.DoesNotExist:
-        return HttpResponse(status=403)
-    if profil.est_prof():
-        return HttpResponse(status=403)
-    if request.method != 'POST':
-        return HttpResponse(status=405)
-    texte = request.POST.get('texte', '').strip()
-    annotation_data = request.POST.get('annotation_data', '')
-    remove_image_flag = request.POST.get('remove_image', '0') == '1'
-    image = request.FILES.get('image')
-    if not profil.classe:
-        messages.error(request, '⚠️ Vous devez être assigné à une classe pour envoyer une communication.')
-        return redirect('core:dashboard_eleve')
-    with transaction.atomic():
-        # trouver professeurs référents pour la classe
-        prof_ids = list(TravailARendre.objects.filter(classe=profil.classe).values_list('createur', flat=True).distinct())
-        if prof_ids:
-            prof_users = User.objects.filter(id__in=prof_ids)
-        else:
-            prof_users = User.objects.filter(profil__type_utilisateur='professeur')
-
-        # créer (ou récupérer) un travail 'Communications' pour que les profs le voient dans travaux_corriger
-        creator = prof_users.first() if prof_users.exists() else None
-        titre_travail = f"Communications élèves - {profil.classe.nom}"
-        if creator:
-            travail, _ = TravailARendre.objects.get_or_create(
-                classe=profil.classe,
-                titre=titre_travail,
-                defaults={
-                    'description': 'Communications envoyées par les élèves',
-                    'date_limite': timezone.now() + timedelta(days=3650),
-                    'createur': creator,
-                    'actif': True,
-                }
-            )
-        else:
-            # fallback: créer avec le premier user professeur or admin
-            fallback_creator = User.objects.filter(is_superuser=True).first()
-            travail, _ = TravailARendre.objects.get_or_create(
-                classe=profil.classe,
-                titre=titre_travail,
-                defaults={
-                    'description': 'Communications envoyées par les élèves',
-                    'date_limite': timezone.now() + timedelta(days=3650),
-                    'createur': fallback_creator or request.user,
-                    'actif': True,
-                }
-            )
-
-        # si le flag remove_image est envoyé (et aucune nouvelle image), supprimer l'image
-        rendu = None
-        if remove_image_flag and not image:
-            last_comm = Communication.objects.filter(eleve=profil).order_by('-date_submitted').first()
-            if last_comm and last_comm.image:
-                try:
-                    last_comm.image.delete(save=False)
-                except Exception:
-                    pass
-                last_comm.image = None
-                # mettre à jour texte/annotation si fournis
-                if annotation_data:
-                    last_comm.annotation_data = annotation_data
-                if texte:
-                    last_comm.texte = texte
-                last_comm.save()
-                messages.success(request, '✅ Photo supprimée de votre dernière communication.')
-                return redirect('core:dashboard_eleve')
-
-        # si une image est fournie, créer/update un rendu élève pour ce travail
-        if image:
-            # update_or_create le rendu
-            rendu, created = RenduEleve.objects.update_or_create(
-                travail=travail,
-                eleve=profil,
-                defaults={'commentaire': texte, 'rendu': True, 'date_rendu': timezone.now()},
-            )
-            # enregistrer le fichier rendu
-            # use a unique name
-            filename = f'communication_{profil.id}_{int(datetime.timestamp(timezone.now()))}.png'
-            rendu.fichier_rendu.save(filename, image, save=True)
-
-        # créer l'entité Communication (garde des métadonnées + image)
-        comm = Communication.objects.create(
-            eleve=profil,
-            classe=profil.classe,
-            image=(rendu.fichier_rendu if rendu else image),
-            annotation_data=annotation_data or None,
-            texte=texte,
-        )
-
-        # notifications aux professeurs
-        for u in prof_users:
-            Notification.objects.create(
-                destinataire=u,
-                titre='Nouvelle communication élève',
-                message=f"Nouvelle communication de {profil.user.get_full_name()} ({profil.classe.nom}).",
-                type_notification='communication',
-                lien=reverse('core:travaux_corriger')
-            )
-    messages.success(request, '✅ Communication envoyée à votre professeur.')
-    return redirect('core:dashboard_eleve')
-
-
-@login_required
-@user_passes_test(est_professeur)
-def communications_list(request):
-    classes_ids = TravailARendre.objects.filter(createur=request.user).values_list('classe_id', flat=True).distinct()
-    if classes_ids:
-        comms = Communication.objects.filter(classe_id__in=classes_ids).select_related('eleve__user')
-    else:
-        comms = Communication.objects.all().select_related('eleve__user')
-    return render(request, 'core/communications_list.html', {'communications': comms})
-
-
-@login_required
-@user_passes_test(est_professeur)
-def communications_export_pdf(request):
-    classes_ids = TravailARendre.objects.filter(createur=request.user).values_list('classe_id', flat=True).distinct()
-    if classes_ids:
-        comms = Communication.objects.filter(classe_id__in=classes_ids).select_related('eleve__user').order_by('-date_submitted')
-    else:
-        comms = Communication.objects.all().select_related('eleve__user').order_by('-date_submitted')
-
-    doc = fitz.open()
-    for c in comms:
-        # page with image (if any)
-        if c.image:
-            try:
-                c.image.open()
-                img_bytes = c.image.read()
-                c.image.close()
-                # load with PIL to get size and convert
                 pil = Image.open(io.BytesIO(img_bytes)).convert('RGB')
                 w, h = pil.size
                 # create page sized to image (limit to A4 width)
