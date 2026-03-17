@@ -1,4 +1,5 @@
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 import base64
 from django.core.files.base import ContentFile
 # ── VUE ÉLÈVE : liste ses messages + formulaire envoi ──
