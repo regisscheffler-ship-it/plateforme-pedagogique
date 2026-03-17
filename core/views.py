@@ -1,3 +1,123 @@
+from django.views.decorators.http import require_POST
+import base64
+from django.core.files.base import ContentFile
+# ── VUE ÉLÈVE : liste ses messages + formulaire envoi ──
+@login_required
+def communication_eleve(request):
+    """Page principale communication côté élève"""
+    profil = request.user.profil
+    if profil.type_utilisateur != 'eleve':
+        return redirect('core:dashboard')
+    
+    # Trouve le prof principal de la classe de l'élève
+    classe = profil.classe
+    professeur = ProfilUtilisateur.objects.filter(
+        type_utilisateur='professeur'
+    ).first()
+    
+    messages_liste = MessageEleve.objects.filter(
+        eleve=profil
+    ).prefetch_related('reponses').order_by('-date_envoi')
+    
+    if request.method == 'POST':
+        texte = request.POST.get('texte', '').strip()
+        image_annotee_data = request.POST.get('image_annotee_data', '')
+        image_fichier = request.FILES.get('image')
+        
+        if not texte and not image_fichier and not image_annotee_data:
+            messages.error(request, 'Veuillez ajouter un message ou une image.')
+            return redirect('core:communication_eleve')
+        
+        msg = MessageEleve(eleve=profil, professeur=professeur)
+        msg.texte = texte
+        
+        # Image originale uploadée
+        if image_fichier:
+            msg.image = image_fichier
+        
+        # Image annotée (canvas base64 → fichier)
+        if image_annotee_data and image_annotee_data.startswith('data:image'):
+            format, imgstr = image_annotee_data.split(';base64,')
+            ext = format.split('/')[-1]
+            nom_fichier = f"annotation_{profil.id}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
+            msg.image_annotee = ContentFile(
+                base64.b64decode(imgstr),
+                name=nom_fichier
+            )
+        
+        msg.save()
+        messages.success(request, 'Message envoyé au professeur !')
+        return redirect('core:communication_eleve')
+    
+    context = {
+        'messages_liste': messages_liste,
+        'professeur': professeur,
+    }
+    return render(request, 'core/communication_eleve.html', context)
+
+
+# ── VUE PROF : boîte de réception ──
+@login_required
+def communication_prof(request):
+    """Page principale communication côté professeur"""
+    profil = request.user.profil
+    if profil.type_utilisateur != 'professeur':
+        return redirect('core:dashboard')
+    
+    messages_liste = MessageEleve.objects.filter(
+        professeur=profil
+    ).prefetch_related('reponses', 'eleve__user').order_by('-date_envoi')
+    
+    # Marquer comme lus les messages affichés
+    messages_liste.filter(lu=False).update(lu=True)
+    
+    nb_non_lus = MessageEleve.objects.filter(
+        professeur=profil, lu=False
+    ).count()
+    
+    context = {
+        'messages_liste': messages_liste,
+        'nb_non_lus': nb_non_lus,
+    }
+    return render(request, 'core/communication_prof.html', context)
+
+
+# ── VUE PROF : répondre à un message ──
+@login_required
+@require_POST
+def communication_repondre(request, message_id):
+    """Le prof répond à un message élève"""
+    profil = request.user.profil
+    if profil.type_utilisateur != 'professeur':
+        return redirect('core:dashboard')
+    
+    msg = get_object_or_404(MessageEleve, id=message_id)
+    texte = request.POST.get('texte', '').strip()
+    
+    if texte:
+        ReponseProf.objects.create(
+            message=msg,
+            professeur=profil,
+            texte=texte
+        )
+        messages.success(request, 'Réponse envoyée !')
+    
+    return redirect('core:communication_prof')
+
+
+# ── VUE PROF : supprimer un message ──
+@login_required
+@require_POST
+def communication_supprimer(request, message_id):
+    """Le prof supprime un message"""
+    profil = request.user.profil
+    if profil.type_utilisateur != 'professeur':
+        return redirect('core:dashboard')
+    
+    msg = get_object_or_404(MessageEleve, id=message_id)
+    msg.delete()
+    messages.success(request, 'Message supprimé.')
+    return redirect('core:communication_prof')
 # core/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
@@ -350,6 +470,9 @@ def logout_view(request):
 @login_required(login_url='core:login_prof')
 @user_passes_test(est_professeur)
 def dashboard_professeur(request):
+    nb_messages_non_lus = MessageEleve.objects.filter(
+        professeur=request.user.profil, lu=False
+    ).count()
     context = {
         'nb_classes':            Classe.objects.count(),
         'nb_eleves':             ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False).count(),
@@ -368,6 +491,7 @@ def dashboard_professeur(request):
         'nb_modes_operatoires':  ModeOperatoire.objects.filter(actif=True).count(),
         'classes_list':          Classe.objects.all().order_by('nom'),
         'themes_list':           Theme.objects.all().order_by('nom'),
+        'nb_messages_non_lus':   nb_messages_non_lus,
     }
     
     # Rebuild fiches_par_theme as a proper dict of lists
@@ -1431,7 +1555,13 @@ def travaux_corriger(request):
         corrige=False
     ).select_related('travail', 'eleve__user').order_by('date_rendu')
 
-    return render(request, 'core/travaux_corriger.html', {'rendus': rendus})
+    nb_messages_non_lus = MessageEleve.objects.filter(
+        professeur=request.user.profil, lu=False
+    ).count()
+    return render(request, 'core/travaux_corriger.html', {
+        'rendus': rendus,
+        'nb_messages_non_lus': nb_messages_non_lus,
+    })
 
 
 @login_required

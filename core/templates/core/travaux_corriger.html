@@ -2,6 +2,19 @@
 {% block title %}Travaux à corriger{% endblock %}
 {% block content %}
 
+<div class="page-header-block" style="border-left:5px solid #4a7fc1; margin-bottom:1.5rem; display:flex; align-items:center; gap:1.2rem;">
+    <div style="display:flex;align-items:center;gap:0.8rem;">
+        <svg viewBox="0 0 24 24" stroke="#4a7fc1" stroke-width="2" fill="none" style="width:32px;height:32px;">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span style="font-size:1.3rem;font-weight:700;color:#4a7fc1;">Messages élèves</span>
+        {% if nb_messages_non_lus and nb_messages_non_lus > 0 %}
+            <span style="background:#d94f4f;color:white;font-size:0.9rem;font-weight:700;padding:4px 12px;border-radius:20px;margin-left:0.6rem;">{{ nb_messages_non_lus }}</span>
+        {% endif %}
+    </div>
+    <a href="{% url 'core:communication_prof' %}" style="background:#4a7fc1;color:white;font-weight:600;padding:0.7rem 1.3rem;border-radius:10px;text-decoration:none;font-size:1rem;">Voir les messages</a>
+</div>
+
 <style>
     /* ========================================
        TRAVAUX À CORRIGER — Rouge #e74c3c

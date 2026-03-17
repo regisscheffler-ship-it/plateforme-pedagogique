@@ -403,20 +403,64 @@ class Notification(models.Model):
 # =====================================================
 # COMMUNICATIONS ÉLÈVE → PROFESSEUR
 # =====================================================
-class Communication(models.Model):
-    eleve = models.ForeignKey(ProfilUtilisateur, on_delete=models.CASCADE, related_name='communications')
-    classe = models.ForeignKey(Classe, on_delete=models.CASCADE, related_name='communications')
-    image = models.ImageField(upload_to='communications/', null=True, blank=True)
-    annotation_data = models.TextField(blank=True, null=True, help_text="JSON ou SVG de l'annotation côté client")
+
+class MessageEleve(models.Model):
+    """Message envoyé par un élève au professeur"""
+    eleve = models.ForeignKey(
+        'ProfilUtilisateur',
+        on_delete=models.CASCADE,
+        related_name='messages_envoyes',
+        limit_choices_to={'type_utilisateur': 'eleve'}
+    )
+    professeur = models.ForeignKey(
+        'ProfilUtilisateur',
+        on_delete=models.CASCADE,
+        related_name='messages_recus',
+        limit_choices_to={'type_utilisateur': 'professeur'}
+    )
     texte = models.TextField(blank=True)
-    date_submitted = models.DateTimeField(auto_now_add=True)
-    statut = models.CharField(max_length=30, default='nouveau')
+    image = models.ImageField(
+        upload_to='messages/',
+        blank=True,
+        null=True
+    )
+    image_annotee = models.ImageField(
+        upload_to='messages/annotees/',
+        blank=True,
+        null=True
+    )
+    date_envoi = models.DateTimeField(auto_now_add=True)
+    lu = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['-date_submitted']
+        ordering = ['-date_envoi']
+        verbose_name = "Message élève"
 
     def __str__(self):
-        return f"Communication de {self.eleve.user.get_full_name()} ({self.classe})"
+        return f"Message de {self.eleve} - {self.date_envoi.strftime('%d/%m/%Y %H:%M')}"
+
+
+class ReponseProf(models.Model):
+    """Réponse du professeur à un message élève"""
+    message = models.ForeignKey(
+        MessageEleve,
+        on_delete=models.CASCADE,
+        related_name='reponses'
+    )
+    professeur = models.ForeignKey(
+        'ProfilUtilisateur',
+        on_delete=models.CASCADE,
+        related_name='reponses_envoyees'
+    )
+    texte = models.TextField()
+    date_envoi = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date_envoi']
+        verbose_name = "Réponse professeur"
+
+    def __str__(self):
+        return f"Réponse de {self.professeur} - {self.date_envoi.strftime('%d/%m/%Y %H:%M')}"
 
 
 

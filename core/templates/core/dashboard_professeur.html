@@ -204,6 +204,22 @@
     <!-- Grid -->
     <div class="dashboard-grid">
 
+    <!-- MESSAGES ÉLÈVES (bleue) -->
+    <a href="{% url 'core:communication_prof' %}" class="dashboard-card card-classes" style="border-left-color:#4a7fc1;color:#4a7fc1;position:relative;">
+        {% if nb_messages_non_lus and nb_messages_non_lus > 0 %}
+            <span class="card-badge">{{ nb_messages_non_lus }}</span>
+        {% endif %}
+        <div class="card-icon-wrapper" style="background:#eff6ff;">
+            <svg viewBox="0 0 24 24" stroke="#4a7fc1" stroke-width="2" fill="none" style="width:36px;height:36px;">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+        </div>
+        <div class="card-content">
+            <h3>Messages élèves</h3>
+            <p class="card-description">Boîte de réception des messages et images envoyés par les élèves</p>
+        </div>
+    </a>
+
         <!-- ── LIGNE 1 : Gestion des personnes & classes ── -->
 
         <!-- Gestion Classes -->
