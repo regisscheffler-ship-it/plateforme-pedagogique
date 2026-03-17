@@ -3,7 +3,7 @@
 <style>
     /* Couleur vignette (modifiable) */
     :root{ --comm-color: #ff8a65; }
-    .comm-card{ background: white; border-radius:12px; padding:1rem; border-left:6px solid var(--comm-color); box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+    .comm-card{ background: white; border-radius:12px; padding:1rem; border-left:6px solid var(--comm-color); box-shadow:0 6px 18px rgba(0,0,0,0.06); max-width:700px; margin:auto; }
     .comm-header{ display:flex; align-items:center; justify-content:space-between; }
     .comm-title{ font-size:1.05rem; font-weight:700; color:#1f2937; }
     .comm-tools{ display:flex; gap:0.6rem; align-items:center; }
@@ -126,7 +126,7 @@
         const f = e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // preload image and draw into bg canvas
         console.log('comm: file selected', f && f.name);
         // keep previewImg hidden; draw into background canvas for consistent rendering
-        previewImg.src = objUrl; previewImg.style.display = 'none'; previewImg.style.zIndex = '-1'; removeInput.value = '0';
+        previewImg.src = objUrl; previewImg.style.display = 'block'; previewImg.style.zIndex = '0'; previewImg.style.pointerEvents = 'none'; removeInput.value = '0';
         const img = new Image();
         img.onload = ()=>{
             // resize canvases keeping aspect ratio
