@@ -3,7 +3,7 @@
 <style>
     /* Couleur vignette (modifiable) */
     :root{ --comm-color: #ff8a65; }
-    .comm-card{ background: white; border-radius:12px; padding:1rem; border-left:6px solid var(--comm-color); box-shadow:0 6px 18px rgba(0,0,0,0.06); max-width:700px; margin:auto; }
+    .comm-card{ background: white; border-radius:12px; padding:1rem; border-left:6px solid var(--comm-color); box-shadow:0 6px 18px rgba(0,0,0,0.06); max-width:420px; width:100%; margin:auto; }
     .comm-header{ display:flex; align-items:center; justify-content:space-between; }
     .comm-title{ font-size:1.05rem; font-weight:700; color:#1f2937; }
     .comm-tools{ display:flex; gap:0.6rem; align-items:center; }
@@ -20,7 +20,7 @@
     .file-actions .comm-btn{ padding:0.4rem 0.6rem; }
     canvas{ border-radius:8px; max-width:100%; width:100%; height:auto; background:#fff; display:block; }
     .comm-actions{ margin-top:0.6rem; display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; }
-    @media (max-width:800px){ .comm-body{ flex-direction:column; } .comm-header{ gap:0.5rem; } .comm-title{ font-size:1rem; } }
+    @media (max-width:800px){ .comm-body{ flex-direction:column; } .comm-header{ gap:0.5rem; } .comm-title{ font-size:1rem; } .comm-card{ max-width:100%; } }
 </style>
 
 <div class="comm-card">
