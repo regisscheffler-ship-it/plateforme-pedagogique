@@ -46,9 +46,10 @@
                 </div>
                 <div style="margin-top:0.6rem; position:relative;">
                     <div style="position:relative;width:100%;overflow:hidden;" class="comm-canvas-container">
-                        <img id="comm-preview" alt="Aperçu photo" style="display:none;position:absolute;left:0;top:0;width:100%;height:100%;border-radius:8px;object-fit:contain;background:#fff;pointer-events:none;z-index:0;" />
-                        <canvas id="comm-bg" width="640" height="480" style="position:absolute;left:0;top:0;z-index:0;width:100%;height:100%;border-radius:8px;background:#fff;display:block;"></canvas>
-                        <canvas id="comm-canvas" width="640" height="480" style="position:absolute;left:0;top:0;border-radius:8px;pointer-events:auto;width:100%;height:100%;z-index:1;"></canvas>
+                        <!-- preview image intentionally hidden; background drawn into bg canvas for consistent rendering -->
+                        <img id="comm-preview" alt="Aperçu photo" style="display:none;position:absolute;left:0;top:0;width:100%;height:100%;border-radius:8px;object-fit:contain;background:#fff;pointer-events:none;z-index:-1;" />
+                        <canvas id="comm-bg" width="640" height="480" style="position:absolute;left:0;top:0;z-index:0;border-radius:8px;background:#fff;display:block;width:100%;height:auto;"></canvas>
+                        <canvas id="comm-canvas" width="640" height="480" style="position:absolute;left:0;top:0;border-radius:8px;pointer-events:auto;width:100%;height:auto;z-index:1;"></canvas>
                     </div>
                 </div>
                 <div class="comm-actions">
@@ -121,20 +122,39 @@
     const eraserBtn = document.getElementById('comm-eraser');
     eraserBtn.addEventListener('click', ()=>{ eraserMode = !eraserMode; eraserBtn.style.borderColor = eraserMode ? '#333' : ''; eraserBtn.style.color = eraserMode ? '#333' : ''; eraserBtn.textContent = eraserMode ? 'Gomme (ON)' : 'Gomme'; });
 
-    fileInput.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // preload image and draw into bg canvas
+    fileInput.addEventListener('change', (e)=>{
+        const f = e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // preload image and draw into bg canvas
         console.log('comm: file selected', f && f.name);
-        previewImg.src = objUrl; previewImg.style.display = 'block'; previewImg.style.zIndex = '0'; previewImg.style.pointerEvents = 'none'; removeInput.value = '0'; const img=new Image(); img.onload=()=>{ // resize canvases keeping aspect ratio
-            const maxW=1200, maxH=900; let iw=img.width, ih=img.height; const scale=Math.min(maxW/iw, maxH/ih, 1); const w=Math.round(iw*scale); const h=Math.round(ih*scale);
+        // keep previewImg hidden; draw into background canvas for consistent rendering
+        previewImg.src = objUrl; previewImg.style.display = 'none'; previewImg.style.zIndex = '-1'; removeInput.value = '0';
+        const img = new Image();
+        img.onload = ()=>{
+            // resize canvases keeping aspect ratio
+            const maxW = 1200, maxH = 900;
+            let iw = img.width, ih = img.height;
+            const scale = Math.min(maxW/iw, maxH/ih, 1);
+            const w = Math.round(iw*scale);
+            const h = Math.round(ih*scale);
             bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
-                img.onerror = ()=>{ console.warn('Preview image failed to load (desktop file).'); const w=640, h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = w+'px'; bgCanvas.style.height = h+'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } currentBg = null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); URL.revokeObjectURL(objUrl); };
-            // ensure CSS sizing matches pixel size so overlay aligns
-            bgCanvas.style.width = bgCanvas.width + 'px'; bgCanvas.style.height = bgCanvas.height + 'px';
-            canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height;
-            // ensure parent container has explicit height so absolute canvases are visible
-            const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; }
-            currentBg = img; drawBg(img); redraw(); console.log('comm: image drawn', w, h); try{ URL.revokeObjectURL(objUrl); }catch(e){} };
-        img.onerror = ()=>{ console.warn('comm: preview image failed to load (desktop file).'); const w=640, h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = w+'px'; bgCanvas.style.height = h+'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } currentBg = null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); try{ URL.revokeObjectURL(objUrl); }catch(e){} };
-        img.src = objUrl; });
+            // use responsive CSS sizing to avoid forcing fixed pixel width that expands the card
+            bgCanvas.style.width = '100%'; bgCanvas.style.height = 'auto';
+            canvas.style.width = '100%'; canvas.style.height = 'auto';
+            // remove explicit container height to let layout remain consistent
+            const container = bgCanvas.parentElement; if(container){ container.style.height = ''; }
+            currentBg = img; drawBg(img); redraw(); console.log('comm: image drawn', w, h);
+            try{ URL.revokeObjectURL(objUrl); }catch(e){}
+        };
+        img.onerror = ()=>{
+            console.warn('comm: preview image failed to load (desktop file).');
+            const w = 640, h = 480;
+            bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
+            bgCanvas.style.width = '100%'; bgCanvas.style.height = 'auto'; canvas.style.width = '100%'; canvas.style.height = 'auto';
+            const container = bgCanvas.parentElement; if(container){ container.style.height = ''; }
+            currentBg = null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw();
+            try{ URL.revokeObjectURL(objUrl); }catch(e){}
+        };
+        img.src = objUrl;
+    });
 
     // buttons to open camera or gallery
     takePhotoBtn.addEventListener('click', ()=>{ fileInput.setAttribute('capture','environment'); fileInput.click(); });
@@ -177,13 +197,14 @@
                         const w=Math.round(iw*scale);
                         const h=Math.round(ih*scale);
                         bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
-                        bgCanvas.style.width = bgCanvas.width + 'px'; bgCanvas.style.height = bgCanvas.height + 'px';
-                        canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height;
-                        const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; }
+                        // responsive CSS sizing to avoid forcing fixed pixel width that expands the card
+                        bgCanvas.style.width = '100%'; bgCanvas.style.height = 'auto';
+                        canvas.style.width = '100%'; canvas.style.height = 'auto';
+                        const container = bgCanvas.parentElement; if(container){ container.style.height = ''; }
                         previewImg.src='{{ ma_comm.image.url }}'; previewImg.style.display='none'; currentBg = img; drawBg(img); redraw();
                     };
                     img.crossOrigin = 'anonymous';
-                    img.onerror = ()=>{ console.warn('Failed to load server image: {{ ma_comm.image.url }}'); const w=640,h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = w+'px'; bgCanvas.style.height = h+'px'; canvas.style.width = bgCanvas.style.width; canvas.style.height = bgCanvas.style.height; const container = bgCanvas.parentElement; if(container){ container.style.height = bgCanvas.style.height; } previewImg.style.display='none'; currentBg=null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); };
+                    img.onerror = ()=>{ console.warn('Failed to load server image: {{ ma_comm.image.url }}'); const w=640,h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = '100%'; bgCanvas.style.height = 'auto'; canvas.style.width = '100%'; canvas.style.height = 'auto'; const container = bgCanvas.parentElement; if(container){ container.style.height = ''; } previewImg.style.display='none'; currentBg=null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); };
                     img.src='{{ ma_comm.image.url }}';
             {% else %}
                 redraw();

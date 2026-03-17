@@ -399,15 +399,23 @@ def dashboard_eleve(request):
         if not classe:
             messages.warning(request, "⚠️ Vous n'êtes pas encore assigné à une classe.")
             return render(request, 'core/dashboard_eleve.html', {'classe': None})
+        # limiter les travaux affichés : garder les travaux actifs non rendus,
+        # et ne pas afficher les travaux dont la date_limite est passée depuis plus de 3 jours
+        seuil_retention = date.today() - timedelta(days=3)
+        travaux_qs = TravailARendre.objects.filter(classe=classe, actif=True).exclude(rendus__eleve=profil)
+        from django.db.models import Q
+        travaux_qs = travaux_qs.filter(Q(date_limite__isnull=True) | Q(date_limite__gte=seuil_retention)).order_by('date_limite')
+
         context = {
             'ma_classe': classe,
             'themes': Theme.objects.filter(classes=classe, visible_eleves=True).order_by('ordre', 'nom'),
-            'travaux_a_faire': TravailARendre.objects.filter(classe=classe, actif=True).exclude(rendus__eleve=profil).order_by('date_limite'),
+            'travaux_a_faire': travaux_qs,
             'mes_rendus': RenduEleve.objects.filter(eleve=profil).select_related('travail').order_by('-date_rendu'),
             'notifications': Notification.objects.filter(destinataire=request.user, lue=False).order_by('-date_creation'),
             'ateliers': Atelier.objects.filter(classe=classe, actif=True, visible_eleves=True).order_by('ordre', 'titre'),
             'mes_pfmp': PFMP.objects.filter(classe=classe, actif=True).order_by('date_debut'),
-            'mes_evaluations': FicheEvaluation.objects.filter(eleve=profil, validee=True).select_related('fiche_contrat').order_by('-date_validation'),
+            # n'afficher que les 6 dernières évaluations validées
+            'mes_evaluations': FicheEvaluation.objects.filter(eleve=profil, validee=True).select_related('fiche_contrat').order_by('-date_validation')[:6],
             'today': date.today(),
             'ma_comm': Communication.objects.filter(eleve=profil).order_by('-date_submitted').first(),
         }
