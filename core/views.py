@@ -575,6 +575,40 @@ def dashboard_eleve(request):
         return redirect('core:home')
 
 
+@login_required
+@user_passes_test(est_professeur)
+def communications_export_pdf(request):
+    """Génère un PDF réunissant les communications des élèves pour le professeur connecté."""
+    try:
+        import fitz
+    except Exception:
+        return HttpResponse('PyMuPDF non disponible', status=501)
+
+    communications = MessageEleve.objects.filter(
+        professeur=request.user.profil
+    ).select_related('eleve__user', 'eleve__classe').order_by('-date_envoi')
+
+    doc = fitz.open()
+    for c in communications:
+        # prefer annotated image, otherwise original image
+        img_url = None
+        if getattr(c, 'image_annotee', None):
+            try:
+                img_url = c.image_annotee.url
+            except Exception:
+                img_url = None
+        if not img_url and getattr(c, 'image', None):
+            try:
+                img_url = c.image.url
+            except Exception:
+                img_url = None
+
+        if img_url:
+            try:
+                import requests
+                resp = requests.get(img_url, timeout=10)
+                resp.raise_for_status()
+                img_bytes = resp.content
                 pil = Image.open(io.BytesIO(img_bytes)).convert('RGB')
                 w, h = pil.size
                 # create page sized to image (limit to A4 width)
@@ -589,15 +623,18 @@ def dashboard_eleve(request):
             except Exception:
                 # fallback: page with text only
                 page = doc.new_page()
-                page.insert_text((72, 72), f"{c.eleve.user.get_full_name()} - {c.classe.nom}\n(Erreur image)")
+                classe_nom = c.eleve.classe.nom if getattr(c.eleve, 'classe', None) else ''
+                page.insert_text((72, 72), f"{c.eleve.user.get_full_name()} - {classe_nom}\n(Erreur image)")
         else:
             page = doc.new_page()
-            page.insert_text((72, 72), f"{c.eleve.user.get_full_name()} - {c.classe.nom}\n(Aucune image)")
+            classe_nom = c.eleve.classe.nom if getattr(c.eleve, 'classe', None) else ''
+            page.insert_text((72, 72), f"{c.eleve.user.get_full_name()} - {classe_nom}\n(Aucune image)")
 
         # add a second small page with the texte
         if c.texte:
             tpage = doc.new_page()
-            text = f"{c.eleve.user.get_full_name()} — {c.classe.nom}\n\n{c.texte}"
+            classe_nom = c.eleve.classe.nom if getattr(c.eleve, 'classe', None) else ''
+            text = f"{c.eleve.user.get_full_name()} — {classe_nom}\n\n{c.texte}"
             tpage.insert_textbox(fitz.Rect(72,72,523,770), text, fontsize=12)
 
     pdf_bytes = doc.write()
