@@ -172,7 +172,7 @@ urlpatterns = [
     path('travaux/<int:pk>/marquer-corrige/', views.marquer_corrige,   name='marquer_corrige'),
 
     # COMMUNICATIONS (ÉLÈVE → PROFESSEUR)
-    path('communication/creer/',              views.communication_create, name='communication_create'),
+    path('communication/',                    views.communication_eleve,  name='communication_eleve'),
     path('communications/',                   views.communications_list,  name='communications_list'),
     path('communications/export-pdf/',        views.communications_export_pdf, name='communications_export_pdf'),
 
