@@ -162,6 +162,7 @@ from .models import (
     SuiviPFMP, HistoriqueClasse,
     QCM, QuestionQCM, SessionQCM,
     ModeOperatoire, LigneModeOperatoire,
+    MessageEleve, ReponseProf,  # ← AJOUTER CETTE LIGNE
 )
 import io
 import fitz
@@ -511,6 +512,19 @@ def dashboard_professeur(request):
     context['pc_filles'] = f"{context['nb_filles']*100/total_sexe:.0f}" if total_sexe else '0'
     
     return render(request, 'core/dashboard_professeur.html', context)
+
+
+@login_required
+@user_passes_test(est_professeur)
+def communications_list(request):
+    """Liste les messages d'élèves destinés au professeur connecté."""
+    communications = MessageEleve.objects.filter(
+        professeur=request.user.profil
+    ).select_related(
+        'eleve__user', 'eleve__classe'
+    ).order_by('-date_envoi')
+    context = {'communications': communications}
+    return render(request, 'core/communications_list.html', context)
 
 
 @login_required(login_url='core:login_eleve')

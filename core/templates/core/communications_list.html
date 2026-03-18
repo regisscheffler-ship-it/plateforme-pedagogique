@@ -18,7 +18,7 @@
 <div class="page-wrap">
     <div class="back-row">
         <a href="{% url 'core:dashboard_professeur' %}" class="btn-outline">← Retour au tableau</a>
-        <a href="{% url 'core:communications_export_pdf' %}" class="btn-outline" style="margin-left:0.6rem;">Exporter PDF</a>
+        <a href="{% url 'core:travaux_corriger' %}" class="btn-outline" style="margin-left:0.6rem;">Voir travaux à corriger</a>
     </div>
 
     <div class="comm-list-card">
@@ -29,15 +29,20 @@
                     <div class="comm-item">
                         <div style="flex:1;min-width:220px;">
                             <div class="comm-meta">{{ c.eleve.user.get_full_name }}</div>
-                            <div class="comm-date">{{ c.classe.nom }} — {{ c.date_submitted|date:'d/m/Y H:i' }}</div>
+                            <div class="comm-date">{{ c.eleve.classe.nom }} — {{ c.date_envoi|date:'d/m/Y H:i' }}</div>
                         </div>
                         <div style="flex:2;">
-                            {% if c.image %}
+                            {% if c.image_annotee %}
+                                <img src="{{ c.image_annotee.url }}" style="max-width:100%;border-radius:8px;display:block;margin-bottom:0.5rem;"/>
+                            {% elif c.image %}
                                 <img src="{{ c.image.url }}" style="max-width:100%;border-radius:8px;display:block;margin-bottom:0.5rem;"/>
                             {% endif %}
                             <div style="color:#6c757d;">{{ c.texte|linebreaksbr }}</div>
                             <div style="margin-top:0.6rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                {% if c.image %}
+                                {% if c.image_annotee %}
+                                    <button type="button" class="btn-outline consult-btn" data-img-url="{{ c.image_annotee.url }}" data-texte="{{ c.texte|escapejs }}">Consulter</button>
+                                    <a href="{{ c.image_annotee.url }}" download class="btn-outline">Télécharger</a>
+                                {% elif c.image %}
                                     <button type="button" class="btn-outline consult-btn" data-img-url="{{ c.image.url }}" data-texte="{{ c.texte|escapejs }}">Consulter</button>
                                     <a href="{{ c.image.url }}" download class="btn-outline">Télécharger</a>
                                 {% endif %}

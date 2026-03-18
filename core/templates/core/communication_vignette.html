@@ -33,7 +33,7 @@
         </div>
     </div>
 
-    <form id="comm-form" method="post" action="{% url 'core:communication_create' %}" enctype="multipart/form-data">
+    <form id="comm-form" method="post" action="{% url 'core:communication_eleve' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="comm-body">
             <div class="comm-left">
@@ -173,7 +173,7 @@
             fd.append('annotation_data', JSON.stringify(strokes || []));
             fd.append('texte', document.getElementById('texte').value || '');
             const csrf = document.querySelector('input[name=csrfmiddlewaretoken]').value;
-            fetch('{% url "core:communication_create" %}', { method: 'POST', body: fd, headers: { 'X-CSRFToken': csrf } })
+            fetch('{% url "core:communication_eleve" %}', { method: 'POST', body: fd, headers: { 'X-CSRFToken': csrf } })
             .then(r=>{
                 if(r.redirected){ window.location = r.url; }
                 else if(r.ok){ window.location = '{% url "core:dashboard_eleve" %}'; }
@@ -185,7 +185,7 @@
     // charger annotations et image existantes si fournies par le serveur
     {% if ma_comm %}
         (function preload(){
-            const strokesData = {{ ma_comm.annotation_data|default:'null'|safe }};
+            const strokesData = null;
             if(strokesData){ try{ strokes = strokesData; }catch(e){ strokes = []; } }
             {% if ma_comm.image %}
                 
@@ -222,7 +222,7 @@
         exportCanvas.toBlob((blob)=>{
             if(!blob){ alert('Impossible de générer l\'image.'); return; }
             const fd=new FormData(); fd.append('texte', document.getElementById('texte').value || ''); fd.append('annotation_data', JSON.stringify(strokes)); fd.append('image', blob, 'communication.png'); const csrf=document.querySelector('input[name=csrfmiddlewaretoken]').value;
-            fetch('{% url "core:communication_create" %}', { method:'POST', body:fd, headers:{ 'X-CSRFToken': csrf } }).then(r=>{ if(r.redirected) window.location=r.url; else if(r.ok) window.location='{% url "core:dashboard_eleve" %}'; else r.text().then(t=>alert('Erreur: '+t)); }).catch(e=>alert('Erreur réseau: '+e));
+            fetch('{% url "core:communication_eleve" %}', { method:'POST', body:fd, headers:{ 'X-CSRFToken': csrf } }).then(r=>{ if(r.redirected) window.location=r.url; else if(r.ok) window.location='{% url "core:dashboard_eleve" %}'; else r.text().then(t=>alert('Erreur: '+t)); }).catch(e=>alert('Erreur réseau: '+e));
         }, 'image/png');
     });
 
