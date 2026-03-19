@@ -6,11 +6,6 @@ app_name = 'core'
 
 urlpatterns = [
 
-    # Communication
-    path('communication/', views.communication_eleve, name='communication_eleve'),
-    path('communication/prof/', views.communication_prof, name='communication_prof'),
-    path('communication/repondre/<int:message_id>/', views.communication_repondre, name='communication_repondre'),
-    path('communication/supprimer/<int:message_id>/', views.communication_supprimer, name='communication_supprimer'),
 
     # ═══════════════════════════════════════
     # PAGE D'ACCUEIL
