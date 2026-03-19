@@ -124,7 +124,6 @@
 
     fileInput.addEventListener('change', (e)=>{
         const f = e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // preload image and draw into bg canvas
-        console.log('comm: file selected', f && f.name);
         // keep previewImg hidden; draw into background canvas for consistent rendering
         previewImg.src = objUrl; previewImg.style.display = 'block'; previewImg.style.zIndex = '0'; previewImg.style.pointerEvents = 'none'; removeInput.value = '0';
         const img = new Image();
@@ -141,11 +140,10 @@
             canvas.style.width = '100%'; canvas.style.height = 'auto';
             // remove explicit container height to let layout remain consistent
             const container = bgCanvas.parentElement; if(container){ container.style.height = ''; }
-            currentBg = img; drawBg(img); redraw(); console.log('comm: image drawn', w, h);
+            currentBg = img; drawBg(img); redraw();
             try{ URL.revokeObjectURL(objUrl); }catch(e){}
         };
         img.onerror = ()=>{
-            console.warn('comm: preview image failed to load (desktop file).');
             const w = 640, h = 480;
             bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
             bgCanvas.style.width = '100%'; bgCanvas.style.height = 'auto'; canvas.style.width = '100%'; canvas.style.height = 'auto';
@@ -178,8 +176,8 @@
                 if(r.redirected){ window.location = r.url; }
                 else if(r.ok){ window.location = '{% url "core:dashboard_eleve" %}'; }
                 else { r.text().then(t=>alert('Erreur suppression: '+t)); }
-            }).catch(e=>{ console.warn('Erreur réseau suppression:', e); alert('Erreur réseau lors de la suppression.'); });
-        }catch(e){ console.warn('Suppression non envoyée', e); }
+            }).catch(e=>{ alert('Erreur réseau lors de la suppression.'); });
+        }catch(e){ }
     });
 
     // charger annotations et image existantes si fournies par le serveur
@@ -204,7 +202,7 @@
                         previewImg.src='{{ ma_comm.image.url }}'; previewImg.style.display='none'; currentBg = img; drawBg(img); redraw();
                     };
                     img.crossOrigin = 'anonymous';
-                    img.onerror = ()=>{ console.warn('Failed to load server image: {{ ma_comm.image.url }}'); const w=640,h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = '100%'; bgCanvas.style.height = 'auto'; canvas.style.width = '100%'; canvas.style.height = 'auto'; const container = bgCanvas.parentElement; if(container){ container.style.height = ''; } previewImg.style.display='none'; currentBg=null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); };
+                    img.onerror = ()=>{ const w=640,h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.width = '100%'; bgCanvas.style.height = 'auto'; canvas.style.width = '100%'; canvas.style.height = 'auto'; const container = bgCanvas.parentElement; if(container){ container.style.height = ''; } previewImg.style.display='none'; currentBg=null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); };
                     img.src='{{ ma_comm.image.url }}';
             {% else %}
                 redraw();
