@@ -8,7 +8,7 @@ def communication_eleve(request):
     """Page principale communication côté élève"""
     profil = request.user.profil
     if profil.type_utilisateur != 'eleve':
-        return redirect('core:dashboard')
+        return redirect('core:dashboard_professeur')
     
     # Trouve le prof principal de la classe de l'élève
     classe = profil.classe
@@ -63,7 +63,7 @@ def communication_prof(request):
     """Page principale communication côté professeur"""
     profil = request.user.profil
     if profil.type_utilisateur != 'professeur':
-        return redirect('core:dashboard')
+        return redirect('core:dashboard_professeur')
     
     messages_liste = MessageEleve.objects.filter(
         professeur=profil
@@ -90,7 +90,7 @@ def communication_repondre(request, message_id):
     """Le prof répond à un message élève"""
     profil = request.user.profil
     if profil.type_utilisateur != 'professeur':
-        return redirect('core:dashboard')
+        return redirect('core:dashboard_professeur')
     
     msg = get_object_or_404(MessageEleve, id=message_id)
     texte = request.POST.get('texte', '').strip()
@@ -113,7 +113,7 @@ def communication_supprimer(request, message_id):
     """Le prof supprime un message"""
     profil = request.user.profil
     if profil.type_utilisateur != 'professeur':
-        return redirect('core:dashboard')
+        return redirect('core:dashboard_professeur')
     
     msg = get_object_or_404(MessageEleve, id=message_id)
     msg.delete()
