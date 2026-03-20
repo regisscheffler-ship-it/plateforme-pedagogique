@@ -167,9 +167,12 @@ urlpatterns = [
     path('travaux/<int:pk>/marquer-corrige/', views.marquer_corrige,   name='marquer_corrige'),
 
     # COMMUNICATIONS (ÉLÈVE → PROFESSEUR)
-    path('communication/',                    views.communication_eleve,  name='communication_eleve'),
-    path('communications/',                   views.communications_list,  name='communications_list'),
-    path('communications/export-pdf/',        views.communications_export_pdf, name='communications_export_pdf'),
+    path('communication/',                                views.communication_eleve,  name='communication_eleve'),
+    path('communication/prof/',                           views.communication_prof,   name='communication_prof'),
+    path('communication/repondre/<int:message_id>/',     views.communication_repondre, name='communication_repondre'),
+    path('communication/supprimer/<int:message_id>/',    views.communication_supprimer, name='communication_supprimer'),
+    path('communications/',                               views.communications_list,  name='communications_list'),
+    path('communications/export-pdf/',                   views.communications_export_pdf, name='communications_export_pdf'),
 
     # ═══════════════════════════════════════
     # NOTIFICATIONS
