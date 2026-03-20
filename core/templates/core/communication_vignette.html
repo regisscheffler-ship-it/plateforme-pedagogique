@@ -1,238 +1,240 @@
 {# Communication vignette avec canvas d'annotation et styles adaptés #}
 {% load static %}
 <style>
-    /* Couleur vignette (modifiable) */
-    :root{ --comm-color: #ff8a65; }
-    .comm-card{ background: white; border-radius:16px; padding:2rem; border-left:5px solid var(--comm-color); box-shadow:0 4px 12px rgba(0,0,0,0.06); max-width:1600px; width:100%; margin-bottom:1.5rem; margin:auto; }
-    .comm-header{ display:flex; align-items:center; justify-content:space-between; }
-    .comm-title{ font-size:1.05rem; font-weight:700; color:#1f2937; }
-    .comm-tools{ display:flex; gap:0.6rem; align-items:center; }
-    .comm-btn{ background:transparent; border:2px solid var(--comm-color); color:var(--comm-color); padding:0.45rem 0.8rem; border-radius:8px; cursor:pointer; font-weight:600; position:relative; z-index:40; }
-    .comm-btn:hover{ background:rgba(255,138,101,0.06); }
-    /* ensure buttons render above canvas on small screens */
-    .comm-btn, .comm-tools button{ z-index:20; }
-    .comm-body{ display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.8rem; }
-    .comm-left{ flex:1; min-width:240px; max-width:380px; }
+    :root{ --comm-color: #4a7fc1; }
+    .comm-card{ background: white; border-radius:16px; padding:1.5rem; border-left:5px solid var(--comm-color); box-shadow:0 4px 12px rgba(0,0,0,0.06); width:100%; margin-bottom:1.5rem; }
+    .comm-tools{ display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; margin-bottom:0.8rem; }
+    .comm-btn{ background:transparent; border:2px solid var(--comm-color); color:var(--comm-color); padding:0.45rem 0.8rem; border-radius:8px; cursor:pointer; font-weight:600; }
+    .comm-btn:hover{ background:rgba(74,127,193,0.08); }
+    .comm-body{ display:flex; gap:1.5rem; flex-wrap:wrap; }
+    .comm-left{ flex:1; min-width:260px; max-width:420px; }
     .comm-right{ flex:2; min-width:260px; }
-    /* make inputs stack on small screens and avoid overlap */
-    #image{ display:block; width:100%; }
     .file-actions{ display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap; }
-    .file-actions .comm-btn{ padding:0.4rem 0.6rem; }
-    canvas{ border-radius:8px; max-width:100%; width:100%; height:auto; background:#fff; display:block; }
+    .file-actions .comm-btn{ padding:0.4rem 0.6rem; font-size:0.85rem; }
+    .comm-canvas-wrap{ margin-top:0.6rem; width:100%; background:#f8f9fa; border-radius:8px; overflow:hidden; border:1px solid #e9ecef; }
+    .comm-canvas-inner{ position:relative; width:100%; }
+    #comm-bg, #comm-canvas{ display:block; width:100%; height:auto; border-radius:0; }
+    #comm-canvas{ position:absolute; top:0; left:0; cursor:crosshair; }
     .comm-actions{ margin-top:0.6rem; display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; }
-    @media (max-width:800px){ .comm-body{ flex-direction:column; } .comm-header{ gap:0.5rem; } .comm-title{ font-size:1rem; } .comm-card{ max-width:100%; } }
+    @media (max-width:700px){ .comm-body{ flex-direction:column; } .comm-left{ max-width:100%; } }
 </style>
 
 <div class="comm-card">
-    <div class="comm-header">
-        <div class="comm-title">Communication</div>
-        <div class="comm-tools">
-            <button type="button" class="comm-btn" id="comm-clear">Effacer</button>
-            <button type="button" class="comm-btn" id="comm-undo">Annuler</button>
-            <button type="button" class="comm-btn" id="comm-eraser">Gomme</button>
-        </div>
+    <div class="comm-tools">
+        <button type="button" class="comm-btn" id="comm-clear">Effacer</button>
+        <button type="button" class="comm-btn" id="comm-undo">Annuler</button>
+        <button type="button" class="comm-btn" id="comm-eraser">Gomme</button>
     </div>
 
     <form id="comm-form" method="post" action="{% url 'core:communication_eleve' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="comm-body">
             <div class="comm-left">
-                <label for="image">Photo (mobile : utilisez l'appareil)</label><br>
-                <input type="file" id="image" name="image" accept="image/*" capture="environment" style="display:none;">
+                <label style="font-weight:600;color:#374151;">Photo</label>
+                <input type="file" id="image" name="image" accept="image/*" style="display:none;">
                 <div class="file-actions">
-                    <button type="button" id="take-photo" class="comm-btn">Prendre une photo</button>
-                    <button type="button" id="choose-photo" class="comm-btn">Choisir une photo</button>
-                    <button type="button" id="remove-photo" class="comm-btn">Supprimer la photo</button>
+                    <button type="button" id="take-photo" class="comm-btn">📷 Appareil photo</button>
+                    <button type="button" id="choose-photo" class="comm-btn">🖼 Galerie</button>
+                    <button type="button" id="remove-photo" class="comm-btn">✕ Supprimer</button>
                 </div>
-                <div style="margin-top:0.6rem; position:relative;">
-                    <div style="position:relative; width:100%; padding-bottom:75%; overflow:hidden; border-radius:8px; background:#f8f9fa;" class="comm-canvas-container">
-                        <!-- preview image intentionally hidden; background drawn into bg canvas for consistent rendering -->
-                        <img id="comm-preview" alt="Aperçu photo" style="display:none;position:absolute;left:0;top:0;width:100%;height:100%;border-radius:8px;object-fit:contain;background:#fff;pointer-events:none;z-index:-1;" />
-                        <canvas id="comm-bg" width="640" height="480" style="position:absolute; left:0; top:0; width:100%; height:100%; border-radius:8px; z-index:0; background:#fff;"></canvas>
-                        <canvas id="comm-canvas" width="640" height="480" style="position:absolute; left:0; top:0; width:100%; height:100%; border-radius:8px; pointer-events:auto; z-index:1;"></canvas>
+
+                <div class="comm-canvas-wrap">
+                    <div class="comm-canvas-inner" id="comm-canvas-inner">
+                        <canvas id="comm-bg" width="640" height="480"></canvas>
+                        <canvas id="comm-canvas" width="640" height="480"></canvas>
                     </div>
                 </div>
+
                 <div class="comm-actions">
-                    <label style="display:flex;align-items:center;gap:0.4rem;">
+                    <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.9rem;">
                         <input type="color" id="pen-color" value="#ff3b30"> Couleur
                     </label>
-                    <label style="display:flex;align-items:center;gap:0.4rem;">
+                    <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.9rem;">
                         Taille
-                        <input id="pen-size" type="range" min="1" max="20" value="3" style="width:120px;margin-left:0.4rem;">
+                        <input id="pen-size" type="range" min="1" max="20" value="3" style="width:100px;">
                     </label>
                 </div>
             </div>
 
             <div class="comm-right">
-                <label for="texte">Rapport du jour (court)</label>
-                <textarea id="texte" name="texte" rows="6" style="width:100%;padding:0.6rem;border-radius:8px;border:1px solid #e9ecef;"></textarea>
+                <label for="texte" style="font-weight:600;color:#374151;">Message / Rapport du jour</label>
+                <textarea id="texte" name="texte" rows="8" style="width:100%;padding:0.6rem;border-radius:8px;border:1px solid #e9ecef;margin-top:0.4rem;resize:vertical;"></textarea>
                 <input type="hidden" name="annotation_data" id="annotation_data" />
                 <input type="hidden" name="remove_image" id="remove_image" value="0" />
-                <div style="margin-top:0.8rem;display:flex;gap:0.6rem;align-items:center;">
-                    <button id="comm-submit" class="comm-btn" type="button">Envoyer au professeur</button>
+                <div style="margin-top:0.8rem;">
+                    <button id="comm-submit" class="comm-btn" type="button" style="background:#4a7fc1;color:#fff;padding:0.6rem 1.2rem;font-size:1rem;">
+                        Envoyer au professeur
+                    </button>
                 </div>
             </div>
         </div>
     </form>
-    <div style="margin-top:0.6rem;color:#94a3b8;font-size:0.9rem;">Astuce : utilisez votre appareil pour prendre une photo, puis annotez avec le doigt.</div>
+    <div style="margin-top:0.6rem;color:#94a3b8;font-size:0.85rem;">Astuce : prenez une photo puis annotez avec le doigt ou la souris.</div>
 </div>
 
 <script>
 (function(){
-    const fileInput = document.getElementById('image');
+    const fileInput    = document.getElementById('image');
     const takePhotoBtn = document.getElementById('take-photo');
     const choosePhotoBtn = document.getElementById('choose-photo');
-    const bgCanvas = document.getElementById('comm-bg');
-    const bgCtx = bgCanvas.getContext('2d');
-    const canvas = document.getElementById('comm-canvas');
-    const ctx = canvas.getContext('2d');
-    const colorInput = document.getElementById('pen-color');
-    const sizeInput = document.getElementById('pen-size');
-    const clearBtn = document.getElementById('comm-clear');
-    const undoBtn = document.getElementById('comm-undo');
-    const submitBtn = document.getElementById('comm-submit');
-    const removeBtn = document.getElementById('remove-photo');
-    const removeInput = document.getElementById('remove_image');
+    const bgCanvas     = document.getElementById('comm-bg');
+    const bgCtx        = bgCanvas.getContext('2d');
+    const canvas       = document.getElementById('comm-canvas');
+    const ctx          = canvas.getContext('2d');
+    const colorInput   = document.getElementById('pen-color');
+    const sizeInput    = document.getElementById('pen-size');
+    const clearBtn     = document.getElementById('comm-clear');
+    const undoBtn      = document.getElementById('comm-undo');
+    const submitBtn    = document.getElementById('comm-submit');
+    const removeBtn    = document.getElementById('remove-photo');
+    const removeInput  = document.getElementById('remove_image');
+    const inner        = document.getElementById('comm-canvas-inner');
 
-    let drawing = false;
-    let currentStroke = null;
-    let strokes = [];
-    let eraserMode = false;
-    let currentBg = null;
-    const previewImg = document.getElementById('comm-preview');
+    let drawing = false, currentStroke = null, strokes = [], eraserMode = false, currentBg = null;
 
-    function drawStroke(points, color, size, mode){ if(points.length<2) return; ctx.save(); if(mode==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='rgba(0,0,0,1)'; } else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle=color; } ctx.lineWidth=size; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y); for(let i=1;i<points.length;i++){ ctx.lineTo(points[i].x,points[i].y); } ctx.stroke(); ctx.restore(); }
+    function syncCanvasOverlay(){
+        // canvas de dessin superposé exactement sur bgCanvas
+        canvas.style.width  = bgCanvas.offsetWidth  + 'px';
+        canvas.style.height = bgCanvas.offsetHeight + 'px';
+        inner.style.height  = bgCanvas.offsetHeight + 'px';
+    }
 
-    function redraw(){ ctx.clearRect(0,0,canvas.width,canvas.height); strokes.forEach(s=>drawStroke(s.points,s.color,s.size,s.mode||'pen')); }
+    function drawStroke(points, color, size, mode){
+        if(points.length < 2) return;
+        ctx.save();
+        if(mode === 'eraser'){ ctx.globalCompositeOperation = 'destination-out'; ctx.strokeStyle = 'rgba(0,0,0,1)'; }
+        else { ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = color; }
+        ctx.lineWidth = size; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
+        for(let i=1;i<points.length;i++) ctx.lineTo(points[i].x, points[i].y);
+        ctx.stroke(); ctx.restore();
+    }
 
-    function drawBg(img){ const iw=img.width, ih=img.height, cw=bgCanvas.width, ch=bgCanvas.height; const scale=Math.max(cw/iw, ch/ih); const w=iw*scale, h=ih*scale; const x=(cw-w)/2, y=(ch-h)/2; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); bgCtx.drawImage(img,x,y,w,h); }
+    function redraw(){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        strokes.forEach(s => drawStroke(s.points, s.color, s.size, s.mode||'pen'));
+    }
 
-    function getPos(e){ const r=canvas.getBoundingClientRect(); const touch = e.touches ? e.touches[0] : null; const clientX = touch ? touch.clientX : e.clientX; const clientY = touch ? touch.clientY : e.clientY; const x=clientX - r.left; const y=clientY - r.top; const rx = x * (canvas.width / r.width); const ry = y * (canvas.height / r.height); return {x:rx,y:ry}; }
+    function drawBg(img){
+        const iw=img.width, ih=img.height, cw=bgCanvas.width, ch=bgCanvas.height;
+        const scale = Math.min(cw/iw, ch/ih);
+        const w=iw*scale, h=ih*scale, x=(cw-w)/2, y=(ch-h)/2;
+        bgCtx.clearRect(0,0,cw,ch);
+        bgCtx.drawImage(img, x, y, w, h);
+    }
 
-    canvas.addEventListener('mousedown', (e)=>{ drawing=true; currentStroke={points:[getPos(e)], color:colorInput.value, size:parseInt(sizeInput.value), mode: eraserMode ? 'eraser' : 'pen'}; });
-    canvas.addEventListener('touchstart', (e)=>{ drawing=true; currentStroke={points:[getPos(e)], color:colorInput.value, size:parseInt(sizeInput.value), mode: eraserMode ? 'eraser' : 'pen'}; e.preventDefault(); });
-    window.addEventListener('mouseup', ()=>{ if(drawing){ drawing=false; strokes.push(currentStroke); currentStroke=null; redraw(); } });
-    window.addEventListener('touchend', ()=>{ if(drawing){ drawing=false; strokes.push(currentStroke); currentStroke=null; redraw(); } });
-    canvas.addEventListener('mousemove', (e)=>{ if(!drawing) return; const p=getPos(e); currentStroke.points.push(p); drawStroke(currentStroke.points.slice(-2), currentStroke.color, currentStroke.size, currentStroke.mode); });
-    canvas.addEventListener('touchmove', (e)=>{ if(!drawing) return; const p=getPos(e); currentStroke.points.push(p); drawStroke(currentStroke.points.slice(-2), currentStroke.color, currentStroke.size, currentStroke.mode); e.preventDefault(); });
+    function loadImage(src, crossOrigin){
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            if(crossOrigin) img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+        });
+    }
 
-    // Undo last stroke
-    undoBtn.addEventListener('click', ()=>{ if(strokes.length>0){ strokes.pop(); redraw(); } });
-    clearBtn.addEventListener('click', ()=>{ strokes=[]; redraw(); });
+    function applyImage(img){
+        // Redimensionne les canvas à la taille réelle de l'image (max 1200x900)
+        const maxW=1200, maxH=900;
+        const scale = Math.min(maxW/img.width, maxH/img.height, 1);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        bgCanvas.width = w; bgCanvas.height = h;
+        canvas.width   = w; canvas.height   = h;
+        currentBg = img;
+        drawBg(img);
+        redraw();
+        // Synchronise la superposition après rendu
+        requestAnimationFrame(syncCanvasOverlay);
+    }
+
+    function getPos(e){
+        const r = canvas.getBoundingClientRect();
+        const touch = e.touches ? e.touches[0] : null;
+        const cx = touch ? touch.clientX : e.clientX;
+        const cy = touch ? touch.clientY : e.clientY;
+        return {
+            x: (cx - r.left) * (canvas.width  / r.width),
+            y: (cy - r.top)  * (canvas.height / r.height)
+        };
+    }
+
+    canvas.addEventListener('mousedown',  e => { drawing=true; currentStroke={points:[getPos(e)], color:colorInput.value, size:parseInt(sizeInput.value), mode: eraserMode?'eraser':'pen'}; });
+    canvas.addEventListener('touchstart', e => { drawing=true; currentStroke={points:[getPos(e)], color:colorInput.value, size:parseInt(sizeInput.value), mode: eraserMode?'eraser':'pen'}; e.preventDefault(); }, {passive:false});
+    window.addEventListener('mouseup',  () => { if(drawing){ drawing=false; if(currentStroke) strokes.push(currentStroke); currentStroke=null; redraw(); } });
+    window.addEventListener('touchend', () => { if(drawing){ drawing=false; if(currentStroke) strokes.push(currentStroke); currentStroke=null; redraw(); } });
+    canvas.addEventListener('mousemove',  e => { if(!drawing) return; const p=getPos(e); currentStroke.points.push(p); drawStroke(currentStroke.points.slice(-2), currentStroke.color, currentStroke.size, currentStroke.mode); });
+    canvas.addEventListener('touchmove',  e => { if(!drawing) return; const p=getPos(e); currentStroke.points.push(p); drawStroke(currentStroke.points.slice(-2), currentStroke.color, currentStroke.size, currentStroke.mode); e.preventDefault(); }, {passive:false});
+
+    window.addEventListener('resize', syncCanvasOverlay);
+
+    undoBtn.addEventListener('click', () => { if(strokes.length>0){ strokes.pop(); redraw(); } });
+    clearBtn.addEventListener('click', () => { strokes=[]; redraw(); });
+
     const eraserBtn = document.getElementById('comm-eraser');
-    eraserBtn.addEventListener('click', ()=>{ eraserMode = !eraserMode; eraserBtn.style.borderColor = eraserMode ? '#333' : ''; eraserBtn.style.color = eraserMode ? '#333' : ''; eraserBtn.textContent = eraserMode ? 'Gomme (ON)' : 'Gomme'; });
-
-    fileInput.addEventListener('change', (e)=>{
-        const f = e.target.files[0]; if(!f) return; const objUrl = URL.createObjectURL(f); // preload image and draw into bg canvas
-        // keep previewImg hidden; draw into background canvas for consistent rendering
-        previewImg.src = objUrl; previewImg.style.display = 'block'; previewImg.style.zIndex = '0'; previewImg.style.pointerEvents = 'none'; removeInput.value = '0';
-        const img = new Image();
-            img.onload = ()=>{
-            // resize canvases keeping aspect ratio
-            const maxW = 1200, maxH = 900;
-            let iw = img.width, ih = img.height;
-            const scale = Math.min(maxW/iw, maxH/ih, 1);
-            const w = Math.round(iw*scale);
-            const h = Math.round(ih*scale);
-            bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
-            // ensure canvases fill the responsive container
-            bgCanvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;';
-            canvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;';
-            // remove explicit container height to let layout remain consistent
-            const container = bgCanvas.parentElement; if(container){ container.style.height = ''; }
-            currentBg = img; drawBg(img); redraw();
-            try{ URL.revokeObjectURL(objUrl); }catch(e){}
-        };
-        img.onerror = ()=>{
-            const w = 640, h = 480;
-            bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
-            bgCanvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;'; canvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;';
-            const container = bgCanvas.parentElement; if(container){ container.style.height = ''; }
-            currentBg = null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw();
-            try{ URL.revokeObjectURL(objUrl); }catch(e){}
-        };
-        img.src = objUrl;
+    eraserBtn.addEventListener('click', () => {
+        eraserMode = !eraserMode;
+        eraserBtn.style.background = eraserMode ? '#374151' : '';
+        eraserBtn.style.color = eraserMode ? '#fff' : '';
+        eraserBtn.textContent = eraserMode ? 'Gomme (ON)' : 'Gomme';
     });
 
-    // buttons to open camera or gallery
-    takePhotoBtn.addEventListener('click', ()=>{ fileInput.setAttribute('capture','environment'); fileInput.click(); });
-    choosePhotoBtn.addEventListener('click', ()=>{ fileInput.removeAttribute('capture'); fileInput.click(); });
-    removeBtn.addEventListener('click', ()=>{
-        // clear any loaded image locally
-        try{ previewImg.src=''; previewImg.style.display='none'; }catch(e){}
+    fileInput.addEventListener('change', async e => {
+        const f = e.target.files[0]; if(!f) return;
+        const objUrl = URL.createObjectURL(f);
+        removeInput.value = '0';
+        try {
+            const img = await loadImage(objUrl, false);
+            applyImage(img);
+        } catch(err) {
+            // fallback canvas vide
+            bgCanvas.width=640; bgCanvas.height=480; canvas.width=640; canvas.height=480;
+            bgCtx.clearRect(0,0,640,480); redraw();
+            requestAnimationFrame(syncCanvasOverlay);
+        } finally {
+            try{ URL.revokeObjectURL(objUrl); }catch(_){}
+        }
+    });
+
+    takePhotoBtn.addEventListener('click',   () => { fileInput.setAttribute('capture','environment'); fileInput.click(); });
+    choosePhotoBtn.addEventListener('click', () => { fileInput.removeAttribute('capture'); fileInput.click(); });
+
+    removeBtn.addEventListener('click', () => {
         currentBg = null;
         bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+        strokes = []; redraw();
         removeInput.value = '1';
-        redraw();
-        // send AJAX request to delete server-side image immediately
-        try{
-            const fd = new FormData();
-            fd.append('remove_image', '1');
-            fd.append('annotation_data', JSON.stringify(strokes || []));
-            fd.append('texte', document.getElementById('texte').value || '');
-            const csrf = document.querySelector('input[name=csrfmiddlewaretoken]').value;
-            fetch('{% url "core:communication_eleve" %}', { method: 'POST', body: fd, headers: { 'X-CSRFToken': csrf } })
-            .then(r=>{
-                if(r.redirected){ window.location = r.url; }
-                else if(r.ok){ window.location = '{% url "core:dashboard_eleve" %}'; }
-                else { r.text().then(t=>alert('Erreur suppression: '+t)); }
-            }).catch(e=>{ alert('Erreur réseau lors de la suppression.'); });
-        }catch(e){ }
+        requestAnimationFrame(syncCanvasOverlay);
     });
 
-    // charger annotations et image existantes si fournies par le serveur
-    {% if ma_comm %}
-        (function preload(){
-            const strokesData = null;
-            if(strokesData){ try{ strokes = strokesData; }catch(e){ strokes = []; } }
-            {% if ma_comm.image %}
-                
-                    const img = new Image();
-                    img.onload = ()=>{
-                        const maxW=1200, maxH=900;
-                        let iw=img.width, ih=img.height;
-                        const scale=Math.min(maxW/iw, maxH/ih, 1);
-                        const w=Math.round(iw*scale);
-                        const h=Math.round(ih*scale);
-                        bgCanvas.width = w; bgCanvas.height = h; canvas.width = w; canvas.height = h;
-                        // ensure canvases fill the responsive container
-                        bgCanvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;';
-                        canvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;';
-                        const container = bgCanvas.parentElement; if(container){ container.style.height = ''; }
-                        previewImg.src='{{ ma_comm.image.url }}'; previewImg.style.display='none'; currentBg = img; drawBg(img); redraw();
-                    };
-                    img.crossOrigin = 'anonymous';
-                    img.onerror = ()=>{ const w=640,h=480; bgCanvas.width=w; bgCanvas.height=h; canvas.width=w; canvas.height=h; bgCanvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;'; canvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;'; const container = bgCanvas.parentElement; if(container){ container.style.height = ''; } previewImg.style.display='none'; currentBg=null; bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height); redraw(); };
-                    img.src='{{ ma_comm.image.url }}';
-            {% else %}
-                redraw();
-            {% endif %}
-        })();
-    {% endif %}
-
-    submitBtn.addEventListener('click', ()=>{
-        // composite bg + overlay into an export canvas
-        const exportCanvas = document.createElement('canvas'); exportCanvas.width = Math.max(bgCanvas.width, canvas.width); exportCanvas.height = Math.max(bgCanvas.height, canvas.height); const ec = exportCanvas.getContext('2d');
-        // draw bg then overlay
-        ec.clearRect(0,0,exportCanvas.width, exportCanvas.height);
+    // Envoyer
+    submitBtn.addEventListener('click', () => {
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width  = bgCanvas.width;
+        exportCanvas.height = bgCanvas.height;
+        const ec = exportCanvas.getContext('2d');
         ec.drawImage(bgCanvas, 0, 0);
-        ec.drawImage(canvas, 0, 0);
-        exportCanvas.toBlob((blob)=>{
-            if(!blob){ alert('Impossible de générer l\'image.'); return; }
-            const fd=new FormData(); fd.append('texte', document.getElementById('texte').value || ''); fd.append('annotation_data', JSON.stringify(strokes)); fd.append('image', blob, 'communication.png'); const csrf=document.querySelector('input[name=csrfmiddlewaretoken]').value;
-            fetch('{% url "core:communication_eleve" %}', { method:'POST', body:fd, headers:{ 'X-CSRFToken': csrf } }).then(r=>{ if(r.redirected) window.location=r.url; else if(r.ok) window.location='{% url "core:dashboard_eleve" %}'; else r.text().then(t=>alert('Erreur: '+t)); }).catch(e=>alert('Erreur réseau: '+e));
+        ec.drawImage(canvas,   0, 0);
+        exportCanvas.toBlob(blob => {
+            const fd   = new FormData();
+            const csrf = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+            fd.append('texte', document.getElementById('texte').value || '');
+            fd.append('annotation_data', JSON.stringify(strokes));
+            if(blob && currentBg) fd.append('image', blob, 'communication.png');
+            fetch('{% url "core:communication_eleve" %}', { method:'POST', body:fd, headers:{'X-CSRFToken':csrf} })
+            .then(r => { if(r.redirected) window.location=r.url; else if(r.ok) window.location='{% url "core:dashboard_eleve" %}'; else r.text().then(t=>alert('Erreur: '+t)); })
+            .catch(err => alert('Erreur réseau: '+err));
         }, 'image/png');
     });
 
-    // Keyboard undo (Ctrl/Cmd+Z) when focus is inside the widget
-    document.addEventListener('keydown', (e)=>{
-        const card = document.querySelector('.comm-card');
-        if(!card) return;
-        const active = document.activeElement;
-        const inside = card.contains(active);
-        const isUndo = (e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === 'z';
-        if(isUndo && inside){ e.preventDefault(); if(strokes.length>0){ strokes.pop(); redraw(); } }
+    // Ctrl+Z
+    document.addEventListener('keydown', e => {
+        const isUndo = (e.ctrlKey||e.metaKey) && e.key && e.key.toLowerCase()==='z';
+        if(isUndo && document.querySelector('.comm-card')){ e.preventDefault(); if(strokes.length>0){ strokes.pop(); redraw(); } }
     });
+
+    // Init
+    syncCanvasOverlay();
 
 })();
 </script>
