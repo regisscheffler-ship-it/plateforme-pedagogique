@@ -186,3 +186,11 @@ class LigneModeOperatoireAdmin(admin.ModelAdmin):
     search_fields = ['phase', 'operations']
     ordering = ['mode_operatoire', 'ordre']
 
+
+@admin.register(ProfilUtilisateur)
+class ProfilUtilisateurAdmin(admin.ModelAdmin):
+    list_display = ['user', 'type_utilisateur', 'classe', 'compte_approuve', 'est_sorti']
+    list_filter = ['type_utilisateur', 'compte_approuve', 'est_sorti']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name']
+    list_editable = ['type_utilisateur', 'compte_approuve']
+
