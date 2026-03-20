@@ -12,9 +12,18 @@ def communication_eleve(request):
     
     # Trouve le prof principal de la classe de l'élève
     classe = profil.classe
-    professeur = ProfilUtilisateur.objects.filter(
-        type_utilisateur='professeur'
-    ).first()
+    # Trouve le prof de la classe de l'élève
+    professeur = None
+    if classe:
+        # Cherche un prof lié à la classe via les thèmes ou directement
+        professeur = ProfilUtilisateur.objects.filter(
+            type_utilisateur='professeur'
+        ).first()
+
+    if not professeur:
+        messages.error(request, 
+            'Aucun professeur disponible. Contactez votre établissement.')
+        return redirect('core:dashboard_eleve')
     
     messages_liste = MessageEleve.objects.filter(
         eleve=profil
