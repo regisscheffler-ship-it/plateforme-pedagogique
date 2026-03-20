@@ -4,6 +4,8 @@ set -o errexit
 echo "=== Installation des dépendances ==="
 pip install --upgrade pip
 pip install -r requirements.txt
+echo "=== Création / mise à jour du profil admin ==="
+python manage.py create_profil_admin || true
 
 echo "=== Collecte des fichiers statiques ==="
 python manage.py collectstatic --no-input
