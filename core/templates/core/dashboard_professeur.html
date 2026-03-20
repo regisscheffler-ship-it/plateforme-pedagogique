@@ -205,7 +205,7 @@
     <div class="dashboard-grid">
 
     <!-- MESSAGES ÉLÈVES (bleue) -->
-    <a href="{% url 'core:communication_prof' %}" class="dashboard-card card-classes" style="border-left-color:#4a7fc1;color:#4a7fc1;position:relative;">
+    <a href="{% url 'core:communications_list' %}" class="dashboard-card card-classes" style="border-left-color:#4a7fc1;color:#4a7fc1;position:relative;">
         {% if nb_messages_non_lus and nb_messages_non_lus > 0 %}
             <span class="card-badge">{{ nb_messages_non_lus }}</span>
         {% endif %}
