@@ -3,6 +3,7 @@ from .models import (
     ProfilUtilisateur, Niveau, Classe, Theme, Dossier,
     Fichier, TypeRessource, TravailARendre, RenduEleve,
     Notification, Archive, EtablissementOrigine,
+    MessageEleve, ReponseProf,
     Referentiel, BlocCompetence, Competence, CompetenceProfessionnelle,
     SousCompetence, CritereEvaluation, IndicateurPerformance,
     FicheContrat, LigneContrat, FicheEvaluation, EvaluationLigne,
@@ -193,4 +194,10 @@ class ProfilUtilisateurAdmin(admin.ModelAdmin):
     list_filter = ['type_utilisateur', 'compte_approuve', 'est_sorti']
     search_fields = ['user__username', 'user__first_name', 'user__last_name']
     list_editable = ['type_utilisateur', 'compte_approuve']
+
+
+@admin.register(MessageEleve)
+class MessageEleveAdmin(admin.ModelAdmin):
+    list_display = ['eleve', 'professeur', 'date_envoi', 'lu']
+    list_filter = ['lu']
 
