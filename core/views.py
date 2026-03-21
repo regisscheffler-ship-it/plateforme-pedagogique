@@ -78,8 +78,7 @@ def communication_prof(request):
         professeur=profil
     ).prefetch_related('reponses', 'eleve__user').order_by('-date_envoi')
     
-    # Marquer comme lus les messages affichés
-    messages_liste.filter(lu=False).update(lu=True)
+    # Ne plus marquer automatiquement comme lus — le professeur choisira
     
     nb_non_lus = MessageEleve.objects.filter(
         professeur=profil, lu=False
@@ -110,6 +109,9 @@ def communication_repondre(request, message_id):
             professeur=profil,
             texte=texte
         )
+        # Quand le professeur répond, on marque le message comme lu
+        msg.lu = True
+        msg.save()
         messages.success(request, 'Réponse envoyée !')
     
     return redirect('core:communication_prof')

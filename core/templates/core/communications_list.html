@@ -46,6 +46,10 @@
                                     <button type="button" class="btn-outline consult-btn" data-img-url="{{ c.image.url }}" data-texte="{{ c.texte|escapejs }}">Consulter</button>
                                     <a href="{{ c.image.url }}" download class="btn-outline">Télécharger</a>
                                 {% endif %}
+                                <form method="post" action="{% url 'core:communication_supprimer' c.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-outline">{% if not c.lu %}Marquer comme lu{% else %}Supprimer{% endif %}</button>
+                                </form>
                             </div>
                         </div>
                     </div>
