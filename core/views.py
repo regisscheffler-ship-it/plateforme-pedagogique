@@ -89,7 +89,7 @@ def communication_prof(request):
         'messages_liste': messages_liste,
         'nb_non_lus': nb_non_lus,
     }
-    return render(request, 'core/communication_prof.html', context)
+    return redirect('core:communications_list')
 
 
 # ── VUE PROF : répondre à un message ──
