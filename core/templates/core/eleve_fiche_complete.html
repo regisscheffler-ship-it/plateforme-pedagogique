@@ -102,7 +102,7 @@
         .th-1   { background: #ffe6cc; text-align: center; }
         .th-2   { background: #ffff99; text-align: center; }
         .th-3   { background: #c6e0b4; text-align: center; }
-        .th-4   { background: #a9d08e; text-align: center; }
+        /* .th-4 removed: note 4 deprecated */
         .th-pct { background: #f0f0f0; text-align: center; font-size: 0.82em; }
         .row-cp td { background: #4472c4; color: #fff; font-weight: 700; font-size: 0.9em; padding: 3px 5px; }
         .row-sc td { background: #dce6f1; font-style: italic; font-size: 0.82em; padding: 2px 5px; }
@@ -113,7 +113,7 @@
         .td-1   { background: #ffe6cc !important; text-align: center; }
         .td-2   { background: #ffff99 !important; text-align: center; }
         .td-3   { background: #c6e0b4 !important; text-align: center; }
-        .td-4   { background: #a9d08e !important; text-align: center; }
+        .td-4   { /* legacy: not used */ }
         .td-pct { background: #f8f9fa !important; text-align: center; font-size: 0.82em; }
 
         .legende { display: flex; gap: 8px; font-size: 0.7em; flex-wrap: wrap; padding: 2px 0; align-items: center; flex-shrink: 0; }
@@ -333,13 +333,12 @@
     </div>
 
     <!-- LÉGENDE -->
-    <div class="legende">
+        <div class="legende">
         <div class="leg-item"><div class="leg-color" style="background:#d9d9d9;"></div> NE = Non évalué</div>
         <div class="leg-item"><div class="leg-color" style="background:#ffc0c0;"></div> 0 = Non maîtrisé</div>
         <div class="leg-item"><div class="leg-color" style="background:#ffe6cc;"></div> 1 = Insuffisant</div>
         <div class="leg-item"><div class="leg-color" style="background:#ffff99;"></div> 2 = Partiel</div>
         <div class="leg-item"><div class="leg-color" style="background:#c6e0b4;"></div> 3 = Satisfaisant</div>
-        <div class="leg-item"><div class="leg-color" style="background:#a9d08e;"></div> 4 = Très bien</div>
     </div>
 
     <!-- FOOTER NOTE (couleur selon la note) -->
