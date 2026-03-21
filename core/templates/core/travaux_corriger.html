@@ -7,12 +7,12 @@
         <svg viewBox="0 0 24 24" stroke="#4a7fc1" stroke-width="2" fill="none" style="width:32px;height:32px;">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
-        <span style="font-size:1.3rem;font-weight:700;color:#4a7fc1;">Messages élèves</span>
+        <span class="page-header-title" style="color:#4a7fc1;">Messages élèves</span>
         {% if nb_messages_non_lus and nb_messages_non_lus > 0 %}
-            <span style="background:#d94f4f;color:white;font-size:0.9rem;font-weight:700;padding:4px 12px;border-radius:20px;margin-left:0.6rem;">{{ nb_messages_non_lus }}</span>
+            <span class="count-badge" style="background:#4a7fc1;margin-left:0.6rem;">{{ nb_messages_non_lus }}</span>
         {% endif %}
     </div>
-    <a href="{% url 'core:communication_prof' %}" style="background:#4a7fc1;color:white;font-weight:600;padding:0.7rem 1.3rem;border-radius:10px;text-decoration:none;font-size:1rem;">Voir les messages</a>
+    <a href="{% url 'core:communication_prof' %}" class="btn-outline-primary">Voir les messages</a>
 </div>
 
 <style>
@@ -74,6 +74,9 @@
         flex-shrink: 0;
     }
 
+    /* variante bleue pour messages */
+    .count-badge.blue { background: #4a7fc1; }
+
     .btn-retour {
         display: inline-flex;
         align-items: center;
@@ -94,6 +97,25 @@
         color: white;
         transform: translateY(-2px);
     }
+
+    /* Bouton primaire outline (bleu) */
+    .btn-outline-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        background: white;
+        color: #4a7fc1;
+        border: 2px solid #4a7fc1;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.18s ease;
+        font-size: 0.96rem;
+    }
+    .btn-outline-primary:hover { background: #4a7fc1; color: white; transform: translateY(-2px); }
+
+    .page-header-title { font-size: 1.25rem; font-weight: 700; }
 
     /* ─── LISTE ─────────────────────────────── */
     .rendus-list {
