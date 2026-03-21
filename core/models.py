@@ -859,7 +859,7 @@ class FicheEvaluation(models.Model):
             try:
                 note_int = int(ligne.note)
                 poids = float(ligne.ligne_contrat.poids)
-                total_pondere += (note_int / 4.0) * poids
+                total_pondere += (note_int / 3.0) * poids
                 poids_total += poids
             except (ValueError, AttributeError):
                 continue
@@ -899,7 +899,7 @@ class FicheEvaluation(models.Model):
 
             if ligne.note != 'NE':
                 note_int = int(ligne.note)
-                contribution = (note_int / 4.0) * poids
+                contribution = (note_int / 3.0) * poids
                 total_pondere += contribution
                 poids_evalues += poids
             else:
@@ -931,8 +931,7 @@ class EvaluationLigne(models.Model):
         ('0', '0 - Insuffisant'),
         ('1', '1 - Fragile'),
         ('2', '2 - Satisfaisant'),
-        ('3', '3 - Très satisfaisant'), # Accent sur 'Très'
-        ('4', '4 - Excellent'),
+        ('3', '3 - Très satisfaisant'),
     ]
 
     fiche_evaluation = models.ForeignKey(
