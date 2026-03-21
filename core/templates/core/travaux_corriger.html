@@ -2,37 +2,7 @@
 {% block title %}Travaux à corriger{% endblock %}
 {% block content %}
 
-<div class="page-header-block" style="margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem;">
-    <div style="display:flex;align-items:center;gap:0.8rem;">
-        <svg viewBox="0 0 24 24" stroke="#e74c3c" stroke-width="2" fill="none" style="width:32px;height:32px;">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-        </svg>
-        <h1>Travaux à corriger</h1>
-        <p style="margin:0 0 0 0.6rem;color:#6c757d;font-size:0.95rem;">0 en attente de correction</p>
-    </div>
-    <div style="display:flex;align-items:center;gap:1rem;">
-        <a href="{% url 'core:dashboard_professeur' %}" class="btn-retour">← Retour</a>
-        {% if nb_messages_non_lus and nb_messages_non_lus > 0 %}
-        <a href="{% url 'core:communications_list' %}" 
-           class="btn-retour" 
-           style="color:#4a7fc1;border-color:#4a7fc1;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" 
-                 stroke="currentColor" stroke-width="2.5" 
-                 stroke-linecap="round" stroke-linejoin="round" style="margin-right:0.45rem;">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            {{ nb_messages_non_lus }} message(s) élève
-        </a>
-        {% endif %}
-    </div>
-</div>
-
 <style>
-    /* ========================================
-       TRAVAUX À CORRIGER — Rouge #e74c3c
-       ======================================== */
-
     .page-container {
         max-width: 1600px;
         width: 100%;
@@ -40,12 +10,11 @@
         padding: 2rem;
     }
 
-    /* ─── EN-TÊTE ─────────────────────────────── */
     .page-header-block {
         background: white;
         border-radius: 16px;
         padding: 2rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         box-shadow: 0 8px 24px rgba(0,0,0,0.08);
         border-left: 5px solid #e74c3c;
         display: flex;
@@ -65,17 +34,8 @@
         font-weight: 700;
     }
 
-    .page-header-block h1 svg {
-        stroke: #e74c3c;
-        fill: none;
-        stroke-width: 1.5;
-    }
-
-    .page-header-block p {
-        margin: 0;
-        color: #6c757d;
-        font-size: 0.95rem;
-    }
+    .page-header-block h1 svg { stroke: #e74c3c; fill: none; stroke-width: 1.5; }
+    .page-header-block p { margin: 0; color: #6c757d; font-size: 0.95rem; }
 
     .count-badge {
         background: #e74c3c;
@@ -86,9 +46,6 @@
         font-size: 1.3rem;
         flex-shrink: 0;
     }
-
-    /* variante bleue pour messages */
-    .count-badge.blue { background: #4a7fc1; }
 
     .btn-retour {
         display: inline-flex;
@@ -104,40 +61,64 @@
         transition: all 0.3s;
         flex-shrink: 0;
     }
+    .btn-retour:hover { background: #e74c3c; color: white; transform: translateY(-2px); }
 
-    .btn-retour:hover {
-        background: #e74c3c;
-        color: white;
-        transform: translateY(-2px);
+    /* Bannière messages élèves */
+    .messages-banner {
+        background: white;
+        border-radius: 16px;
+        padding: 1.2rem 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border-left: 5px solid #4a7fc1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
-    /* Bouton primaire outline (bleu) */
-    .btn-outline-primary {
+    .messages-banner-left {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .messages-banner-left svg { stroke: #4a7fc1; fill: none; }
+
+    .messages-banner-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .count-badge-blue {
+        background: #4a7fc1;
+        color: white;
+        padding: 0.3rem 0.9rem;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .btn-messages {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.6rem 1.2rem;
+        padding: 0.7rem 1.5rem;
         background: white;
         color: #4a7fc1;
         border: 2px solid #4a7fc1;
         border-radius: 8px;
         text-decoration: none;
         font-weight: 600;
-        transition: all 0.18s ease;
-        font-size: 0.96rem;
+        transition: all 0.3s;
+        flex-shrink: 0;
     }
-    .btn-outline-primary:hover { background: #4a7fc1; color: white; transform: translateY(-2px); }
+    .btn-messages:hover { background: #4a7fc1; color: white; transform: translateY(-2px); }
 
-    .page-header-title { font-size: 1.25rem; font-weight: 700; }
+    .rendus-list { display: flex; flex-direction: column; gap: 1rem; }
 
-    /* ─── LISTE ─────────────────────────────── */
-    .rendus-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    /* ─── CARTE RENDU ────────────────────────── */
     .rendu-card {
         background: white;
         border: 1.5px solid #e9ecef;
@@ -146,152 +127,56 @@
         padding: 1.5rem;
         transition: all 0.3s ease;
     }
+    .rendu-card:hover { transform: translateX(6px); box-shadow: 0 6px 20px rgba(231,76,60,0.12); border-left-color: #c0392b; }
 
-    .rendu-card:hover {
-        transform: translateX(6px);
-        box-shadow: 0 6px 20px rgba(231,76,60,0.12);
-        border-left-color: #c0392b;
-    }
-
-    .rendu-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1.5rem;
-    }
-
+    .rendu-content { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
     .rendu-info { flex: 1; }
 
-    .rendu-header-row {
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
-        margin-bottom: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .rendu-header-row h3 {
-        margin: 0;
-        color: #2c3e50;
-        font-size: 1.2rem;
-        font-weight: 700;
-    }
+    .rendu-header-row { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+    .rendu-header-row h3 { margin: 0; color: #2c3e50; font-size: 1.2rem; font-weight: 700; }
 
     .tag-eleve {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.2rem 0.75rem;
-        background: #fef2f2;
-        color: #c0392b;
-        border-radius: 20px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        border: 1px solid #fca5a5;
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 0.2rem 0.75rem; background: #fef2f2; color: #c0392b;
+        border-radius: 20px; font-size: 0.82rem; font-weight: 600; border: 1px solid #fca5a5;
     }
-
     .tag-classe {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.2rem 0.75rem;
-        background: #f8f9fa;
-        color: #495057;
-        border-radius: 20px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        border: 1px solid #dee2e6;
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 0.2rem 0.75rem; background: #f8f9fa; color: #495057;
+        border-radius: 20px; font-size: 0.82rem; font-weight: 600; border: 1px solid #dee2e6;
     }
 
-    .rendu-meta {
-        display: flex;
-        gap: 1.2rem;
-        font-size: 0.88rem;
-        color: #7a8694;
-        flex-wrap: wrap;
-        margin-top: 0.25rem;
-    }
+    .rendu-meta { display: flex; gap: 1.2rem; font-size: 0.88rem; color: #7a8694; flex-wrap: wrap; margin-top: 0.25rem; }
+    .rendu-meta-item { display: flex; align-items: center; gap: 0.35rem; }
+    .rendu-commentaire { margin-top: 0.6rem; font-size: 0.9rem; color: #6c757d; font-style: italic; }
 
-    .rendu-meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-
-    .rendu-commentaire {
-        margin-top: 0.6rem;
-        font-size: 0.9rem;
-        color: #6c757d;
-        font-style: italic;
-    }
-
-    /* ─── ACTIONS ─────────────────────────────── */
-    .rendu-actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        flex-shrink: 0;
-    }
+    .rendu-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; flex-shrink: 0; }
 
     .btn-action {
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 0.85rem;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.4rem;
-        white-space: nowrap;
-        background: white;
-        border: 2px solid currentColor;
+        padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none;
+        font-weight: 600; font-size: 0.85rem; transition: all 0.3s ease;
+        cursor: pointer; display: inline-flex; align-items: center;
+        justify-content: center; gap: 0.4rem; white-space: nowrap;
+        background: white; border: 2px solid currentColor;
     }
-
     .btn-action:hover { transform: translateY(-2px); }
 
-    .btn-telecharger  { color: #059669; }
-    .btn-telecharger:hover { background: #059669; color: white; box-shadow: 0 4px 12px rgba(5,150,105,0.25); }
-
-    /* Voir (view-only) button */
-    .btn-voir { color: #0d6efd; }
-    .btn-voir:hover { background: #0d6efd; color: white; box-shadow: 0 4px 12px rgba(13,110,253,0.25); }
-
-    .btn-corriger     { color: #007bff; }
+    .btn-voir    { color: #0d6efd; }
+    .btn-voir:hover    { background: #0d6efd; color: white; box-shadow: 0 4px 12px rgba(13,110,253,0.25); }
+    .btn-corriger { color: #007bff; }
     .btn-corriger:hover { background: #007bff; color: white; box-shadow: 0 4px 12px rgba(0,123,255,0.25); }
-
-    .btn-marquer      { color: #e74c3c; }
+    .btn-marquer  { color: #e74c3c; }
     .btn-marquer:hover  { background: #e74c3c; color: white; box-shadow: 0 4px 12px rgba(231,76,60,0.25); }
-
-    .btn-disabled {
-        color: #adb5bd;
-        border-color: #dee2e6;
-        cursor: not-allowed;
-        background: #f8f9fa;
-    }
+    .btn-disabled { color: #adb5bd; border-color: #dee2e6; cursor: not-allowed; background: #f8f9fa; }
     .btn-disabled:hover { transform: none; box-shadow: none; }
 
     .form-inline { display: contents; }
 
-    /* ─── ÉTAT VIDE ──────────────────────────── */
     .empty-state {
-        background: #f8f9fa;
-        border: 2px dashed #dee2e6;
-        border-radius: 12px;
-        padding: 3.5rem;
-        text-align: center;
+        background: #f8f9fa; border: 2px dashed #dee2e6;
+        border-radius: 12px; padding: 3.5rem; text-align: center;
     }
-
-    .empty-state svg {
-        width: 56px;
-        height: 56px;
-        stroke: #adb5bd;
-        fill: none;
-        margin-bottom: 1rem;
-    }
-
+    .empty-state svg { width: 56px; height: 56px; stroke: #adb5bd; fill: none; margin-bottom: 1rem; }
     .empty-state h3 { color: #6c757d; margin: 0 0 0.4rem; }
     .empty-state p  { color: #adb5bd; margin: 0; font-size: 0.95rem; }
 
@@ -304,7 +189,7 @@
 
 <div class="page-container">
 
-    <!-- En-tête -->
+    <!-- ═══ EN-TÊTE TRAVAUX ═══ -->
     <div class="page-header-block">
         <div>
             <h1>
@@ -320,13 +205,34 @@
         <div style="display:flex; align-items:center; gap:1rem; flex-shrink:0;">
             <span class="count-badge">{{ rendus|length }}</span>
             <a href="{% url 'core:dashboard_professeur' %}" class="btn-retour">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
                 Retour
             </a>
         </div>
     </div>
 
-    <!-- Liste des rendus -->
+    <!-- ═══ BANNIÈRE MESSAGES ÉLÈVES ═══ -->
+    {% if nb_messages_non_lus and nb_messages_non_lus > 0 %}
+    <div class="messages-banner">
+        <div class="messages-banner-left">
+            <svg width="28" height="28" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="messages-banner-title">Messages élèves</span>
+            <span class="count-badge-blue">{{ nb_messages_non_lus }}</span>
+        </div>
+        <a href="{% url 'core:communications_list' %}" class="btn-messages">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Voir les messages
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- ═══ LISTE DES RENDUS ═══ -->
     {% if rendus %}
     <div class="rendus-list">
         {% for rendu in rendus %}
@@ -336,17 +242,28 @@
                     <div class="rendu-header-row">
                         <h3>{{ rendu.travail.titre }}</h3>
                         <span class="tag-eleve">
-                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
                             {{ rendu.eleve.user.get_full_name }}
                         </span>
                         <span class="tag-classe">
-                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
                             {{ rendu.eleve.classe.nom }}
                         </span>
                     </div>
                     <div class="rendu-meta">
                         <div class="rendu-meta-item">
-                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
                             Rendu le {{ rendu.date_rendu|date:"d/m/Y à H:i" }}
                         </div>
                     </div>
@@ -358,25 +275,37 @@
                 <div class="rendu-actions">
                     {% if rendu.fichier_rendu %}
                         <a href="{{ rendu.fichier_rendu.url }}" class="btn-action btn-voir" target="_blank" rel="noopener noreferrer">
-                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
                             Voir
                         </a>
                     {% else %}
                         <span class="btn-action btn-disabled">
-                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
                             Aucun fichier
                         </span>
                     {% endif %}
 
                     <a href="{% url 'core:corriger_rendu' rendu.id %}" class="btn-action btn-corriger">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
                         Corriger
                     </a>
 
                     <form method="post" action="{% url 'core:marquer_corrige' rendu.id %}" class="form-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn-action btn-marquer">
-                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
                             Marquer corrigé
                         </button>
                     </form>
@@ -388,7 +317,7 @@
 
     {% else %}
     <div class="empty-state">
-        <svg stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+        <svg stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
         </svg>
