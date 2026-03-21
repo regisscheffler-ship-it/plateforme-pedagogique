@@ -2,17 +2,30 @@
 {% block title %}Travaux à corriger{% endblock %}
 {% block content %}
 
-<div class="page-header-block" style="border-left:5px solid #4a7fc1; margin-bottom:1.5rem; display:flex; align-items:center; gap:1.2rem;">
+<div class="page-header-block" style="margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem;">
     <div style="display:flex;align-items:center;gap:0.8rem;">
-        <svg viewBox="0 0 24 24" stroke="#4a7fc1" stroke-width="2" fill="none" style="width:32px;height:32px;">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        <svg viewBox="0 0 24 24" stroke="#e74c3c" stroke-width="2" fill="none" style="width:32px;height:32px;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
         </svg>
-        <span class="page-header-title" style="color:#4a7fc1;">Messages élèves</span>
+        <h1>Travaux à corriger</h1>
+        <p style="margin:0 0 0 0.6rem;color:#6c757d;font-size:0.95rem;">0 en attente de correction</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;">
+        <a href="{% url 'core:dashboard_professeur' %}" class="btn-retour">← Retour</a>
         {% if nb_messages_non_lus and nb_messages_non_lus > 0 %}
-            <span class="count-badge" style="background:#4a7fc1;margin-left:0.6rem;">{{ nb_messages_non_lus }}</span>
+        <a href="{% url 'core:communications_list' %}" 
+           class="btn-retour" 
+           style="color:#4a7fc1;border-color:#4a7fc1;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" 
+                 stroke="currentColor" stroke-width="2.5" 
+                 stroke-linecap="round" stroke-linejoin="round" style="margin-right:0.45rem;">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            {{ nb_messages_non_lus }} message(s) élève
+        </a>
         {% endif %}
     </div>
-    <a href="{% url 'core:communication_prof' %}" class="btn-outline-primary">Voir les messages</a>
 </div>
 
 <style>
