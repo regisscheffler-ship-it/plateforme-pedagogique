@@ -157,21 +157,20 @@
         <div class="eval-section">
             <table>
                 <thead>
-                    <tr>
-                        <th style="width:46%">Critère d'évaluation</th>
-                        <th class="bg-ne" style="width:7%">NE</th>
-                        <th class="bg-0"  style="width:7%">0</th>
-                        <th class="bg-1"  style="width:7%">1</th>
-                        <th class="bg-2"  style="width:7%">2</th>
-                        <th class="bg-3"  style="width:7%">3</th>
-                        <th class="bg-4"  style="width:7%">4</th>
-                    </tr>
+                        <tr>
+                            <th style="width:52%">Critère d'évaluation</th>
+                            <th class="bg-ne" style="width:8%">NE</th>
+                            <th class="bg-0"  style="width:8%">0</th>
+                            <th class="bg-1"  style="width:8%">1</th>
+                            <th class="bg-2"  style="width:8%">2</th>
+                            <th class="bg-3"  style="width:8%">3</th>
+                        </tr>
                 </thead>
                 <tbody>
                     {% for groupe in groupes_competences %}
-                        <tr><td colspan="7" class="th-cp">{% if groupe.competence_pro %}{{ groupe.competence_pro.code }} - {{ groupe.competence_pro.nom }}{% else %}Transversales{% endif %}</td></tr>
+                        <tr><td colspan="6" class="th-cp">{% if groupe.competence_pro %}{{ groupe.competence_pro.code }} - {{ groupe.competence_pro.nom }}{% else %}Transversales{% endif %}</td></tr>
                         {% for sc_group in groupe.sous_competences %}
-                            <tr><td colspan="7" class="th-sc">{{ sc_group.sous_competence.nom }}</td></tr>
+                            <tr><td colspan="6" class="th-sc">{{ sc_group.sous_competence.nom }}</td></tr>
                             {% for ligne in sc_group.lignes %}
                             <tr>
                                 <td class="critere-cell">{{ ligne.ligne_contrat.critere.nom }}</td>
@@ -180,7 +179,6 @@
                                 <td class="radio-cell bg-1"><input type="radio" {% if ligne.note == '1' %}checked{% endif %} disabled></td>
                                 <td class="radio-cell bg-2"><input type="radio" {% if ligne.note == '2' %}checked{% endif %} disabled></td>
                                 <td class="radio-cell bg-3"><input type="radio" {% if ligne.note == '3' %}checked{% endif %} disabled></td>
-                                <td class="radio-cell bg-4"><input type="radio" {% if ligne.note == '4' %}checked{% endif %} disabled></td>
                             </tr>
                             {% endfor %}
                         {% endfor %}

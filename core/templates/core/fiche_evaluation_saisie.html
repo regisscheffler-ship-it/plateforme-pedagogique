@@ -178,22 +178,21 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:42%">Critère d'évaluation</th>
-                            <th class="bg-ne" style="width:7%">NE</th>
-                            <th class="bg-0"  style="width:7%">0</th>
-                            <th class="bg-1"  style="width:7%">1</th>
-                            <th class="bg-2"  style="width:7%">2</th>
-                            <th class="bg-3"  style="width:7%">3</th>
-                            <th class="bg-4"  style="width:7%">4</th>
+                            <th style="width:48%">Critère d'évaluation</th>
+                            <th class="bg-ne" style="width:8%">NE</th>
+                            <th class="bg-0"  style="width:8%">0</th>
+                            <th class="bg-1"  style="width:8%">1</th>
+                            <th class="bg-2"  style="width:8%">2</th>
+                            <th class="bg-3"  style="width:8%">3</th>
                             <th class="bg-pct" style="width:9%">Poids %</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for groupe in groupes_competences %}
-                            <tr><td colspan="8" class="th-cp">{% if groupe.competence_pro %}{{ groupe.competence_pro.code }} - {{ groupe.competence_pro.nom }}{% else %}Autres indicateurs{% endif %}</td></tr>
+                            <tr><td colspan="7" class="th-cp">{% if groupe.competence_pro %}{{ groupe.competence_pro.code }} - {{ groupe.competence_pro.nom }}{% else %}Autres indicateurs{% endif %}</td></tr>
                             {% for sc_group in groupe.sous_competences %}
                                 {% if sc_group.sous_competence %}
-                                <tr><td colspan="8" class="th-sc">{{ sc_group.sous_competence.nom }}</td></tr>
+                                <tr><td colspan="7" class="th-sc">{{ sc_group.sous_competence.nom }}</td></tr>
                                 {% endif %}
                                 {% for ligne in sc_group.lignes %}
                                 <tr class="calc-row">
@@ -228,12 +227,6 @@
                                             {% if fiche_eval.validee %}disabled{% endif %}
                                             onchange="recalc()">
                                     </td>
-                                    <td class="radio-cell bg-4">
-                                        <input type="radio" name="note_{{ ligne.id }}" value="4"
-                                            {% if ligne.note == '4' %}checked{% endif %}
-                                            {% if fiche_eval.validee %}disabled{% endif %}
-                                            onchange="recalc()">
-                                    </td>
                                     <td class="bg-pct">
                                         <input type="text" class="input-weight"
                                             name="poids_{{ ligne.id }}"
@@ -250,14 +243,13 @@
             </div>
 
             <!-- Légende -->
-            <div class="legende">
-                <div class="leg-item"><div class="leg-color" style="background:#d9d9d9;"></div> NC – Non évalué</div>
-                <div class="leg-item"><div class="leg-color" style="background:#ffc0c0;"></div> 0 – Non maîtrisé</div>
-                <div class="leg-item"><div class="leg-color" style="background:#ffe6cc;"></div> 1 – Insuffisant</div>
-                <div class="leg-item"><div class="leg-color" style="background:#ffff99;"></div> 2 – Partiel</div>
-                <div class="leg-item"><div class="leg-color" style="background:#c6e0b4;"></div> 3 – Satisfaisant</div>
-                <div class="leg-item"><div class="leg-color" style="background:#a9d08e;"></div> 4 – Très bien</div>
-            </div>
+                <div class="legende">
+                    <div class="leg-item"><div class="leg-color" style="background:#d9d9d9;"></div> NC – Non évalué</div>
+                    <div class="leg-item"><div class="leg-color" style="background:#ffc0c0;"></div> 0 – Non maîtrisé</div>
+                    <div class="leg-item"><div class="leg-color" style="background:#ffe6cc;"></div> 1 – Insuffisant</div>
+                    <div class="leg-item"><div class="leg-color" style="background:#ffff99;"></div> 2 – Partiel</div>
+                    <div class="leg-item"><div class="leg-color" style="background:#c6e0b4;"></div> 3 – Satisfaisant</div>
+                </div>
 
             <!-- Footer -->
             <div class="footer-row">
@@ -314,7 +306,7 @@
                 if (chk) {
                     hasChecked = true;
                     const v = parseFloat(chk.value);
-                    if (!isNaN(v) && v >= 0) wSum += (v / 4) * w;
+                    if (!isNaN(v) && v >= 0) wSum += (v / 3) * w;
                 }
             });
 

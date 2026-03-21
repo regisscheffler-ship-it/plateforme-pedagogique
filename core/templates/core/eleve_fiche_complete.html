@@ -287,27 +287,26 @@
     <table class="eval-table">
         <thead>
             <tr>
-                <th class="th-dark" style="width:40%">Critère d'évaluation</th>
-                <th class="th-ne"  style="width:6%">NE</th>
-                <th class="th-0"   style="width:6%">0</th>
-                <th class="th-1"   style="width:6%">1</th>
-                <th class="th-2"   style="width:6%">2</th>
-                <th class="th-3"   style="width:6%">3</th>
-                <th class="th-4"   style="width:6%">4</th>
+                <th class="th-dark" style="width:46%">Critère d'évaluation</th>
+                <th class="th-ne"  style="width:8%">NE</th>
+                <th class="th-0"   style="width:8%">0</th>
+                <th class="th-1"   style="width:8%">1</th>
+                <th class="th-2"   style="width:8%">2</th>
+                <th class="th-3"   style="width:8%">3</th>
                 <th class="th-pct" style="width:7%">Poids%</th>
             </tr>
         </thead>
         <tbody>
         {% for groupe in groupes_competences %}
             <tr class="row-cp">
-                <td colspan="8">
+                <td colspan="7">
                     {% if groupe.competence_pro %}{{ groupe.competence_pro.code }} — {{ groupe.competence_pro.nom }}{% else %}Transversales{% endif %}
                 </td>
             </tr>
             {% for sc_group in groupe.sous_competences %}
                 {% if sc_group.sous_competence %}
                 <tr class="row-sc">
-                    <td colspan="8">↳ {{ sc_group.sous_competence.nom }}</td>
+                    <td colspan="7">↳ {{ sc_group.sous_competence.nom }}</td>
                 </tr>
                 {% endif %}
                 {% for le in sc_group.lignes %}
@@ -324,7 +323,6 @@
                     <td class="td-1" >{% if le.note == '1'  %}●{% endif %}</td>
                     <td class="td-2" >{% if le.note == '2'  %}●{% endif %}</td>
                     <td class="td-3" >{% if le.note == '3'  %}●{% endif %}</td>
-                    <td class="td-4" >{% if le.note == '4'  %}●{% endif %}</td>
                     <td class="td-pct">{{ le.ligne_contrat.poids|floatformat:1 }}</td>
                 </tr>
                 {% endfor %}

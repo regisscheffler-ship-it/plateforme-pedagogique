@@ -180,27 +180,26 @@ body { font-family: Arial, sans-serif; background: #666; margin: 0; padding: 0; 
     <table class="eval-table" id="tbl-{{ item.evaluation.id }}">
         <thead>
             <tr>
-                <th class="th-dark" style="width:40%">Critère d'évaluation</th>
-                <th class="th-ne" style="width:6%">NE</th>
-                <th class="th-0"  style="width:6%">0</th>
-                <th class="th-1"  style="width:6%">1</th>
-                <th class="th-2"  style="width:6%">2</th>
-                <th class="th-3"  style="width:6%">3</th>
-                <th class="th-4"  style="width:6%">4</th>
+                <th class="th-dark" style="width:46%">Critère d'évaluation</th>
+                <th class="th-ne" style="width:8%">NE</th>
+                <th class="th-0"  style="width:8%">0</th>
+                <th class="th-1"  style="width:8%">1</th>
+                <th class="th-2"  style="width:8%">2</th>
+                <th class="th-3"  style="width:8%">3</th>
                 <th class="th-pct" style="width:7%">Poids%</th>
             </tr>
         </thead>
         <tbody>
         {% for groupe in item.groupes_competences %}
             <tr class="row-cp">
-                <td colspan="8">
+                <td colspan="7">
                     {% if groupe.competence_pro %}{{ groupe.competence_pro.code }} — {{ groupe.competence_pro.nom }}{% else %}Transversales{% endif %}
                 </td>
             </tr>
             {% for sc_group in groupe.sous_competences %}
                 {% if sc_group.sous_competence %}
                 <tr class="row-sc">
-                    <td colspan="8">↳ {{ sc_group.sous_competence.nom }}</td>
+                    <td colspan="7">↳ {{ sc_group.sous_competence.nom }}</td>
                 </tr>
                 {% endif %}
                 {% for le in sc_group.lignes %}
@@ -226,9 +225,6 @@ body { font-family: Arial, sans-serif; background: #666; margin: 0; padding: 0; 
                     <td class="td-3">
                         <input type="radio" name="n_{{ item.evaluation.id }}_{{ le.id }}" data-ligne="{{ le.id }}" data-eval="{{ item.evaluation.id }}" value="3" {% if le.note == '3' %}checked{% endif %} onchange="recalc('{{ item.evaluation.id }}')">
                     </td>
-                    <td class="td-4">
-                        <input type="radio" name="n_{{ item.evaluation.id }}_{{ le.id }}" data-ligne="{{ le.id }}" data-eval="{{ item.evaluation.id }}" value="4" {% if le.note == '4' %}checked{% endif %} onchange="recalc('{{ item.evaluation.id }}')">
-                    </td>
                     <td class="td-pct">
                         <input type="text" class="input-poids" data-eval="{{ item.evaluation.id }}" data-ligne="{{ le.id }}" value="{{ le.ligne_contrat.poids|floatformat:1 }}" oninput="recalc('{{ item.evaluation.id }}')">
                     </td>
@@ -241,13 +237,12 @@ body { font-family: Arial, sans-serif; background: #666; margin: 0; padding: 0; 
     </div><!-- /table-wrap -->
 
     <!-- LÉGENDE -->
-    <div class="legende">
+        <div class="legende">
         <div class="leg-item"><div class="leg-color" style="background:#d9d9d9;"></div> NE = Non évalué</div>
         <div class="leg-item"><div class="leg-color" style="background:#ffc0c0;"></div> 0 = Non maîtrisé</div>
         <div class="leg-item"><div class="leg-color" style="background:#ffe6cc;"></div> 1 = Insuffisant</div>
         <div class="leg-item"><div class="leg-color" style="background:#ffff99;"></div> 2 = Partiel</div>
         <div class="leg-item"><div class="leg-color" style="background:#c6e0b4;"></div> 3 = Satisfaisant</div>
-        <div class="leg-item"><div class="leg-color" style="background:#a9d08e;"></div> 4 = Très bien</div>
     </div>
 
     <!-- FOOTER -->
@@ -312,15 +307,15 @@ function recalc(evalId) {
 
     var totalW = 0, sumP = 0, hasNote = false;
 
-    rows.forEach(function(row) {
+        rows.forEach(function(row) {
         var pInput = row.querySelector('.input-poids[data-eval="' + evalId + '"]');
         var w = pInput ? parseFloat(pInput.value.replace(',', '.')) || 0 : 0;
         totalW += w;
         var checked = row.querySelector('input[type="radio"][data-eval="' + evalId + '"]:checked');
-        if (checked) {
-            var v = parseFloat(checked.value);
-            if (v >= 0) { sumP += (v / 4) * w; hasNote = true; }
-        }
+            if (checked) {
+                var v = parseFloat(checked.value);
+                if (v >= 0) { sumP += (v / 3) * w; hasNote = true; }
+            }
     });
 
     var tw = Math.round(totalW * 10) / 10;
