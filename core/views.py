@@ -15,6 +15,12 @@ def communication_eleve(request):
     # Trouve le prof de la classe de l'élève
     professeur = None
     if classe:
+        try:
+            professeur = classe.professeur_principal
+        except Exception:
+            professeur = None
+    # Affiche la page communication élève (placeholder minimal pour conserver la vue)
+    return render(request, 'core/communication_eleve.html', {'profil': profil, 'professeur': professeur})
 def _generer_pdf_fiche_complete(fc, fiche_eval, competences_vises,
                                  savoirs_dedupliques, groupes_competences,
                                  poids_auto):
@@ -377,91 +383,7 @@ def archives_export(request):
     resp = HttpResponse(bio.read(), content_type='application/zip')
     resp['Content-Disposition'] = f'attachment; filename="{filename}"'
     return resp
-            spaceAfter=12, fontName='Helvetica-Bold', alignment=TA_CENTER)
-        h2_style = ParagraphStyle('h2', fontSize=12,
-            spaceAfter=6, fontName='Helvetica-Bold',
-            textColor=colors.HexColor('#2c3e50'))
-        body_style = ParagraphStyle('body', fontSize=10,
-            spaceAfter=4, fontName='Helvetica')
-
-        story = []
-        titre = getattr(fiche_contrat, 'titre_tp',
-                getattr(fiche_contrat, 'titre', ''))
-        story.append(Paragraph(f"Fiche Contrat — {titre}", titre_style))
-        story.append(HRFlowable(width="100%", thickness=2,
-            color=colors.HexColor('#e74c3c'), spaceAfter=12))
-
-        classe_nom = fiche_contrat.classe.nom if fiche_contrat.classe else ''
-        story.append(Paragraph(f"Classe : {classe_nom}", body_style))
-        if fiche_contrat.date_tp:
-            story.append(Paragraph(f"Date : {fiche_contrat.date_tp}", body_style))
-        story.append(Spacer(1, 0.4*cm))
-
-        if getattr(fiche_contrat, 'problematique', ''):
-            story.append(Paragraph("Problématique", h2_style))
-            story.append(Paragraph(fiche_contrat.problematique, body_style))
-            story.append(Spacer(1, 0.3*cm))
-
-        if getattr(fiche_contrat, 'consigne', ''):
-            story.append(Paragraph("Consigne", h2_style))
-            story.append(Paragraph(fiche_contrat.consigne, body_style))
-            story.append(Spacer(1, 0.3*cm))
-
-        lignes = fiche_contrat.lignes.select_related(
-            'competence_pro', 'critere', 'indicateur'
-        ).order_by('ordre')
-
-        if lignes:
-            story.append(Paragraph("Critères d'évaluation", h2_style))
-            data = [['Compétence', 'Critère / Indicateur', 'Poids']]
-            for ligne in lignes:
-                cp = ligne.competence_pro.code if ligne.competence_pro else ''
-                crit = ligne.indicateur.nom if ligne.indicateur else (
-                    ligne.critere.nom if ligne.critere else '')
-                poids = f"{ligne.poids}%" if ligne.poids else ''
-                data.append([cp, crit, poids])
-
-            table = Table(data, colWidths=[3*cm, 12*cm, 2.5*cm])
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#e74c3c')),
-                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0,0), (-1,-1), 9),
-                ('ROWBACKGROUNDS', (0,1), (-1,-1),
-                    [colors.white, colors.HexColor('#f8f9fa')]),
-                ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#dee2e6')),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-                ('PADDING', (0,0), (-1,-1), 4),
-            ]))
-            story.append(table)
-            story.append(Spacer(1, 0.5*cm))
-
-        # Liste des élèves avec notes
-        if evaluations:
-            story.append(Paragraph("Notes des élèves", h2_style))
-            data_ev = [['Élève', 'Note /20']]
-            for ev in evaluations:
-                nom = ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else ''
-                note = f"{round(float(ev.note_sur_20), 1)}/20" if ev.note_sur_20 else 'NE'
-                data_ev.append([nom, note])
-            table_ev = Table(data_ev, colWidths=[13*cm, 4.5*cm])
-            table_ev.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#4a7fc1')),
-                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0,0), (-1,-1), 10),
-                ('ROWBACKGROUNDS', (0,1), (-1,-1),
-                    [colors.white, colors.HexColor('#f8f9fa')]),
-                ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#dee2e6')),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-                ('PADDING', (0,0), (-1,-1), 6),
-            ]))
-            story.append(table_ev)
-
-        doc.build(story)
-        return buf.getvalue()
-    except Exception:
-        return None
+    
 
 
 def _render_fiche_evaluation_pdf_bytes(fiche_eval):
