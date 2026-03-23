@@ -215,131 +215,205 @@ def est_eleve(user):
 
 
 def _render_fiche_contrat_pdf_bytes(fiche_contrat, evaluations):
-    """Génère un PDF lisible (bytes) pour une fiche_contrat et sa liste d'évaluations.
-    Utilise PyMuPDF (fitz) si disponible. Retourne None en cas d'erreur.
-    """
     try:
-        import fitz
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib.units import cm
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+        from reportlab.lib.enums import TA_CENTER
+        from io import BytesIO
+
+        buf = BytesIO()
+        doc = SimpleDocTemplate(buf, pagesize=A4,
+            rightMargin=2*cm, leftMargin=2*cm,
+            topMargin=2*cm, bottomMargin=2*cm)
+
+        titre_style = ParagraphStyle('titre', fontSize=16,
+            spaceAfter=12, fontName='Helvetica-Bold', alignment=TA_CENTER)
+        h2_style = ParagraphStyle('h2', fontSize=12,
+            spaceAfter=6, fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#2c3e50'))
+        body_style = ParagraphStyle('body', fontSize=10,
+            spaceAfter=4, fontName='Helvetica')
+
+        story = []
+        titre = getattr(fiche_contrat, 'titre_tp',
+                getattr(fiche_contrat, 'titre', ''))
+        story.append(Paragraph(f"Fiche Contrat — {titre}", titre_style))
+        story.append(HRFlowable(width="100%", thickness=2,
+            color=colors.HexColor('#e74c3c'), spaceAfter=12))
+
+        classe_nom = fiche_contrat.classe.nom if fiche_contrat.classe else ''
+        story.append(Paragraph(f"Classe : {classe_nom}", body_style))
+        if fiche_contrat.date_tp:
+            story.append(Paragraph(f"Date : {fiche_contrat.date_tp}", body_style))
+        story.append(Spacer(1, 0.4*cm))
+
+        if getattr(fiche_contrat, 'problematique', ''):
+            story.append(Paragraph("Problématique", h2_style))
+            story.append(Paragraph(fiche_contrat.problematique, body_style))
+            story.append(Spacer(1, 0.3*cm))
+
+        if getattr(fiche_contrat, 'consigne', ''):
+            story.append(Paragraph("Consigne", h2_style))
+            story.append(Paragraph(fiche_contrat.consigne, body_style))
+            story.append(Spacer(1, 0.3*cm))
+
+        lignes = fiche_contrat.lignes.select_related(
+            'competence_pro', 'critere', 'indicateur'
+        ).order_by('ordre')
+
+        if lignes:
+            story.append(Paragraph("Critères d'évaluation", h2_style))
+            data = [['Compétence', 'Critère / Indicateur', 'Poids']]
+            for ligne in lignes:
+                cp = ligne.competence_pro.code if ligne.competence_pro else ''
+                crit = ligne.indicateur.nom if ligne.indicateur else (
+                    ligne.critere.nom if ligne.critere else '')
+                poids = f"{ligne.poids}%" if ligne.poids else ''
+                data.append([cp, crit, poids])
+
+            table = Table(data, colWidths=[3*cm, 12*cm, 2.5*cm])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#e74c3c')),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,-1), 9),
+                ('ROWBACKGROUNDS', (0,1), (-1,-1),
+                    [colors.white, colors.HexColor('#f8f9fa')]),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#dee2e6')),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('PADDING', (0,0), (-1,-1), 4),
+            ]))
+            story.append(table)
+            story.append(Spacer(1, 0.5*cm))
+
+        # Liste des élèves avec notes
+        if evaluations:
+            story.append(Paragraph("Notes des élèves", h2_style))
+            data_ev = [['Élève', 'Note /20']]
+            for ev in evaluations:
+                nom = ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else ''
+                note = f"{round(float(ev.note_sur_20), 1)}/20" if ev.note_sur_20 else 'NE'
+                data_ev.append([nom, note])
+            table_ev = Table(data_ev, colWidths=[13*cm, 4.5*cm])
+            table_ev.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#4a7fc1')),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,-1), 10),
+                ('ROWBACKGROUNDS', (0,1), (-1,-1),
+                    [colors.white, colors.HexColor('#f8f9fa')]),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#dee2e6')),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('PADDING', (0,0), (-1,-1), 6),
+            ]))
+            story.append(table_ev)
+
+        doc.build(story)
+        return buf.getvalue()
     except Exception:
-        return None
-
-    try:
-        doc = fitz.open()
-        # A4 page
-        page = doc.new_page(width=595, height=842)
-
-        titre = getattr(fiche_contrat, 'titre', getattr(fiche_contrat, 'titre_tp', ''))
-        classe_nom = fiche_contrat.classe.nom if getattr(fiche_contrat, 'classe', None) else ''
-        createur = fiche_contrat.createur.get_full_name() if getattr(fiche_contrat, 'createur', None) else ''
-        date_creation = fiche_contrat.date_creation.isoformat() if getattr(fiche_contrat, 'date_creation', None) else ''
-
-        header = f"{titre}\nClasse: {classe_nom}\nCréateur: {createur}\nDate: {date_creation}\n\n"
-        # Header box
-        try:
-            page.insert_textbox(fitz.Rect(50, 50, 545, 140), header, fontsize=14, fontname="helv", align=0)
-        except Exception:
-            page.insert_text((50, 50), header, fontsize=14)
-
-        # Body: consigne, problématique, savoirs associés
-        body_parts = []
-        if getattr(fiche_contrat, 'consigne', None):
-            body_parts.append("Consigne:\n" + fiche_contrat.consigne + "\n\n")
-        if getattr(fiche_contrat, 'problematique', None):
-            body_parts.append("Problématique:\n" + fiche_contrat.problematique + "\n\n")
-        if getattr(fiche_contrat, 'savoirs_associes', None):
-            body_parts.append("Savoirs associés:\n" + fiche_contrat.savoirs_associes + "\n\n")
-
-        # Liste des évaluations (nom - note)
-        body_parts.append("Évaluations:\n")
-        for ev in evaluations:
-            nom = ev.eleve.user.get_full_name() if getattr(ev, 'eleve', None) and getattr(ev.eleve, 'user', None) else ''
-            note = ev.note_sur_20 if getattr(ev, 'note_sur_20', None) is not None else '\u2014'
-            body_parts.append(f"- {nom}: {note}\n")
-
-        body = "".join(body_parts)
-        try:
-            page.insert_textbox(fitz.Rect(50, 150, 545, 800), body, fontsize=11, fontname="helv", align=0)
-        except Exception:
-            page.insert_text((50, 150), body, fontsize=11)
-
-        try:
-            pdf_bytes = doc.write()
-        except Exception:
-            try:
-                pdf_bytes = doc.tobytes()
-            except Exception:
-                pdf_bytes = None
-        doc.close()
-        return pdf_bytes
-    except Exception:
-        try:
-            doc.close()
-        except Exception:
-            pass
         return None
 
 
 def _render_fiche_evaluation_pdf_bytes(fiche_eval):
-    """Génère un PDF (bytes) pour une FicheEvaluation individuelle.
-    Contient les informations de la fiche contrat, élève, note et la liste des lignes d'évaluation.
-    Retourne None si PyMuPDF absent ou erreur.
-    """
     try:
-        import fitz
-    except Exception:
-        return None
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib.units import cm
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+        from reportlab.lib.enums import TA_CENTER
+        from io import BytesIO
 
-    try:
-        doc = fitz.open()
-        page = doc.new_page(width=595, height=842)
+        buf = BytesIO()
+        doc = SimpleDocTemplate(buf, pagesize=A4,
+            rightMargin=2*cm, leftMargin=2*cm,
+            topMargin=2*cm, bottomMargin=2*cm)
 
-        fc = fiche_eval.fiche_contrat
-        titre = getattr(fc, 'titre', getattr(fc, 'titre_tp', ''))
-        classe_nom = fc.classe.nom if getattr(fc, 'classe', None) else ''
-        eleve_nom = fiche_eval.eleve.user.get_full_name() if getattr(fiche_eval, 'eleve', None) and getattr(fiche_eval.eleve, 'user', None) else ''
-        note = fiche_eval.note_sur_20 if getattr(fiche_eval, 'note_sur_20', None) is not None else '\u2014'
+        titre_style = ParagraphStyle('titre', fontSize=16,
+            spaceAfter=12, fontName='Helvetica-Bold', alignment=TA_CENTER)
+        h2_style = ParagraphStyle('h2', fontSize=12,
+            spaceAfter=6, fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#2c3e50'))
+        body_style = ParagraphStyle('body', fontSize=10,
+            spaceAfter=4, fontName='Helvetica')
 
-        header = f"{titre}\nClasse: {classe_nom}\nÉlève: {eleve_nom}\nNote /20: {note}\nDate validation: {fiche_eval.date_validation.isoformat() if fiche_eval.date_validation else ''}\n\n"
-        try:
-            page.insert_textbox(fitz.Rect(50, 50, 545, 140), header, fontsize=13, fontname='helv')
-        except Exception:
-            page.insert_text((50, 50), header, fontsize=13)
+        story = []
+        fiche_contrat = fiche_eval.fiche_contrat
+        titre = getattr(fiche_contrat, 'titre_tp',
+                getattr(fiche_contrat, 'titre', ''))
+        eleve_nom = fiche_eval.eleve.user.get_full_name() \
+            if fiche_eval.eleve else ''
 
-        # Lignes d'évaluation
-        lignes = fiche_eval.lignes_evaluation.select_related('ligne_contrat', 'ligne_contrat__indicateur').all()
-        y = 150
-        for ln in lignes:
-            texte = f"- {ln.ligne_contrat.indicateur.nom if ln.ligne_contrat and ln.ligne_contrat.indicateur else str(ln.ligne_contrat)} : {ln.get_note_display()}"
-            try:
-                page.insert_textbox(fitz.Rect(60, y, 540, y+20), texte, fontsize=11, fontname='helv')
-            except Exception:
-                page.insert_text((60, y), texte, fontsize=11)
-            y += 18
-            if y > 780:
-                page = doc.new_page()
-                y = 50
+        story.append(Paragraph(
+            f"Fiche Évaluation — {titre}", titre_style))
+        story.append(HRFlowable(width="100%", thickness=2,
+            color=colors.HexColor('#4a7fc1'), spaceAfter=12))
 
-        # Compte-rendu
+        classe_nom = fiche_contrat.classe.nom if fiche_contrat.classe else ''
+        story.append(Paragraph(f"Élève : {eleve_nom}", body_style))
+        story.append(Paragraph(f"Classe : {classe_nom}", body_style))
+        note = fiche_eval.note_sur_20
+        if note is not None:
+            story.append(Paragraph(
+                f"Note : {round(float(note), 1)}/20", body_style))
+        if fiche_eval.date_validation:
+            story.append(Paragraph(
+                f"Date validation : {fiche_eval.date_validation.strftime('%d/%m/%Y')}", 
+                body_style))
+        story.append(Spacer(1, 0.4*cm))
+
+        lignes_eval = fiche_eval.lignes_evaluation.select_related(
+            'ligne_contrat__competence_pro',
+            'ligne_contrat__sous_competence',
+            'ligne_contrat__critere',
+            'ligne_contrat__indicateur'
+        ).order_by('ligne_contrat__ordre')
+
+        if lignes_eval:
+            story.append(Paragraph("Résultats par critère", h2_style))
+
+            NOTE_LABELS = {
+                'NE': 'Non évalué',
+                '0': '0 — Insuffisant',
+                '1': '1 — Fragile',
+                '2': '2 — Satisfaisant',
+                '3': '3 — Très satisfaisant',
+            }
+
+            data = [['Compétence', 'Critère / Indicateur', 'Note']]
+            for le in lignes_eval:
+                lc = le.ligne_contrat
+                cp = lc.competence_pro.code if lc.competence_pro else ''
+                crit = lc.indicateur.nom if lc.indicateur else (
+                    lc.critere.nom if lc.critere else '')
+                note_label = NOTE_LABELS.get(le.note, le.note)
+                data.append([cp, crit, note_label])
+
+            table = Table(data, colWidths=[3*cm, 10*cm, 4.5*cm])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#4a7fc1')),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,-1), 9),
+                ('ROWBACKGROUNDS', (0,1), (-1,-1),
+                    [colors.white, colors.HexColor('#f8f9fa')]),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#dee2e6')),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('PADDING', (0,0), (-1,-1), 4),
+            ]))
+            story.append(table)
+
         if fiche_eval.compte_rendu:
-            try:
-                page.insert_textbox(fitz.Rect(50, y+10, 545, 800), "Compte-rendu:\n" + fiche_eval.compte_rendu, fontsize=11, fontname='helv')
-            except Exception:
-                page.insert_text((50, y+10), "Compte-rendu:\n" + fiche_eval.compte_rendu, fontsize=11)
+            story.append(Spacer(1, 0.5*cm))
+            story.append(Paragraph("Compte-rendu", h2_style))
+            story.append(Paragraph(fiche_eval.compte_rendu, body_style))
 
-        try:
-            pdf_bytes = doc.write()
-        except Exception:
-            try:
-                pdf_bytes = doc.tobytes()
-            except Exception:
-                pdf_bytes = None
-        doc.close()
-        return pdf_bytes
+        doc.build(story)
+        return buf.getvalue()
     except Exception:
-        try:
-            doc.close()
-        except Exception:
-            pass
         return None
 
 
