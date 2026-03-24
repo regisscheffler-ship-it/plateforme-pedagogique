@@ -381,10 +381,15 @@
         <p id="modalMessage">Cette action est irréversible.</p>
         <div class="modal-btns">
             <button class="btn-cancel" onclick="closeModal()">Annuler</button>
-            <a href="#" id="modalConfirmBtn" class="btn-confirm">Supprimer</a>
+            <button type="button" id="modalConfirmBtn" class="btn-confirm">Supprimer</button>
         </div>
     </div>
 </div>
+
+<!-- Formulaire caché pour soumettre les suppressions en POST (avec CSRF) -->
+<form id="deleteForm" method="post" style="display:none;">
+    {% csrf_token %}
+</form>
 
 <div class="page-container">
 
@@ -665,7 +670,8 @@ document.querySelectorAll('.btn-supprimer').forEach(function(btn) {
     btn.addEventListener('click', function() {
         document.getElementById('modalTitle').textContent   = this.dataset.titre;
         document.getElementById('modalMessage').textContent = this.dataset.message;
-        document.getElementById('modalConfirmBtn').href     = this.dataset.url;
+        // Set form action and show modal; submission will be POST (with CSRF)
+        document.getElementById('deleteForm').action = this.dataset.url;
         document.getElementById('deleteModal').classList.add('active');
     });
 });
@@ -673,6 +679,11 @@ document.querySelectorAll('.btn-supprimer').forEach(function(btn) {
 function closeModal() {
     document.getElementById('deleteModal').classList.remove('active');
 }
+
+// Soumet le formulaire caché quand l'utilisateur confirme
+document.getElementById('modalConfirmBtn').addEventListener('click', function() {
+    document.getElementById('deleteForm').submit();
+});
 
 document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
