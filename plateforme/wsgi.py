@@ -14,6 +14,8 @@ import traceback
 from django.core.wsgi import get_wsgi_application
 import django
 from django.core.management import call_command
+import socket
+from urllib.parse import urlparse
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'plateforme.settings')
 
@@ -29,6 +31,18 @@ def _run_startup_maintenance():
 	if os.environ.get('RUN_MIGRATIONS_ON_STARTUP') != '1':
 		return
 	try:
+		# Quick connectivity check to the database host: avoid long blocking
+		db_url = os.environ.get('DATABASE_URL')
+		if db_url:
+			try:
+				parsed = urlparse(db_url)
+				host = parsed.hostname
+				port = parsed.port or 5432
+				# try a short TCP connect
+				socket.create_connection((host, port), timeout=5)
+			except Exception as e:
+				print(f"Database not reachable ({e}), skipping startup migrations.")
+				return
 		django.setup()
 		call_command('migrate', '--noinput')
 		call_command('collectstatic', '--noinput')
