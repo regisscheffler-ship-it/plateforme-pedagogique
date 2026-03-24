@@ -3,11 +3,6 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 import base64
 from django.core.files.base import ContentFile
-import io
-import zipfile
-import json
-from django.contrib import messages
-from .models import Archive, FicheContrat, FicheEvaluation
 # Helper access
 def est_professeur(user):
     """Retourne True si l'utilisateur est un professeur (via user.profil)."""
