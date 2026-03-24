@@ -250,6 +250,139 @@ def _generer_pdf_fiche_complete(fc, fiche_eval, competences_vises,
         return buf.getvalue()
     except Exception:
         return None
+
+
+@login_required
+@user_passes_test(est_professeur)
+def archives_export(request):
+    annee = request.GET.get('annee') or request.GET.get('annee_scolaire')
+    categorie = request.GET.get('categorie') or None
+    if not annee:
+        messages.error(request, '❌ Indiquez une année scolaire pour l\'export.')
+        return redirect('core:archives')
+
+    qs = Archive.objects.filter(actif=True, annee_scolaire=annee)
+    if categorie and categorie != 'all':
+        qs = qs.filter(categorie=categorie)
+
+    if not qs.exists():
+        messages.warning(request, '⚠️ Aucun document trouvé pour ces critères.')
+        return redirect('core:archives')
+
+    bio = io.BytesIO()
+    with zipfile.ZipFile(bio, 'w', zipfile.ZIP_DEFLATED) as z:
+
+        for archive in qs.order_by('categorie', '-date_creation'):
+
+            # Détermine le dossier dans le ZIP
+            safe_titre = archive.titre.replace(' ', '_').replace('/', '-')[:50]
+            safe_classe = 'Sans_classe'
+
+            # Récupère la fiche contrat si liée
+            fc = None
+            if archive.description and 'fiche_contrat_id:' in archive.description:
+                try:
+                    fc_id = int(archive.description.split('fiche_contrat_id:')[1].split('|')[0].strip())
+                    fc = FicheContrat.objects.filter(id=fc_id).first()
+                    if fc and fc.classe:
+                        safe_classe = fc.classe.nom.replace(' ', '_')
+                except Exception:
+                    pass
+
+            folder = f"{safe_classe}/{safe_titre}"
+
+            # Génère un PDF par élève
+            if fc:
+                evaluations = FicheEvaluation.objects.filter(
+                    fiche_contrat=fc
+                ).select_related('eleve__user')
+
+                for fiche_eval in evaluations:
+                    try:
+                        # Prépare les données comme dans eleve_fiche_complete
+                        lignes_contrat = fc.lignes.select_related(
+                            'competence_pro', 'sous_competence',
+                            'critere', 'indicateur'
+                        ).order_by('ordre')
+
+                        cps_vus = set()
+                        competences_vises = []
+                        for ligne in lignes_contrat:
+                            if ligne.competence_pro and ligne.competence_pro.id not in cps_vus:
+                                cps_vus.add(ligne.competence_pro.id)
+                                competences_vises.append(ligne.competence_pro)
+                        competences_vises.sort(key=lambda x: x.code)
+
+                        savoirs_bruts = fc.savoirs_associes or ""
+                        savoirs_dedupliques = list(dict.fromkeys(
+                            l.strip() for l in savoirs_bruts.splitlines() if l.strip()
+                        ))
+
+                        nb_lignes_total = fc.lignes.count()
+                        poids_auto = round(100 / nb_lignes_total, 2) if nb_lignes_total > 0 else 10.0
+
+                        lignes_eval = fiche_eval.lignes_evaluation.select_related(
+                            'ligne_contrat__competence_pro',
+                            'ligne_contrat__sous_competence',
+                            'ligne_contrat__critere',
+                            'ligne_contrat__indicateur'
+                        ).order_by(
+                            'ligne_contrat__competence_pro__code',
+                            'ligne_contrat__sous_competence__ordre',
+                            'ligne_contrat__ordre'
+                        )
+
+                        def get_cp(l): return l.ligne_contrat.competence_pro
+                        def get_sc(l): return l.ligne_contrat.sous_competence
+
+                        groupes_competences = []
+                        for cp, lignes_cp in groupby(lignes_eval, key=get_cp):
+                            lignes_cp_list = list(lignes_cp)
+                            sous_competences = []
+                            for sc, lignes_sc in groupby(lignes_cp_list, key=get_sc):
+                                sous_competences.append({
+                                    'sous_competence': sc,
+                                    'lignes': list(lignes_sc)
+                                })
+                            groupes_competences.append({
+                                'competence_pro': cp,
+                                'lignes': lignes_cp_list,
+                                'sous_competences': sous_competences,
+                            })
+
+                        if fiche_eval.note_sur_20 is None:
+                            fiche_eval.calculer_note_sur_20()
+
+                        # Génère le PDF ReportLab (2 pages : contrat + évaluation)
+                        pdf_bytes = _generer_pdf_fiche_complete(
+                            fc, fiche_eval, competences_vises,
+                            savoirs_dedupliques, groupes_competences, poids_auto
+                        )
+
+                        if pdf_bytes:
+                            eleve_nom = fiche_eval.eleve.user.get_full_name().replace(' ', '_')
+                            z.writestr(
+                                f"{folder}/{eleve_nom}.pdf",
+                                pdf_bytes
+                            )
+                    except Exception:
+                        continue
+
+            # Inclut aussi le fichier uploadé si présent
+            if archive.fichier:
+                try:
+                    with archive.fichier.open('rb') as fh:
+                        data = fh.read()
+                    filename = os.path.basename(archive.fichier.name)
+                    z.writestr(f"{folder}/{filename}", data)
+                except Exception:
+                    pass
+
+    bio.seek(0)
+    filename = f'archives_{annee}.zip'
+    resp = HttpResponse(bio.read(), content_type='application/zip')
+    resp['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return resp
     
 
 
