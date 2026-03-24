@@ -1,15 +1,7 @@
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 import base64
 from django.core.files.base import ContentFile
-# Helper access
-def est_professeur(user):
-    """Retourne True si l'utilisateur est un professeur (via user.profil)."""
-    try:
-        return hasattr(user, 'profil') and user.profil.est_prof()
-    except Exception:
-        return False
 # ── VUE ÉLÈVE : liste ses messages + formulaire envoi ──
 @login_required
 def communication_eleve(request):
@@ -29,59 +21,6 @@ def communication_eleve(request):
             professeur = None
     # Affiche la page communication élève (placeholder minimal pour conserver la vue)
     return render(request, 'core/communication_eleve.html', {'profil': profil, 'professeur': professeur})
-@login_required
-@user_passes_test(est_professeur)
-def communication_prof(request):
-    """Page principale communication côté professeur (placeholder minimal)."""
-    profil = request.user.profil
-    # Liste minimale d'éléments pour la page professeur
-    return render(request, 'core/communication_prof.html', {'profil': profil})
-
-
-@login_required
-def communication_repondre(request, message_id):
-    """Répondre à un message (placeholder minimal)."""
-    return redirect('core:communication_eleve')
-
-
-@login_required
-@user_passes_test(est_professeur)
-def communication_supprimer(request, message_id):
-    """Supprimer un message (placeholder minimal)."""
-    return redirect('core:communications_list')
-
-
-@login_required
-def communications_list(request):
-    """Liste des communications (placeholder minimal)."""
-    return render(request, 'core/communications_list.html', {})
-
-
-@login_required
-@user_passes_test(est_professeur)
-def communications_export_pdf(request):
-    """Export PDF des communications (placeholder minimal)."""
-    return render(request, 'core/communications_export_pdf.html', {})
-
-
-def keepalive(request):
-    """Endpoint de keepalive minimal pour les health checks."""
-    from django.http import HttpResponse
-    return HttpResponse('OK')
-
-
-# Fallback dynamique pour éviter les AttributeError lors de l'import des routes
-def __getattr__(name):
-    """Retourne un stub view HTTP pour tout attribut manquant (utile en dev).
-
-    Ceci permet au module d'être importé même si certaines vues ont été
-    temporairement supprimées lors des modifications. Les stubs renvoient
-    une réponse simple 200 "Stub view: <name>".
-    """
-    def _stub(request, *args, **kwargs):
-        from django.http import HttpResponse
-        return HttpResponse(f"Stub view: {name}")
-    return _stub
 def _generer_pdf_fiche_complete(fc, fiche_eval, competences_vises,
                                  savoirs_dedupliques, groupes_competences,
                                  poids_auto):
