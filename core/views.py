@@ -3,7 +3,10 @@ from django.contrib.auth.decorators import login_required
 import base64
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
-from xhtml2pdf import pisa
+try:
+    from xhtml2pdf import pisa
+except Exception:
+    pisa = None
 from django.conf import settings
 import os
 # ── VUE ÉLÈVE : liste ses messages + formulaire envoi ──
