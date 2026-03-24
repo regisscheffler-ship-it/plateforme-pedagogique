@@ -152,9 +152,16 @@ if 'test' in sys.argv:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # ===================================================================
-# FICHIERS MEDIA — Cloudinary en prod, local en dev
+# FICHIERS MEDIA — Cloudinary en prod si identifiants fournis, local en dev
 # ===================================================================
+# Par défaut on autorise l'activation explicite via USE_CLOUDINARY env var,
+# mais on active aussi Cloudinary automatiquement si les clés sont présentes.
 USE_CLOUDINARY = os.environ.get('USE_CLOUDINARY', 'False') == 'True'
+
+# Auto-enable when Cloudinary credentials are present
+if not USE_CLOUDINARY:
+    if os.environ.get('CLOUDINARY_CLOUD_NAME') and os.environ.get('CLOUDINARY_API_KEY') and os.environ.get('CLOUDINARY_API_SECRET'):
+        USE_CLOUDINARY = True
 
 if USE_CLOUDINARY:
     import cloudinary
@@ -164,6 +171,8 @@ if USE_CLOUDINARY:
         api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
         secure=True,
     )
+    # Use modern DEFAULT_FILE_STORAGE and STORAGES mapping for Django
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     STORAGES = {
         'default': {
             'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
@@ -176,6 +185,7 @@ if USE_CLOUDINARY:
 else:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
     STORAGES = {
         'default': {
             'BACKEND': 'django.core.files.storage.FileSystemStorage',
