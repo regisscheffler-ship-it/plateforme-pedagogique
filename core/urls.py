@@ -1,6 +1,7 @@
 # core/urls.py — VERSION CORRIGÉE
 from django.urls import path
-from . import views
+from . import views_lazy as views
+from .views_signed import download_fichier_atelier_signed
 
 app_name = 'core'
 
@@ -265,4 +266,6 @@ urlpatterns = [
     path('assistant/tts/', views.assistant_tts, name='assistant_tts'),
     path('keepalive/', views.keepalive, name='keepalive'),
     path('health/', views.health, name='health'),
+    # Route de test : redirection vers une URL Cloudinary signée pour un FichierAtelier
+    path('test-download/<int:pk>/', download_fichier_atelier_signed, name='test_download_fichier_signed'),
 ]
