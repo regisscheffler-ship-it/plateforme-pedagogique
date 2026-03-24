@@ -81,4 +81,12 @@ def communication_eleve(request):
 		'professeur': professeur,
 	}
 	return render(request, 'core/communication_eleve.html', context)
+    
+	# Alias attendu par core.urls
+
+# Compat alias historique : `core/urls.py` importe `export_annuel_complet`.
+try:
+	export_annuel_complet = archives_export
+except NameError:
+	export_annuel_complet = None
 
