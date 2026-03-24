@@ -172,10 +172,12 @@ if USE_CLOUDINARY:
         secure=True,
     )
     # Use modern DEFAULT_FILE_STORAGE and STORAGES mapping for Django
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    # Use an auto-selecting Cloudinary storage that picks resource_type
+    # (image / video / raw) from the file extension so PDFs are stored as raw.
+    DEFAULT_FILE_STORAGE = 'core.storage.AutoMediaCloudinaryStorage'
     STORAGES = {
         'default': {
-            'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+            'BACKEND': 'core.storage.AutoMediaCloudinaryStorage',
         },
         'staticfiles': {
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
