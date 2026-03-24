@@ -2,6 +2,10 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 import base64
 from django.core.files.base import ContentFile
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
+from django.conf import settings
+import os
 # ── VUE ÉLÈVE : liste ses messages + formulaire envoi ──
 @login_required
 def communication_eleve(request):
@@ -1936,6 +1940,34 @@ def archives_export(request):
                             # Générer un PDF plus lisible via le helper
                             evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
                             pdf_bytes = _render_fiche_contrat_pdf_bytes(fc, evs)
+                            if not pdf_bytes:
+                                # fallback: render print template to HTML then to PDF (xhtml2pdf)
+                                try:
+                                    lignes_contrat = fc.lignes.select_related('competence_pro', 'sous_competence', 'critere', 'indicateur').order_by('ordre')
+                                    cps_vus = set()
+                                    competences_vises = []
+                                    for ligne in lignes_contrat:
+                                        if ligne.competence_pro and ligne.competence_pro.id not in cps_vus:
+                                            cps_vus.add(ligne.competence_pro.id)
+                                            competences_vises.append(ligne.competence_pro)
+                                    competences_vises.sort(key=lambda x: getattr(x, 'code', ''))
+                                    nb_lignes = lignes_contrat.count()
+                                    poids_auto = round(100 / nb_lignes, 2) if nb_lignes > 0 else 10.0
+                                    savoirs_bruts = getattr(fc, 'savoirs_associes', '') or ''
+                                    savoirs_dedupliques = list(dict.fromkeys(l.strip() for l in savoirs_bruts.splitlines() if l.strip()))
+                                    html = render_to_string('core/fiche_contrat_print.html', {
+                                        'fiche_contrat': fc,
+                                        'eleves': evs,
+                                        'competences_vises': competences_vises,
+                                        'poids_auto': poids_auto,
+                                        'savoirs_dedupliques': savoirs_dedupliques,
+                                    })
+                                    buf = io.BytesIO()
+                                    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=buf, encoding='utf-8')
+                                    if not pisa_status.err:
+                                        pdf_bytes = buf.getvalue()
+                                except Exception:
+                                    pdf_bytes = None
                             if pdf_bytes:
                                 z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.pdf', pdf_bytes)
                             else:
@@ -1947,6 +1979,32 @@ def archives_export(request):
                                 # Tenter de générer un PDF par élève; sinon écrire JSON
                                 for ev in evs:
                                     pdf_ev = _render_fiche_evaluation_pdf_bytes(ev)
+                                    if not pdf_ev:
+                                        # fallback: render evaluation print template to PDF
+                                        try:
+                                            # build context similar to generer_fiches_evaluation
+                                            lignes = ev.lignes_evaluation.select_related('ligne_contrat__competence_pro', 'ligne_contrat__sous_competence', 'ligne_contrat__critere', 'ligne_contrat__indicateur').order_by('ligne_contrat__ordre')
+                                            from itertools import groupby
+                                            def get_cp(l): return l.ligne_contrat.competence_pro
+                                            def get_sc(l): return l.ligne_contrat.sous_competence
+                                            groupes_competences = []
+                                            for cp, lignes_cp in groupby(lignes, key=get_cp):
+                                                lignes_cp_list = list(lignes_cp)
+                                                sous_competences = []
+                                                for sc, lignes_sc in groupby(lignes_cp_list, key=get_sc):
+                                                    sous_competences.append({'sous_competence': sc, 'lignes': list(lignes_sc)})
+                                                groupes_competences.append({'competence_pro': cp, 'lignes': lignes_cp_list, 'sous_competences': sous_competences})
+                                            html = render_to_string('core/fiche_evaluation_print.html', {
+                                                'fiche_contrat': fc,
+                                                'donnees_impression': [{'eleve': ev.eleve, 'evaluation': ev, 'groupes_competences': groupes_competences}],
+                                                'poids_auto': round(100 / max(1, fc.lignes.count()), 2),
+                                            })
+                                            buf = io.BytesIO()
+                                            pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=buf, encoding='utf-8')
+                                            if not pisa_status.err:
+                                                pdf_ev = buf.getvalue()
+                                        except Exception:
+                                            pdf_ev = None
                                     safe_nom = (ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else f'eleve_{ev.id}').replace(' ', '_')
                                     if pdf_ev:
                                         z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluation_{ev.id}_{safe_nom}.pdf', pdf_ev)
