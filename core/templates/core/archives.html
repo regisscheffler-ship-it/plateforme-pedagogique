@@ -165,27 +165,59 @@
         </div>
     </div>
 
-    <!-- Export ZIP: année + catégorie -->
-    <div style="display:flex;gap:12px;align-items:center;margin-bottom:1rem;">
-        <form method="get" action="{% url 'core:archives_export' %}">
-            <label style="font-weight:600;margin-right:6px;">Exporter</label>
-            <select name="annee" class="form-control" style="display:inline-block;width:auto;">
-                {% for annee in annees_disponibles %}
-                    <option value="{{ annee }}">{{ annee }}</option>
-                {% empty %}
-                    <option>2024-2025</option>
-                {% endfor %}
-            </select>
-            <select name="categorie" class="form-control" style="display:inline-block;width:auto;margin-left:6px;">
-                <option value="all">Toutes catégories</option>
-                <option value="evaluations">Évaluations</option>
-                <option value="examens">Examens</option>
-                <option value="administratif">Documents administratifs</option>
-                <option value="ressources">Ressources pédagogiques</option>
-                <option value="autre">Autre</option>
-            </select>
-            <button type="submit" class="btn-submit" style="margin-left:8px;">Télécharger ZIP</button>
-        </form>
+    <!-- Carte Export: téléchargements et export complet -->
+    <div class="form-card" style="display:flex;align-items:center;gap:16px;margin-bottom:1.4rem;">
+        <div style="flex:1;">
+            <h2 style="margin:0 0 8px;">Téléchargements</h2>
+            <div>
+                <form method="get" action="{% url 'core:archives_export' %}" class="d-inline">
+                    <select name="annee" class="form-control" style="display:inline-block;width:auto;">
+                        <option value="">-- Année --</option>
+                        {% for a in annees_disponibles %}
+                            <option value="{{ a }}">{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="categorie" class="form-control" style="display:inline-block;width:auto;margin-left:8px;">
+                        <option value="all">Toutes catégories</option>
+                        <option value="evaluations">Évaluations</option>
+                        <option value="examens">Examens</option>
+                        <option value="administratif">Administratif</option>
+                        <option value="ressources">Ressources</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                    <button type="submit" class="btn-submit" style="margin-left:8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:middle;">
+                            <path d="M.5 9.9V14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V9.9a.5.5 0 0 0-1 0V14a1 1 0 0 1-1 1H2.5a1 1 0 0 1-1-1V9.9a.5.5 0 0 0-1 0z"/>
+                            <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 1 1-.708.708L8.5 2.707V10.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                        </svg>
+                        <span style="margin-left:6px;">Télécharger archives</span>
+                    </button>
+                </form>
+
+                <form method="get" action="{% url 'core:export_annuel_complet' %}" class="d-inline" style="margin-left:12px;">
+                    <select name="annee" class="form-control" style="display:inline-block;width:auto;">
+                        <option value="">-- Année --</option>
+                        {% for a in annees_disponibles %}
+                            <option value="{{ a }}">{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn-submit" style="margin-left:8px;background:#10b981;color:white;border-color:#10b981;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="vertical-align:middle;">
+                            <path d="M21 16V8a2 2 0 0 0-2-2h-3V4a2 2 0 0 0-2-2H10a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM9 4h6v2H9V4zM6 10h12v6H6v-6z"/>
+                        </svg>
+                        <span style="margin-left:6px;">Export COMPLET fin d'année</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div style="flex:0 0 160px;text-align:right;">
+            <a href="{% url 'core:dashboard_professeur' %}" class="btn-retour"> 
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                </svg>
+                <span style="margin-left:6px;">Retour</span>
+            </a>
+        </div>
     </div>
 
     <!-- Statistiques -->
