@@ -3425,6 +3425,87 @@ def evaluation_lier_atelier(request, pk):
     return redirect('core:evaluation_detail', pk=fiche_contrat.id)
 
 
+@login_required
+@user_passes_test(est_professeur)
+def export_fiche_contrat_archive(request, pk):
+    """Génère un ZIP contenant : fichiers de l'atelier (si présent),
+    la fiche contrat (PDF) et les fiches évaluations (PDF) pour téléchargement.
+    Accessible par le créateur (professeur) seulement.
+    """
+    fiche_contrat = get_object_or_404(FicheContrat, id=pk, createur=request.user)
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+        # 1) Ajouter fichiers de l'atelier (dossiers + fichiers)
+        atelier = getattr(fiche_contrat, 'atelier', None)
+        if atelier:
+            # fichier direct sur Atelier
+            if getattr(atelier, 'fichier', None):
+                try:
+                    ffield = atelier.fichier
+                    name = os.path.basename(ffield.name)
+                    with ffield.open('rb') as fh:
+                        zf.writestr(f'ateliers/{atelier.titre}/{name}', fh.read())
+                except Exception:
+                    pass
+            # dossiers et fichiers
+            for dossier in atelier.dossiers.all():
+                for fa in dossier.fichiers.filter(actif=True).order_by('ordre'):
+                    if fa.type_contenu == 'fichier' and fa.fichier:
+                        try:
+                            with fa.fichier.open('rb') as fh:
+                                path_in_zip = f'ateliers/{atelier.titre}/{dossier.nom}/{os.path.basename(fa.fichier.name)}'
+                                zf.writestr(path_in_zip, fh.read())
+                        except Exception:
+                            # si stockage distant ou erreur, ignorer
+                            continue
+                    elif fa.type_contenu == 'lien' and fa.lien_externe:
+                        zf.writestr(f'ateliers/{atelier.titre}/{dossier.nom}/{fa.nom}_link.txt', fa.lien_externe)
+
+        # Helper to render template -> PDF (pisa) or HTML fallback
+        def render_to_pdf_bytes(template_name, context, filename_base):
+            html = render_to_string(template_name, context)
+            out = io.BytesIO()
+            if 'pisa' in globals() and pisa is not None:
+                try:
+                    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=out, encoding='utf-8')
+                    if not pisa_status.err:
+                        return out.getvalue(), f'{filename_base}.pdf'
+                except Exception:
+                    pass
+            # fallback : include HTML
+            return html.encode('utf-8'), f'{filename_base}.html'
+
+        # 2) Fiche contrat (page imprimable)
+        try:
+            lignes_contrat, competences_vises, savoirs_dedupliques = _get_donnees_page1_contrat(fiche_contrat)
+            context = {'fiche_contrat': fiche_contrat, 'lignes_contrat': lignes_contrat,
+                       'competences_vises': competences_vises, 'savoirs_dedupliques': savoirs_dedupliques}
+            data, fname = render_to_pdf_bytes('core/fiche_contrat_print.html', context, f'fiche_contrat_{fiche_contrat.id}')
+            zf.writestr(fname, data)
+        except Exception:
+            pass
+
+        # 3) Fiches évaluations (compile toutes les fiches dans un PDF/HTML)
+        try:
+            # reuse generer_fiches_evaluation context
+            fiches_eleves = FicheEvaluation.objects.filter(fiche_contrat=fiche_contrat).select_related('eleve__user')
+            donnees_impression = []
+            for fe in fiches_eleves:
+                groupes = _get_donnees_page2_evaluation(fe, fiche_contrat)[1]
+                donnees_impression.append({'eleve': fe.eleve, 'evaluation': fe, 'groupes_competences': groupes})
+            context_eval = {'fiche_contrat': fiche_contrat, 'donnees_impression': donnees_impression, 'poids_auto': round(100 / (fiche_contrat.lignes.count() or 1), 2)}
+            data_eval, fname_eval = render_to_pdf_bytes('core/fiche_evaluation_print.html', context_eval, f'fiches_evaluation_{fiche_contrat.id}')
+            zf.writestr(fname_eval, data_eval)
+        except Exception:
+            pass
+
+    buf.seek(0)
+    filename = f"{fiche_contrat.titre_tp.replace(' ', '_')}_archive.zip"
+    response = FileResponse(buf, as_attachment=True, filename=filename)
+    return response
+
+
 def deverrouiller_fiche_evaluation(request, fiche_eval_id):
     """Déverrouille une fiche d'évaluation validée pour correction."""
     fiche_eval = get_object_or_404(FicheEvaluation, id=fiche_eval_id)

@@ -130,6 +130,7 @@ urlpatterns = [
     path('evaluations/<int:pk>/supprimer/',                           views.fiche_contrat_supprimer,        name='fiche_contrat_supprimer'),
     path('evaluations/<int:pk>/archiver/',                            views.fiche_contrat_archiver,         name='fiche_contrat_archiver'),
     path('evaluations/<int:pk>/lier-atelier/',                          views.evaluation_lier_atelier,        name='evaluation_lier_atelier'),
+    path('evaluations/<int:pk>/export-archive/',                        views.export_fiche_contrat_archive,   name='export_fiche_contrat_archive'),
 
     # Impression
     path('evaluations/print-contrat/<int:fiche_contrat_id>/',    views.generer_fiches_eleves,     name='generer_fiches_eleves'),
