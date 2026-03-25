@@ -86,6 +86,7 @@ import json
 
 
 import traceback
+import logging
 
 
 import csv
@@ -146,12 +147,18 @@ def html_to_pdf_bytes(html, request=None):
         from playwright.sync_api import sync_playwright
         base_url = request.build_absolute_uri('/') if request is not None else 'about:blank'
         with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-            page.set_content(html, wait_until='networkidle', base_url=base_url)
-            pdf_bytes = page.pdf(format='A4')
-            browser.close()
-            return pdf_bytes, '.pdf'
+            # set timeouts and no-sandbox for restricted containers
+            browser = p.chromium.launch(timeout=15000, args=['--no-sandbox'])
+            try:
+                page = browser.new_page()
+                page.set_content(html, wait_until='networkidle', base_url=base_url, timeout=15000)
+                pdf_bytes = page.pdf(format='A4', timeout=30000)
+                return pdf_bytes, '.pdf'
+            finally:
+                try:
+                    browser.close()
+                except Exception:
+                    pass
     except Exception:
         pass
 
@@ -3498,6 +3505,8 @@ def export_fiche_contrat_archive(request, pk):
     la fiche contrat (PDF) et les fiches évaluations (PDF) pour téléchargement.
     Accessible par le créateur (professeur) seulement.
     """
+    logger = logging.getLogger(__name__)
+    logger.info(f"Export archive requested pk={pk} by user={getattr(request.user, 'username', None)}")
     fiche_contrat = get_object_or_404(FicheContrat, id=pk, createur=request.user)
 
     buf = io.BytesIO()
