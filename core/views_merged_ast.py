@@ -3537,12 +3537,11 @@ def export_fiche_contrat_archive(request, pk):
                     elif fa.type_contenu == 'lien' and fa.lien_externe:
                         zf.writestr(f'ateliers/{atelier.titre}/{dossier.nom}/{fa.nom}_link.txt', fa.lien_externe)
 
-        # Helper to render template -> PDF bytes using best available tool
-        # use new helper that tries Playwright/Weasy/pisa
+        # Temporary helper: force HTML output (fallback) to ensure archive downloads
         def render_to_pdf_bytes(template_name, context, filename_base, request):
+            # Render template to HTML and return as .html bytes
             html = render_to_string(template_name, context, request=request)
-            data, ext = html_to_pdf_bytes(html, request=request)
-            return data, f'{filename_base}{ext}'
+            return html.encode('utf-8'), f'{filename_base}.html'
 
         # 2) Fiche contrat (page imprimable)
         try:
