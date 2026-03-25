@@ -136,6 +136,70 @@ except Exception:
     pisa = None
 
 
+# Utilitaire global pour convertir HTML -> PDF bytes (Playwright -> WeasyPrint -> pisa)
+def html_to_pdf_bytes(html, request=None):
+    """Retourne (pdf_bytes, '.pdf') ou (html_bytes, '.html') en fallback.
+    Essaie Playwright, puis WeasyPrint, puis xhtml2pdf.
+    """
+    # 1) Playwright (headless Chromium) - render HTML string directly
+    try:
+        from playwright.sync_api import sync_playwright
+        base_url = request.build_absolute_uri('/') if request is not None else 'about:blank'
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
+            page.set_content(html, wait_until='networkidle', base_url=base_url)
+            pdf_bytes = page.pdf(format='A4')
+            browser.close()
+            return pdf_bytes, '.pdf'
+    except Exception:
+        pass
+
+    # 2) WeasyPrint
+    try:
+        from weasyprint import HTML
+        try:
+            base_url = request.build_absolute_uri('/') if request is not None else None
+            html_obj = HTML(string=html, base_url=base_url)
+            pdf = html_obj.write_pdf()
+            return pdf, '.pdf'
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+    # 3) xhtml2pdf (pisa)
+    if 'pisa' in globals() and pisa is not None:
+        try:
+            out = io.BytesIO()
+            from django.contrib.staticfiles import finders
+
+            def link_callback(uri, rel):
+                if uri.startswith('http://') or uri.startswith('https://'):
+                    return uri
+                if settings.STATIC_URL and uri.startswith(settings.STATIC_URL):
+                    path = uri.replace(settings.STATIC_URL, '')
+                    found = finders.find(path)
+                    if found:
+                        return found
+                if settings.MEDIA_URL and uri.startswith(settings.MEDIA_URL):
+                    path = uri.replace(settings.MEDIA_URL, '')
+                    return os.path.join(settings.MEDIA_ROOT, path)
+                found = finders.find(uri)
+                if found:
+                    return found
+                return uri
+
+            pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=out, encoding='utf-8', link_callback=link_callback)
+            if not pisa_status.err:
+                return out.getvalue(), '.pdf'
+        except Exception:
+            pass
+
+    # Fallback : return HTML bytes
+    return html.encode('utf-8'), '.html'
+
+
 try:
     from .forms import FormulaireSortie, ThemeForm
 except ImportError:
@@ -3463,58 +3527,11 @@ def export_fiche_contrat_archive(request, pk):
                         zf.writestr(f'ateliers/{atelier.titre}/{dossier.nom}/{fa.nom}_link.txt', fa.lien_externe)
 
         # Helper to render template -> PDF bytes using best available tool
+        # use new helper that tries Playwright/Weasy/pisa
         def render_to_pdf_bytes(template_name, context, filename_base, request):
             html = render_to_string(template_name, context, request=request)
-            # 1) Try WeasyPrint if available (better CSS support)
-            try:
-                from weasyprint import HTML
-                try:
-                    base_url = request.build_absolute_uri('/') if request is not None else None
-                    if base_url:
-                        pdf = HTML(string=html, base_url=base_url).write_pdf()
-                        return pdf, f'{filename_base}.pdf'
-                    # fallback to file system base
-                    pdf = HTML(string=html, base_url='file://' + str(settings.BASE_DIR)).write_pdf()
-                    return pdf, f'{filename_base}.pdf'
-                except Exception:
-                    pass
-            except Exception:
-                pass
-
-            # 2) Try xhtml2pdf (pisa) with link_callback to resolve static/media
-            out = io.BytesIO()
-            if 'pisa' in globals() and pisa is not None:
-                try:
-                    from django.contrib.staticfiles import finders
-
-                    def link_callback(uri, rel):
-                        # External URL
-                        if uri.startswith('http://') or uri.startswith('https://'):
-                            return uri
-                        # Static files
-                        if settings.STATIC_URL and uri.startswith(settings.STATIC_URL):
-                            path = uri.replace(settings.STATIC_URL, '')
-                            found = finders.find(path)
-                            if found:
-                                return found
-                        # Media files
-                        if settings.MEDIA_URL and uri.startswith(settings.MEDIA_URL):
-                            path = uri.replace(settings.MEDIA_URL, '')
-                            return os.path.join(settings.MEDIA_ROOT, path)
-                        # Try to find via finders
-                        found = finders.find(uri)
-                        if found:
-                            return found
-                        return uri
-
-                    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=out, encoding='utf-8', link_callback=link_callback)
-                    if not pisa_status.err:
-                        return out.getvalue(), f'{filename_base}.pdf'
-                except Exception:
-                    pass
-
-            # 3) Fallback to HTML file inside ZIP
-            return html.encode('utf-8'), f'{filename_base}.html'
+            data, ext = html_to_pdf_bytes(html, request=request)
+            return data, f'{filename_base}{ext}'
 
         # 2) Fiche contrat (page imprimable)
         try:
