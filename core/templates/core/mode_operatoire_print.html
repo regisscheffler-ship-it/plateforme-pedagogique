@@ -1,0 +1,36 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>{{ mode_operatoire.titre }}</title>
+    <style>
+        body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12px; }
+        h1 { font-size: 18px; }
+        .phase { margin-bottom: 12px; padding: 8px; border-bottom: 1px solid #ddd; }
+        .phase h3 { margin: 0 0 6px 0; }
+        .meta { color: #666; font-size: 11px; margin-bottom: 8px; }
+        .ops { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>{{ mode_operatoire.titre }}</h1>
+    <div class="meta">Créé par {{ mode_operatoire.createur.get_full_name }} — {{ mode_operatoire.date_creation }}</div>
+    {% if mode_operatoire.description %}
+    <p>{{ mode_operatoire.description }}</p>
+    {% endif %}
+
+    {% for ligne in lignes %}
+    <div class="phase">
+        <h3>Phase {{ ligne.ordre }} — {{ ligne.phase }}</h3>
+        {% if ligne.schema_image %}
+            <div><img src="{{ ligne.schema_image.url }}" style="max-width:400px;max-height:300px;"/></div>
+        {% endif %}
+        <div><strong>Opérations</strong></div>
+        <div class="ops">{{ ligne.operations }}</div>
+        <div><strong>Matériels</strong></div>
+        <div class="ops">{{ ligne.materiels }}</div>
+        <div><strong>Points de contrôle</strong></div>
+        <div class="ops">{{ ligne.controle }}</div>
+    </div>
+    {% endfor %}
+</body>
+</html>

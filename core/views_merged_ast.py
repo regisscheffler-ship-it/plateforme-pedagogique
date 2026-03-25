@@ -3462,9 +3462,21 @@ def export_fiche_contrat_archive(request, pk):
                     elif fa.type_contenu == 'lien' and fa.lien_externe:
                         zf.writestr(f'ateliers/{atelier.titre}/{dossier.nom}/{fa.nom}_link.txt', fa.lien_externe)
 
-        # Helper to render template -> PDF (pisa) or HTML fallback
+        # Helper to render template -> PDF bytes using best available tool
         def render_to_pdf_bytes(template_name, context, filename_base):
             html = render_to_string(template_name, context)
+            # 1) Try WeasyPrint if available (better CSS support)
+            try:
+                from weasyprint import HTML
+                try:
+                    pdf = HTML(string=html, base_url=settings.BASE_DIR).write_pdf()
+                    return pdf, f'{filename_base}.pdf'
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+            # 2) Try xhtml2pdf (pisa)
             out = io.BytesIO()
             if 'pisa' in globals() and pisa is not None:
                 try:
@@ -3473,7 +3485,8 @@ def export_fiche_contrat_archive(request, pk):
                         return out.getvalue(), f'{filename_base}.pdf'
                 except Exception:
                     pass
-            # fallback : include HTML
+
+            # 3) Fallback to HTML file inside ZIP
             return html.encode('utf-8'), f'{filename_base}.html'
 
         # 2) Fiche contrat (page imprimable)
@@ -3497,6 +3510,18 @@ def export_fiche_contrat_archive(request, pk):
             context_eval = {'fiche_contrat': fiche_contrat, 'donnees_impression': donnees_impression, 'poids_auto': round(100 / (fiche_contrat.lignes.count() or 1), 2)}
             data_eval, fname_eval = render_to_pdf_bytes('core/fiche_evaluation_print.html', context_eval, f'fiches_evaluation_{fiche_contrat.id}')
             zf.writestr(fname_eval, data_eval)
+        except Exception:
+            pass
+
+        # 4) Modes opératoires liés à l'atelier
+        try:
+            if atelier:
+                for mo in atelier.modes_operatoires.filter(actif=True).order_by('date_creation'):
+                    # Build simple context and render
+                    lignes = list(mo.lignes.order_by('ordre'))
+                    ctx_mo = {'mode_operatoire': mo, 'lignes': lignes}
+                    data_mo, fname_mo = render_to_pdf_bytes('core/mode_operatoire_print.html', ctx_mo, f'mode_operatoire_{mo.id}')
+                    zf.writestr(f'modes_operatoires/{fname_mo}', data_mo)
         except Exception:
             pass
 
