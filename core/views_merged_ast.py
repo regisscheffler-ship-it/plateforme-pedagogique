@@ -1885,9 +1885,15 @@ def archives_export(request):
 
 
 def supprimer_archive(request, pk):
-    archive = get_object_or_404(Archive, pk=pk, createur=request.user)
+    # Allow the creator or staff/superuser to delete an archive. If the user is
+    # not authorised, show a friendly error instead of raising 404.
+    archive = get_object_or_404(Archive, pk=pk)
+    user = request.user
+    if not (archive.createur == user or getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False)):
+        messages.error(request, "❌ Vous n'avez pas les droits pour supprimer cette archive.")
+        return redirect('core:archives')
 
-    # ✅ Accepte GET et POST (le bouton dans archives.html utilise un lien GET + confirm JS)
+    # Accept GET and POST (the archives list uses a GET link with JS confirm)
     archive.delete()
     messages.success(request, f'Archive « {archive.titre} » supprimée.')
     return redirect('core:archives')
