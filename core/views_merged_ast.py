@@ -3191,8 +3191,10 @@ def evaluation_parametres(request):
         return creer_evaluation(request)
     referentiels = Referentiel.objects.filter(actif=True)
     classes = Classe.objects.filter(actif=True).order_by('nom')
+    ateliers = Atelier.objects.filter(actif=True).select_related('classe')
     return render(request, 'core/evaluation_parametres.html', {
         'referentiels': referentiels, 'classes': classes,
+        'ateliers': ateliers,
     })
 
 
@@ -3321,6 +3323,17 @@ def creer_evaluation(request):
             savoirs_associes="\n".join(noms_connaissances),
             createur=request.user
         )
+
+        # Si un atelier est fourni, on l'associe (sécurité : vérifie la classe)
+        atelier_id = request.POST.get('atelier')
+        if atelier_id:
+            try:
+                atelier_obj = Atelier.objects.get(id=atelier_id, classe=classe)
+                fiche_contrat.atelier = atelier_obj
+                fiche_contrat.save()
+            except Atelier.DoesNotExist:
+                # on ignore silencieusement (l'UI enverra un message si nécessaire)
+                pass
 
         _creer_lignes_contrat(fiche_contrat, criteres_selectionnes)
         _creer_fiches_eleves(fiche_contrat, eleves_ids)
