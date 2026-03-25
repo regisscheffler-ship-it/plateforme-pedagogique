@@ -737,6 +737,15 @@ class FicheContrat(models.Model):
     fiches_eval_valide = models.BooleanField(default=False)
     # ------------------------------------
 
+    atelier = models.ForeignKey(
+        'Atelier',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='fiches_contrat',
+        verbose_name='Atelier lié'
+    )
+
     class Meta:
         verbose_name = 'Fiche contrat'
         verbose_name_plural = 'Fiches contrat'

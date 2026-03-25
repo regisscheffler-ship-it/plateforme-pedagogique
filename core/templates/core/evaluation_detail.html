@@ -483,6 +483,52 @@
                 <div class="info-label">Contexte Professionnel</div>
                 <div class="info-value">{{ fiche_contrat.contexte|default:"Non renseigné" }}</div>
             </div>
+
+            <div class="info-item">
+                <div class="info-label">Atelier lié</div>
+                <div class="info-value">
+                    {% if fiche_contrat.atelier %}
+                        <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <a href="{% url 'core:atelier_detail' fiche_contrat.atelier.id %}">{{ fiche_contrat.atelier.titre }}</a>
+                            <form method="post" action="{% url 'core:evaluation_lier_atelier' fiche_contrat.id %}" style="display:inline;margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="atelier" value="">
+                                <button type="submit" class="btn-action btn-orange" style="margin-left:0.6rem;">Délier</button>
+                            </form>
+                        </div>
+                        <details style="margin-top:0.6rem;">
+                            <summary style="cursor:pointer;color:#4a9fc1;font-weight:700;">Modifier le lien</summary>
+                            <form method="post" action="{% url 'core:evaluation_lier_atelier' fiche_contrat.id %}" style="margin-top:0.6rem;display:flex;gap:0.6rem;align-items:center;">
+                                {% csrf_token %}
+                                <select name="atelier">
+                                    <option value="">-- Aucun --</option>
+                                    {% for at in ateliers %}
+                                        <option value="{{ at.id }}" {% if at.id == fiche_contrat.atelier.id %}selected{% endif %}>{{ at.titre }} ({{ at.classe.nom }})</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn-action btn-blue">Lier</button>
+                            </form>
+                        </details>
+                    {% else %}
+                        <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <span style="color:#94a3b8;font-style:italic;">Aucun atelier lié</span>
+                        </div>
+                        <details style="margin-top:0.6rem;">
+                            <summary style="cursor:pointer;color:#4a9fc1;font-weight:700;">Lier un atelier</summary>
+                            <form method="post" action="{% url 'core:evaluation_lier_atelier' fiche_contrat.id %}" style="margin-top:0.6rem;display:flex;gap:0.6rem;align-items:center;">
+                                {% csrf_token %}
+                                <select name="atelier">
+                                    <option value="">-- Sélectionner --</option>
+                                    {% for at in ateliers %}
+                                        <option value="{{ at.id }}">{{ at.titre }} ({{ at.classe.nom }})</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn-action btn-blue">Lier</button>
+                            </form>
+                        </details>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 

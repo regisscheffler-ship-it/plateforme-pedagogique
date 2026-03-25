@@ -3385,7 +3385,31 @@ def evaluation_detail(request, pk):
         'eleves_sans_fiche': eleves_sans_fiche,
         'peut_archiver': peut_archiver,
         'raison_blocage_archivage': raison_blocage_archivage,
+        'ateliers': Atelier.objects.filter(classe=fiche_contrat.classe, actif=True).order_by('ordre', 'titre'),
+        'atelier_selection': getattr(fiche_contrat, 'atelier', None),
     })
+
+
+@login_required
+@user_passes_test(est_professeur)
+def evaluation_lier_atelier(request, pk):
+    """Lie ou délien une FicheContrat à un Atelier (professeurs seulement)."""
+    fiche_contrat = get_object_or_404(FicheContrat, id=pk, createur=request.user)
+    if request.method == 'POST':
+        atelier_id = request.POST.get('atelier')
+        if atelier_id:
+            try:
+                atelier = Atelier.objects.get(id=atelier_id, classe=fiche_contrat.classe)
+                fiche_contrat.atelier = atelier
+                fiche_contrat.save()
+                messages.success(request, '✅ Atelier lié à la fiche.')
+            except Atelier.DoesNotExist:
+                messages.error(request, '❌ Atelier introuvable pour cette classe.')
+        else:
+            fiche_contrat.atelier = None
+            fiche_contrat.save()
+            messages.success(request, '✅ Atelier détaché de la fiche.')
+    return redirect('core:evaluation_detail', pk=fiche_contrat.id)
 
 
 def deverrouiller_fiche_evaluation(request, fiche_eval_id):
