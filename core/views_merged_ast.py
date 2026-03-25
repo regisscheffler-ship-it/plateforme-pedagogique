@@ -3463,24 +3463,51 @@ def export_fiche_contrat_archive(request, pk):
                         zf.writestr(f'ateliers/{atelier.titre}/{dossier.nom}/{fa.nom}_link.txt', fa.lien_externe)
 
         # Helper to render template -> PDF bytes using best available tool
-        def render_to_pdf_bytes(template_name, context, filename_base):
-            html = render_to_string(template_name, context)
+        def render_to_pdf_bytes(template_name, context, filename_base, request):
+            html = render_to_string(template_name, context, request=request)
             # 1) Try WeasyPrint if available (better CSS support)
             try:
                 from weasyprint import HTML
                 try:
-                    pdf = HTML(string=html, base_url=settings.BASE_DIR).write_pdf()
+                    base_url = request.build_absolute_uri('/') if request is not None else None
+                    if base_url:
+                        pdf = HTML(string=html, base_url=base_url).write_pdf()
+                        return pdf, f'{filename_base}.pdf'
+                    # fallback to file system base
+                    pdf = HTML(string=html, base_url='file://' + str(settings.BASE_DIR)).write_pdf()
                     return pdf, f'{filename_base}.pdf'
                 except Exception:
                     pass
             except Exception:
                 pass
 
-            # 2) Try xhtml2pdf (pisa)
+            # 2) Try xhtml2pdf (pisa) with link_callback to resolve static/media
             out = io.BytesIO()
             if 'pisa' in globals() and pisa is not None:
                 try:
-                    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=out, encoding='utf-8')
+                    from django.contrib.staticfiles import finders
+
+                    def link_callback(uri, rel):
+                        # External URL
+                        if uri.startswith('http://') or uri.startswith('https://'):
+                            return uri
+                        # Static files
+                        if settings.STATIC_URL and uri.startswith(settings.STATIC_URL):
+                            path = uri.replace(settings.STATIC_URL, '')
+                            found = finders.find(path)
+                            if found:
+                                return found
+                        # Media files
+                        if settings.MEDIA_URL and uri.startswith(settings.MEDIA_URL):
+                            path = uri.replace(settings.MEDIA_URL, '')
+                            return os.path.join(settings.MEDIA_ROOT, path)
+                        # Try to find via finders
+                        found = finders.find(uri)
+                        if found:
+                            return found
+                        return uri
+
+                    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=out, encoding='utf-8', link_callback=link_callback)
                     if not pisa_status.err:
                         return out.getvalue(), f'{filename_base}.pdf'
                 except Exception:
@@ -3494,7 +3521,7 @@ def export_fiche_contrat_archive(request, pk):
             lignes_contrat, competences_vises, savoirs_dedupliques = _get_donnees_page1_contrat(fiche_contrat)
             context = {'fiche_contrat': fiche_contrat, 'lignes_contrat': lignes_contrat,
                        'competences_vises': competences_vises, 'savoirs_dedupliques': savoirs_dedupliques}
-            data, fname = render_to_pdf_bytes('core/fiche_contrat_print.html', context, f'fiche_contrat_{fiche_contrat.id}')
+            data, fname = render_to_pdf_bytes('core/fiche_contrat_print.html', context, f'fiche_contrat_{fiche_contrat.id}', request)
             zf.writestr(fname, data)
         except Exception:
             pass
@@ -3508,7 +3535,7 @@ def export_fiche_contrat_archive(request, pk):
                 groupes = _get_donnees_page2_evaluation(fe, fiche_contrat)[1]
                 donnees_impression.append({'eleve': fe.eleve, 'evaluation': fe, 'groupes_competences': groupes})
             context_eval = {'fiche_contrat': fiche_contrat, 'donnees_impression': donnees_impression, 'poids_auto': round(100 / (fiche_contrat.lignes.count() or 1), 2)}
-            data_eval, fname_eval = render_to_pdf_bytes('core/fiche_evaluation_print.html', context_eval, f'fiches_evaluation_{fiche_contrat.id}')
+            data_eval, fname_eval = render_to_pdf_bytes('core/fiche_evaluation_print.html', context_eval, f'fiches_evaluation_{fiche_contrat.id}', request)
             zf.writestr(fname_eval, data_eval)
         except Exception:
             pass
@@ -3520,7 +3547,7 @@ def export_fiche_contrat_archive(request, pk):
                     # Build simple context and render
                     lignes = list(mo.lignes.order_by('ordre'))
                     ctx_mo = {'mode_operatoire': mo, 'lignes': lignes}
-                    data_mo, fname_mo = render_to_pdf_bytes('core/mode_operatoire_print.html', ctx_mo, f'mode_operatoire_{mo.id}')
+                    data_mo, fname_mo = render_to_pdf_bytes('core/mode_operatoire_print.html', ctx_mo, f'mode_operatoire_{mo.id}', request)
                     zf.writestr(f'modes_operatoires/{fname_mo}', data_mo)
         except Exception:
             pass
