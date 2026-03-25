@@ -344,9 +344,11 @@ def est_professeur(user):
 
 
 def keepalive(request):
-    """Ping keep-alive pour éviter la mise en veille de Supabase."""
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT 1")
+    """Ping keep-alive minimal — ne dépend pas de la base pour éviter les blocages.
+    Anciennement la vue exécutait une requête SQL; si la base est indisponible
+    cela peut bloquer ou enchaîner des erreurs côté hébergeur. Retourne simplement
+    un statut OK pour vérifier que l'app répond.
+    """
     return JsonResponse({'status': 'ok'})
 
 
