@@ -31,6 +31,8 @@ VIEW_NAMES = [
     'archives', 'archives_export', 'export_annuel_complet', 'supprimer_archive', 'archive_detail', 'statistiques',
     'api_eleves_par_classe', 'api_competences_par_referentiel', 'contact',
     'gestion_portfolio',
+    'portfolio_detail', 'fiche_portfolio_create', 'fiche_portfolio_update',
+    'fiche_portfolio_delete', 'fiche_portfolio_valider',
     'gestion_pfmp', 'pfmp_create', 'pfmp_detail', 'pfmp_update', 'pfmp_supprimer', 'saisie_suivi_pfmp',
     'pfmp_dossier_create', 'pfmp_dossier_update', 'pfmp_dossier_delete', 'pfmp_fichier_create', 'pfmp_fichier_update', 'pfmp_fichier_delete',
     'gestion_ateliers', 'atelier_create', 'atelier_detail', 'atelier_update', 'atelier_delete', 'atelier_toggle_visibilite',

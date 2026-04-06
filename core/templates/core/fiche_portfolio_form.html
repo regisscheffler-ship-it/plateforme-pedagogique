@@ -1,0 +1,307 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ action }} une fiche — {{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #d97706;
+        border: 2px solid #d97706; border-radius: 8px;
+        text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        transition: all 0.2s; margin-bottom: 1rem;
+    }
+    .btn-retour:hover { background: #d97706; color: white; }
+
+    .page-header {
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border-left: 5px solid #d97706;
+        padding: 1.4rem 2rem; margin-bottom: 1.8rem;
+        display: flex; align-items: center; gap: 14px;
+    }
+    .page-header-icon {
+        width: 48px; height: 48px; border-radius: 12px;
+        background: #fef3c7; color: #d97706;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .page-header h1 { margin: 0; font-size: 1.4rem; color: #1e293b; }
+    .page-header p  { margin: 3px 0 0; font-size: 0.85rem; color: #64748b; }
+
+    .form-card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.06);
+        padding: 2rem;
+    }
+
+    .form-section {
+        margin-bottom: 1.8rem;
+        padding-bottom: 1.8rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .form-section:last-of-type { border-bottom: none; margin-bottom: 0.5rem; }
+
+    .form-section-title {
+        font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.07em; color: #d97706; margin-bottom: 1.1rem;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-title::after {
+        content: ''; flex: 1; height: 1px; background: #fde68a;
+    }
+
+    .form-group { margin-bottom: 1.1rem; }
+    .form-group label {
+        display: block; font-size: 0.88rem; font-weight: 600;
+        color: #374151; margin-bottom: 0.4rem;
+    }
+    .form-group label .required { color: #ef4444; margin-left: 2px; }
+    .form-control {
+        width: 100%; padding: 0.6rem 0.9rem;
+        border: 1.5px solid #e2e8f0; border-radius: 8px;
+        font-size: 0.92rem; color: #1e293b; background: white;
+        transition: border-color 0.2s; box-sizing: border-box;
+    }
+    .form-control:focus { outline: none; border-color: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.12); }
+    textarea.form-control { resize: vertical; min-height: 90px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media(max-width:600px){ .form-row { grid-template-columns: 1fr; } }
+
+    /* Sélection compétences */
+    .competences-panel {
+        border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    }
+    .comp-referentiel {
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .comp-referentiel:last-child { border-bottom: none; }
+    .comp-ref-header {
+        padding: 0.7rem 1rem; background: #f8fafc;
+        font-weight: 700; font-size: 0.88rem; color: #374151;
+        cursor: pointer; display: flex; align-items: center; gap: 8px;
+        user-select: none;
+    }
+    .comp-ref-header:hover { background: #f1f5f9; }
+    .comp-ref-body { padding: 0.5rem 1rem 0.8rem; }
+    .comp-ref-body.collapsed { display: none; }
+
+    .comp-bloc-title {
+        font-size: 0.78rem; font-weight: 700; color: #94a3b8;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        margin: 0.8rem 0 0.4rem;
+    }
+    .comp-item {
+        display: flex; align-items: flex-start; gap: 8px;
+        padding: 0.3rem 0; cursor: pointer;
+    }
+    .comp-item input[type=checkbox] { margin-top: 3px; accent-color: #d97706; flex-shrink: 0; }
+    .comp-item-label { font-size: 0.87rem; color: #374151; line-height: 1.35; }
+    .comp-item-code { font-weight: 700; color: #d97706; }
+
+    /* Boutons bas de form */
+    .form-actions {
+        display: flex; gap: 0.8rem; justify-content: flex-end;
+        margin-top: 1.6rem;
+    }
+    .btn-submit {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.7rem 1.6rem; background: #d97706; color: white;
+        border: none; border-radius: 8px; font-weight: 700; font-size: 0.95rem;
+        cursor: pointer; transition: background 0.2s;
+    }
+    .btn-submit:hover { background: #b45309; }
+    .btn-cancel {
+        display: inline-flex; align-items: center;
+        padding: 0.7rem 1.3rem; background: white; color: #64748b;
+        border: 1.5px solid #e2e8f0; border-radius: 8px;
+        font-weight: 600; font-size: 0.9rem; text-decoration: none;
+        transition: all 0.2s;
+    }
+    .btn-cancel:hover { background: #f1f5f9; }
+
+    .badge-selected {
+        display: inline-block; background: #fef3c7; color: #92400e;
+        border-radius: 20px; padding: 2px 10px; font-size: 0.78rem;
+        font-weight: 700; margin-left: auto;
+    }
+</style>
+
+<div class="page-container">
+
+    <a href="{% url 'core:portfolio_detail' portfolio.id %}" class="btn-retour">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+        Retour au portfolio
+    </a>
+
+    <div class="page-header">
+        <div class="page-header-icon">
+            <svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+        </div>
+        <div>
+            <h1>{{ action }} une fiche</h1>
+            <p>{{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }} — {{ portfolio.eleve.classe.nom }}</p>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div style="padding:0.7rem 1.2rem;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:0.9rem;margin-bottom:1rem;">{{ msg }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="form-card">
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Informations principales -->
+            <div class="form-section">
+                <div class="form-section-title">Informations de la fiche</div>
+
+                <div class="form-group">
+                    <label for="id_titre">Titre de la fiche <span class="required">*</span></label>
+                    <input type="text" name="titre" id="id_titre" class="form-control"
+                           placeholder="Ex: Pose de cloison en plaque de plâtre"
+                           value="{{ fiche.titre|default:'' }}" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_type_evaluation">Type d'évaluation</label>
+                        <select name="type_evaluation" id="id_type_evaluation" class="form-control">
+                            <option value="formative"     {% if fiche.type_evaluation == 'formative'     or not fiche %}selected{% endif %}>Formative</option>
+                            <option value="sommative"     {% if fiche.type_evaluation == 'sommative'     %}selected{% endif %}>Sommative</option>
+                            <option value="certificative" {% if fiche.type_evaluation == 'certificative' %}selected{% endif %}>Certificative</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_unite_evaluation">Unité d'évaluation</label>
+                        <input type="text" name="unite_evaluation" id="id_unite_evaluation" class="form-control"
+                               placeholder="Ex: UP2 - Travaux d'intérieur"
+                               value="{{ fiche.unite_evaluation|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_pfmp">PFMP associée (optionnel)</label>
+                    <select name="pfmp" id="id_pfmp" class="form-control">
+                        <option value="">— Aucune PFMP —</option>
+                        {% for pfmp in pfmps %}
+                        <option value="{{ pfmp.id }}" {% if fiche.pfmp_id == pfmp.id %}selected{% endif %}>
+                            {{ pfmp.titre }}{% if pfmp.date_debut %} ({{ pfmp.date_debut|date:"d/m/Y" }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_activites">Activités professionnelles</label>
+                    <textarea name="activites_professionnelles" id="id_activites" class="form-control"
+                              placeholder="Décrivez les activités réalisées en entreprise...">{{ fiche.activites_professionnelles|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Compétences -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    Compétences évaluées
+                    <span class="badge-selected" id="count-comp">0 sélectionnée(s)</span>
+                </div>
+
+                {% if competences_qs %}
+                <div class="competences-panel">
+                    {% regroup competences_qs by competence.bloc.referentiel as ref_groups %}
+                    {% for ref_group in ref_groups %}
+                    <div class="comp-referentiel">
+                        <div class="comp-ref-header" onclick="toggleRef(this)">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+                            {{ ref_group.grouper.nom }}
+                        </div>
+                        <div class="comp-ref-body">
+                            {% regroup ref_group.list by competence.bloc as bloc_groups %}
+                            {% for bloc_group in bloc_groups %}
+                            <div class="comp-bloc-title">{{ bloc_group.grouper.code }} — {{ bloc_group.grouper.nom }}</div>
+                            {% for comp in bloc_group.list %}
+                            <label class="comp-item">
+                                <input type="checkbox" name="competences" value="{{ comp.id }}"
+                                    {% if selected_comp_ids and comp.id in selected_comp_ids %}checked{% endif %}
+                                    onchange="updateCount()">
+                                <span class="comp-item-label">
+                                    <span class="comp-item-code">{{ comp.code }}</span> — {{ comp.nom }}
+                                </span>
+                            </label>
+                            {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color:#94a3b8;font-size:0.9rem;font-style:italic;">
+                    Aucun référentiel de compétences disponible. Ajoutez-en via l'administration Django.
+                </p>
+                {% endif %}
+            </div>
+
+            {% if fiche %}
+            <!-- Validation (uniquement en modification) -->
+            <div class="form-section">
+                <div class="form-section-title">Validation</div>
+                <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+                    <input type="checkbox" name="validee_par_prof" id="id_validee"
+                           {% if fiche.validee_par_prof %}checked{% endif %}
+                           style="width:18px;height:18px;accent-color:#10b981;">
+                    <label for="id_validee" style="margin:0;font-size:0.92rem;">Marquer cette fiche comme validée</label>
+                </div>
+                <div class="form-group">
+                    <label for="id_commentaire">Commentaire professeur</label>
+                    <textarea name="commentaire_prof" id="id_commentaire" class="form-control"
+                              placeholder="Retours, observations, points d'amélioration...">{{ fiche.commentaire_prof|default:'' }}</textarea>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <a href="{% url 'core:portfolio_detail' portfolio.id %}" class="btn-cancel">Annuler</a>
+                <button type="submit" class="btn-submit">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+                    {{ action }} la fiche
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+<script>
+function toggleRef(header) {
+    const body = header.nextElementSibling;
+    const chev = header.querySelector('svg');
+    const collapsed = body.classList.toggle('collapsed');
+    chev.style.transform = collapsed ? 'rotate(-90deg)' : '';
+}
+
+function updateCount() {
+    const n = document.querySelectorAll('input[name="competences"]:checked').length;
+    document.getElementById('count-comp').textContent = n + ' sélectionnée(s)';
+}
+
+// Init compteur au chargement
+document.addEventListener('DOMContentLoaded', updateCount);
+
+// Ouvrir les référentiels qui ont des compétences pré-cochées
+document.querySelectorAll('.comp-ref-body').forEach(body => {
+    const hasChecked = body.querySelector('input:checked');
+    if (!hasChecked) body.classList.add('collapsed');
+    const chev = body.previousElementSibling.querySelector('svg');
+    if (!hasChecked) chev.style.transform = 'rotate(-90deg)';
+});
+</script>
+{% endblock %}

@@ -1,0 +1,457 @@
+{% extends 'core/base.html' %}
+{% block title %}Portfolio — {{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #d97706;
+        border: 2px solid #d97706; border-radius: 8px;
+        text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        transition: all 0.2s; margin-bottom: 1rem;
+    }
+    .btn-retour:hover { background: #d97706; color: white; }
+
+    .page-header {
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border-left: 5px solid #d97706;
+        padding: 1.6rem 2rem; margin-bottom: 1.8rem;
+        display: flex; align-items: center; gap: 16px;
+    }
+    .avatar-lg {
+        width: 60px; height: 60px; border-radius: 50%;
+        background: #fef3c7; color: #d97706;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 1.3rem; flex-shrink: 0;
+    }
+    .page-header h1 { margin: 0; font-size: 1.5rem; color: #1e293b; }
+    .page-header p  { margin: 4px 0 0; font-size: 0.88rem; color: #64748b; }
+    .header-actions { margin-left: auto; display: flex; gap: 0.7rem; align-items: center; }
+
+    .btn-primary {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.65rem 1.3rem; background: #d97706; color: white;
+        border: none; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+        text-decoration: none; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #b45309; color: white; }
+
+    /* Stats bar */
+    .stats-row {
+        display: flex; gap: 1rem; margin-bottom: 1.6rem; flex-wrap: wrap;
+    }
+    .stat-pill {
+        background: white; border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 0.8rem 1.2rem;
+        display: flex; flex-direction: column; align-items: center; min-width: 100px;
+    }
+    .stat-pill-value { font-size: 1.6rem; font-weight: 700; color: #d97706; line-height: 1; }
+    .stat-pill-label { font-size: 0.75rem; color: #94a3b8; margin-top: 3px; }
+    .stat-pill.green .stat-pill-value { color: #10b981; }
+    .stat-pill.blue  .stat-pill-value { color: #3b82f6; }
+
+    /* Liste des fiches */
+    .fiches-grid {
+        display: flex; flex-direction: column; gap: 1rem;
+    }
+    .fiche-card {
+        background: white; border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        border-left: 4px solid #e2e8f0;
+        overflow: hidden; transition: box-shadow 0.2s;
+    }
+    .fiche-card.validee { border-left-color: #10b981; }
+    .fiche-card.en-attente { border-left-color: #f59e0b; }
+    .fiche-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.1); }
+
+    .fiche-header {
+        display: flex; align-items: center; gap: 12px;
+        padding: 1rem 1.4rem;
+        cursor: pointer; user-select: none;
+    }
+    .fiche-header:hover { background: #fafafa; }
+
+    .badge-type {
+        display: inline-block; padding: 3px 10px;
+        border-radius: 20px; font-size: 0.72rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.03em;
+        flex-shrink: 0;
+    }
+    .badge-formative    { background: #dbeafe; color: #1d4ed8; }
+    .badge-sommative    { background: #fce7f3; color: #9d174d; }
+    .badge-certificative{ background: #f3e8ff; color: #6d28d9; }
+
+    .badge-status {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+        flex-shrink: 0; margin-left: auto;
+    }
+    .badge-status.ok { background: #d1fae5; color: #166534; }
+    .badge-status.pending { background: #fef3c7; color: #92400e; }
+
+    .fiche-titre { font-weight: 700; font-size: 1rem; color: #1e293b; flex: 1; }
+    .fiche-date  { font-size: 0.8rem; color: #94a3b8; flex-shrink: 0; }
+
+    .fiche-body {
+        padding: 0 1.4rem 1.2rem;
+        border-top: 1px solid #f1f5f9;
+    }
+    .fiche-body.collapsed { display: none; }
+
+    .fiche-section { margin-top: 0.9rem; }
+    .fiche-section-title {
+        font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 0.35rem;
+    }
+    .fiche-section-content {
+        font-size: 0.9rem; color: #374151; white-space: pre-wrap; line-height: 1.55;
+    }
+    .fiche-section-content.empty { color: #cbd5e1; font-style: italic; }
+
+    .competences-list {
+        display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none;
+    }
+    .competences-list li {
+        background: #eff6ff; color: #1d4ed8;
+        padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+    }
+
+    /* photos */
+    .photos-row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .photo-thumb {
+        width: 90px; height: 70px; object-fit: cover;
+        border-radius: 8px; border: 2px solid #e2e8f0;
+    }
+    .photo-doc {
+        width: 90px; height: 70px; background: #f1f5f9;
+        border-radius: 8px; border: 2px solid #e2e8f0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.7rem; color: #64748b; text-align: center; padding: 4px;
+        text-decoration: none; overflow: hidden;
+    }
+
+    .commentaire-prof-box {
+        background: #fffbeb; border-left: 3px solid #d97706;
+        border-radius: 0 8px 8px 0;
+        padding: 0.7rem 1rem; margin-top: 0.8rem;
+        font-size: 0.88rem; color: #78350f;
+    }
+
+    .fiche-actions {
+        display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;
+    }
+    .btn-sm {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 0.4rem 0.9rem; border-radius: 6px;
+        font-size: 0.82rem; font-weight: 600; text-decoration: none;
+        cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s;
+    }
+    .btn-edit   { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .btn-edit:hover { background: #1d4ed8; color: white; }
+    .btn-valid  { background: #d1fae5; color: #166534; border-color: #6ee7b7; }
+    .btn-valid:hover { background: #166534; color: white; }
+    .btn-unvalid{ background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .btn-unvalid:hover { background: #92400e; color: white; }
+    .btn-delete { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .btn-delete:hover { background: #991b1b; color: white; }
+
+    .empty-state {
+        text-align: center; padding: 3rem 2rem; color: #94a3b8;
+        background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;
+    }
+    .empty-state h3 { color: #64748b; margin: 0.5rem 0; }
+
+    /* Modale validation rapide */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5); z-index: 1000;
+        align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+        background: white; border-radius: 16px; padding: 2rem;
+        width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-box h3 { margin: 0 0 1rem; font-size: 1.1rem; color: #1e293b; }
+    .modal-box textarea {
+        width: 100%; padding: 0.7rem; border: 1.5px solid #e2e8f0;
+        border-radius: 8px; font-size: 0.9rem; resize: vertical; min-height: 80px; box-sizing: border-box;
+    }
+    .modal-actions { display: flex; gap: 0.6rem; margin-top: 1rem; justify-content: flex-end; }
+
+    /* Modale suppression */
+    #modal-delete .modal-box { max-width: 400px; text-align: center; }
+    #modal-delete p { color: #64748b; margin: 0.5rem 0 1.2rem; font-size: 0.9rem; }
+</style>
+
+<div class="page-container">
+
+    <a href="{% url 'core:gestion_portfolio' %}" class="btn-retour">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+        Retour
+    </a>
+
+    <div class="page-header">
+        <div class="avatar-lg">
+            {{ portfolio.eleve.user.first_name|first }}{{ portfolio.eleve.user.last_name|first }}
+        </div>
+        <div>
+            <h1>{{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }}</h1>
+            <p>{{ portfolio.eleve.classe.nom }} — Portfolio BAC Pro</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'core:fiche_portfolio_create' portfolio.id %}" class="btn-primary">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke-linecap="round"></line><line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round"></line></svg>
+                Nouvelle fiche
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-pill">
+            <span class="stat-pill-value">{{ fiches|length }}</span>
+            <span class="stat-pill-label">Fiche{{ fiches|length|pluralize }}</span>
+        </div>
+        <div class="stat-pill green">
+            <span class="stat-pill-value">{{ portfolio.nb_fiches_validees }}</span>
+            <span class="stat-pill-label">Validée{{ portfolio.nb_fiches_validees|pluralize }}</span>
+        </div>
+        <div class="stat-pill blue">
+            <span class="stat-pill-value">{{ fiches|length|add:"-"|add:portfolio.nb_fiches_validees }}</span>
+            <span class="stat-pill-label">En attente</span>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div style="margin-bottom:1rem;">
+        {% for msg in messages %}
+        <div style="padding:0.7rem 1.2rem;border-radius:8px;background:{% if msg.tags == 'error' %}#fee2e2{% else %}#d1fae5{% endif %};color:{% if msg.tags == 'error' %}#991b1b{% else %}#166534{% endif %};font-size:0.9rem;margin-bottom:0.4rem;">
+            {{ msg }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Liste des fiches -->
+    {% if fiches %}
+    <div class="fiches-grid">
+        {% for fiche in fiches %}
+        <div class="fiche-card {% if fiche.validee_par_prof %}validee{% else %}en-attente{% endif %}">
+
+            <div class="fiche-header" onclick="toggleFiche({{ fiche.id }})">
+                <span class="badge-type badge-{{ fiche.type_evaluation }}">{{ fiche.get_type_evaluation_display }}</span>
+                <span class="fiche-titre">{{ fiche.titre }}</span>
+                <span class="fiche-date">{{ fiche.date_creation|date:"d/m/Y" }}</span>
+                <span class="badge-status {% if fiche.validee_par_prof %}ok{% else %}pending{% endif %}">
+                    {% if fiche.validee_par_prof %}
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+                    Validée
+                    {% else %}
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12" stroke-linecap="round"></line><line x1="12" y1="16" x2="12.01" y2="16" stroke-linecap="round"></line></svg>
+                    En attente
+                    {% endif %}
+                </span>
+                <svg id="chevron-{{ fiche.id }}" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2" viewBox="0 0 24 24" style="transition:transform 0.2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+            </div>
+
+            <div class="fiche-body collapsed" id="body-{{ fiche.id }}">
+
+                {% if fiche.competences.all %}
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Compétences évaluées</div>
+                    <ul class="competences-list">
+                        {% for c in fiche.competences.all %}
+                        <li>{{ c.code }} — {{ c.nom }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if fiche.activites_professionnelles %}
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Activités professionnelles</div>
+                    <div class="fiche-section-content">{{ fiche.activites_professionnelles }}</div>
+                </div>
+                {% endif %}
+
+                {% if fiche.unite_evaluation %}
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Unité d'évaluation</div>
+                    <div class="fiche-section-content">{{ fiche.unite_evaluation }}</div>
+                </div>
+                {% endif %}
+
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Description de la situation (élève)</div>
+                    <div class="fiche-section-content {% if not fiche.description_situation %}empty{% endif %}">
+                        {{ fiche.description_situation|default:"Non renseigné" }}
+                    </div>
+                </div>
+
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Observation de l'environnement (élève)</div>
+                    <div class="fiche-section-content {% if not fiche.observation_environnement %}empty{% endif %}">
+                        {{ fiche.observation_environnement|default:"Non renseigné" }}
+                    </div>
+                </div>
+
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Problématique (élève)</div>
+                    <div class="fiche-section-content {% if not fiche.problematique %}empty{% endif %}">
+                        {{ fiche.problematique|default:"Non renseigné" }}
+                    </div>
+                </div>
+
+                {% if fiche.photos.all %}
+                <div class="fiche-section">
+                    <div class="fiche-section-title">Photos / Documents</div>
+                    <div class="photos-row">
+                        {% for photo in fiche.photos.all %}
+                        {% if photo.image %}
+                            {% with photo.image.url as url %}
+                            {% if ".pdf" in url|lower or ".doc" in url|lower %}
+                            <a class="photo-doc" href="{{ url }}" target="_blank">
+                                <svg width="20" height="20" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                <span style="margin-top:4px;">{{ photo.legende|default:photo.image.name|slice:"-12:" }}</span>
+                            </a>
+                            {% else %}
+                            <img src="{{ url }}" class="photo-thumb" alt="{{ photo.legende }}" title="{{ photo.legende }}">
+                            {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if fiche.commentaire_prof %}
+                <div class="commentaire-prof-box">
+                    <strong>Commentaire professeur :</strong> {{ fiche.commentaire_prof }}
+                </div>
+                {% endif %}
+
+                <div class="fiche-actions">
+                    <a href="{% url 'core:fiche_portfolio_update' fiche.id %}" class="btn-sm btn-edit">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Modifier
+                    </a>
+                    {% if fiche.validee_par_prof %}
+                    <button class="btn-sm btn-unvalid" onclick="openValidModal({{ fiche.id }}, false, '{{ fiche.commentaire_prof|escapejs }}')">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"></line><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"></line></svg>
+                        Dé-valider
+                    </button>
+                    {% else %}
+                    <button class="btn-sm btn-valid" onclick="openValidModal({{ fiche.id }}, true, '{{ fiche.commentaire_prof|escapejs }}')">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+                        Valider
+                    </button>
+                    {% endif %}
+                    <button class="btn-sm btn-delete" onclick="openDeleteModal({{ fiche.id }}, '{{ fiche.titre|escapejs }}')">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
+                        Supprimer
+                    </button>
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <svg width="56" height="56" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
+        <h3>Aucune fiche</h3>
+        <p>Créez la première fiche d'activité pour cet élève.</p>
+        <a href="{% url 'core:fiche_portfolio_create' portfolio.id %}" class="btn-primary" style="margin-top:1rem;display:inline-flex;">
+            Nouvelle fiche
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Modale validation rapide -->
+<div class="modal-overlay" id="modal-valid">
+    <div class="modal-box">
+        <h3 id="modal-valid-title">Valider la fiche</h3>
+        <form method="post" id="form-valid">
+            {% csrf_token %}
+            <label style="font-size:0.88rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">Commentaire (optionnel)</label>
+            <textarea name="commentaire_prof" id="commentaire-input" placeholder="Vos observations, retours..."></textarea>
+            <div class="modal-actions">
+                <button type="button" class="btn-sm btn-edit" onclick="closeValidModal()">Annuler</button>
+                <button type="submit" class="btn-sm btn-valid" id="modal-valid-btn">Valider</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modale suppression -->
+<div class="modal-overlay" id="modal-delete">
+    <div class="modal-box">
+        <svg width="40" height="40" viewBox="0 0 24 24" stroke="#ef4444" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:0.5rem;">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6l-1 14H6L5 6"></path>
+        </svg>
+        <h3>Supprimer la fiche ?</h3>
+        <p id="delete-msg">Cette action est irréversible.</p>
+        <form method="post" id="form-delete">
+            {% csrf_token %}
+            <div class="modal-actions" style="justify-content:center;">
+                <button type="button" class="btn-sm btn-edit" onclick="closeDeleteModal()">Annuler</button>
+                <button type="submit" class="btn-sm btn-delete">Supprimer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleFiche(id) {
+    const body = document.getElementById('body-' + id);
+    const chev = document.getElementById('chevron-' + id);
+    const open = !body.classList.contains('collapsed');
+    body.classList.toggle('collapsed', open);
+    chev.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+function openValidModal(ficheId, doValidate, currentComment) {
+    const form = document.getElementById('form-valid');
+    form.action = "{% url 'core:fiche_portfolio_valider' 0 %}".replace('/0/', '/' + ficheId + '/');
+    document.getElementById('commentaire-input').value = currentComment;
+    const title = document.getElementById('modal-valid-title');
+    const btn = document.getElementById('modal-valid-btn');
+    if (doValidate) {
+        title.textContent = 'Valider la fiche';
+        btn.textContent = 'Valider';
+        btn.className = 'btn-sm btn-valid';
+    } else {
+        title.textContent = 'Dé-valider la fiche';
+        btn.textContent = 'Dé-valider';
+        btn.className = 'btn-sm btn-unvalid';
+    }
+    document.getElementById('modal-valid').classList.add('open');
+}
+function closeValidModal() { document.getElementById('modal-valid').classList.remove('open'); }
+
+function openDeleteModal(ficheId, titre) {
+    const form = document.getElementById('form-delete');
+    form.action = "{% url 'core:fiche_portfolio_delete' 0 %}".replace('/0/', '/' + ficheId + '/');
+    document.getElementById('delete-msg').textContent = '« ' + titre + ' » sera définitivement supprimée.';
+    document.getElementById('modal-delete').classList.add('open');
+}
+function closeDeleteModal() { document.getElementById('modal-delete').classList.remove('open'); }
+
+// Fermer en cliquant hors de la modale
+document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('open'); });
+});
+</script>
+{% endblock %}

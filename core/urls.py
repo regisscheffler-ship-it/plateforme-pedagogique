@@ -209,7 +209,12 @@ urlpatterns = [
     # ═══════════════════════════════════════
     # PORTFOLIO BAC PRO
     # ═══════════════════════════════════════
-    path('gestion/portfolio/',             views.gestion_portfolio, name='gestion_portfolio'),
+    path('gestion/portfolio/',                                     views.gestion_portfolio,       name='gestion_portfolio'),
+    path('gestion/portfolio/<int:portfolio_id>/',                  views.portfolio_detail,        name='portfolio_detail'),
+    path('gestion/portfolio/<int:portfolio_id>/fiche/creer/',      views.fiche_portfolio_create,  name='fiche_portfolio_create'),
+    path('gestion/portfolio/fiche/<int:fiche_id>/modifier/',       views.fiche_portfolio_update,  name='fiche_portfolio_update'),
+    path('gestion/portfolio/fiche/<int:fiche_id>/supprimer/',      views.fiche_portfolio_delete,  name='fiche_portfolio_delete'),
+    path('gestion/portfolio/fiche/<int:fiche_id>/valider/',        views.fiche_portfolio_valider, name='fiche_portfolio_valider'),
 
     # ═══════════════════════════════════════
     # PFMP

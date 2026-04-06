@@ -3026,6 +3026,135 @@ def gestion_portfolio(request):
     })
 
 
+# ─────────────────────────────────────────────────────────────
+# PORTFOLIO — détail + CRUD fiches (côté professeur)
+# ─────────────────────────────────────────────────────────────
+
+def portfolio_detail(request, portfolio_id):
+    """Vue détail du portfolio d'un élève — côté professeur."""
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+    fiches = (
+        portfolio.fiches
+        .prefetch_related('competences', 'photos')
+        .order_by('-date_creation')
+    )
+    referentiels = Referentiel.objects.prefetch_related(
+        'blocs__competences__competences_pro'
+    ).order_by('nom')
+    pfmps = PFMP.objects.filter(actif=True).order_by('-date_debut')
+    return render(request, 'core/portfolio_detail.html', {
+        'portfolio': portfolio,
+        'fiches': fiches,
+        'referentiels': referentiels,
+        'pfmps': pfmps,
+    })
+
+
+def fiche_portfolio_create(request, portfolio_id):
+    """Le professeur crée une nouvelle fiche dans un portfolio élève."""
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+
+    competences_qs = CompetenceProfessionnelle.objects.select_related(
+        'competence__bloc__referentiel'
+    ).order_by('competence__bloc__referentiel__nom', 'competence__bloc__code', 'competence__code', 'code')
+
+    pfmps = PFMP.objects.filter(actif=True).order_by('-date_debut')
+
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '').strip()
+        if not titre:
+            messages.error(request, 'Le titre est obligatoire.')
+        else:
+            fiche = FichePortfolio(
+                portfolio=portfolio,
+                titre=titre,
+                type_evaluation=request.POST.get('type_evaluation', 'formative'),
+                unite_evaluation=request.POST.get('unite_evaluation', '').strip(),
+                activites_professionnelles=request.POST.get('activites_professionnelles', '').strip(),
+                createur=request.user,
+            )
+            pfmp_id = request.POST.get('pfmp')
+            if pfmp_id:
+                fiche.pfmp_id = pfmp_id
+            fiche.save()
+            comp_ids = request.POST.getlist('competences')
+            if comp_ids:
+                fiche.competences.set(comp_ids)
+            messages.success(request, f'Fiche « {titre} » créée.')
+            return redirect('core:portfolio_detail', portfolio_id=portfolio.id)
+
+    return render(request, 'core/fiche_portfolio_form.html', {
+        'portfolio': portfolio,
+        'competences_qs': competences_qs,
+        'pfmps': pfmps,
+        'action': 'Créer',
+    })
+
+
+def fiche_portfolio_update(request, fiche_id):
+    """Le professeur modifie une fiche (champs prof + commentaire + validation)."""
+    fiche = get_object_or_404(FichePortfolio, id=fiche_id)
+    portfolio = fiche.portfolio
+
+    competences_qs = CompetenceProfessionnelle.objects.select_related(
+        'competence__bloc__referentiel'
+    ).order_by('competence__bloc__referentiel__nom', 'competence__bloc__code', 'competence__code', 'code')
+
+    pfmps = PFMP.objects.filter(actif=True).order_by('-date_debut')
+
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '').strip()
+        if not titre:
+            messages.error(request, 'Le titre est obligatoire.')
+        else:
+            fiche.titre = titre
+            fiche.type_evaluation = request.POST.get('type_evaluation', fiche.type_evaluation)
+            fiche.unite_evaluation = request.POST.get('unite_evaluation', '').strip()
+            fiche.activites_professionnelles = request.POST.get('activites_professionnelles', '').strip()
+            fiche.commentaire_prof = request.POST.get('commentaire_prof', '').strip()
+            fiche.validee_par_prof = request.POST.get('validee_par_prof') == 'on'
+            pfmp_id = request.POST.get('pfmp')
+            fiche.pfmp_id = pfmp_id if pfmp_id else None
+            fiche.save()
+            comp_ids = request.POST.getlist('competences')
+            fiche.competences.set(comp_ids)
+            messages.success(request, 'Fiche mise à jour.')
+            return redirect('core:portfolio_detail', portfolio_id=portfolio.id)
+
+    return render(request, 'core/fiche_portfolio_form.html', {
+        'portfolio': portfolio,
+        'fiche': fiche,
+        'competences_qs': competences_qs,
+        'pfmps': pfmps,
+        'action': 'Modifier',
+        'selected_comp_ids': list(fiche.competences.values_list('id', flat=True)),
+    })
+
+
+def fiche_portfolio_delete(request, fiche_id):
+    """Suppression d'une fiche (confirmation POST)."""
+    fiche = get_object_or_404(FichePortfolio, id=fiche_id)
+    portfolio_id = fiche.portfolio_id
+    if request.method == 'POST':
+        fiche.delete()
+        messages.success(request, 'Fiche supprimée.')
+    return redirect('core:portfolio_detail', portfolio_id=portfolio_id)
+
+
+def fiche_portfolio_valider(request, fiche_id):
+    """Toggle validation d'une fiche + sauvegarde commentaire (AJAX-friendly)."""
+    fiche = get_object_or_404(FichePortfolio, id=fiche_id)
+    if request.method == 'POST':
+        fiche.validee_par_prof = not fiche.validee_par_prof
+        fiche.commentaire_prof = request.POST.get('commentaire_prof', fiche.commentaire_prof).strip()
+        fiche.save()
+        messages.success(
+            request,
+            f"Fiche {'validée' if fiche.validee_par_prof else 'dé-validée'}."
+        )
+    return redirect('core:portfolio_detail', portfolio_id=fiche.portfolio_id)
+
+
 def gestion_pfmp(request):
     classes = Classe.objects.all().order_by('nom')
     classe_selectionnee = request.GET.get('classe')

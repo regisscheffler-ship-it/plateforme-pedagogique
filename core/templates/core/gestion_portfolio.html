@@ -150,7 +150,10 @@
     {% if portfolios %}
     <div class="portfolio-grid">
         {% for p in portfolios %}
-        <div class="portfolio-card">
+        <div class="portfolio-card"
+             onclick="window.location='{% url 'core:portfolio_detail' p.id %}'"
+             style="cursor:pointer;"
+             title="Voir le portfolio de {{ p.eleve.user.last_name }} {{ p.eleve.user.first_name }}">
             <div class="portfolio-card-header">
                 <div class="avatar">
                     {{ p.eleve.user.first_name|first }}{{ p.eleve.user.last_name|first }}
