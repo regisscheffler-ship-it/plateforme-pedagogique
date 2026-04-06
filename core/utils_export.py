@@ -290,7 +290,7 @@ def generer_zip_complet(annee):
         fiches = (
             FicheContrat.objects
             .filter(actif=True).filter(q_annee | q_dates)
-            .select_related('classe', 'referentiel', 'createur', 'atelier')
+            .select_related('classe', 'referentiel', 'createur')
             .distinct()
         )
 
@@ -356,11 +356,11 @@ def generer_zip_complet(annee):
                 nb += 1
 
             # C) Atelier lié ?
-            if fc.atelier_id:
-                try:
+            try:
+                if getattr(fc, 'atelier_id', None):
                     nb += _ajouter_atelier_au_zip(zf, fc.atelier, base, erreurs)
-                except Exception as e:
-                    logger.warning("Atelier lié à FC %s : %s", fc.pk, e)
+            except Exception as e:
+                logger.warning("Atelier lié à FC %s : %s", fc.pk, e)
 
         # ════════════════════════════════════
         # 2. TRAVAUX RENDUS
@@ -827,7 +827,7 @@ def generer_zip_avance(annee, tri='par_classe', classes_ids=None, eleves_ids=Non
     fiches_qs = (
         FicheContrat.objects
         .filter(actif=True).filter(q_annee | q_dates)
-        .select_related('classe', 'referentiel', 'createur', 'atelier')
+        .select_related('classe', 'referentiel', 'createur')
         .distinct()
     )
     if classes_ids:
@@ -883,19 +883,18 @@ def generer_zip_avance(annee, tri='par_classe', classes_ids=None, eleves_ids=Non
                 nb += 1
 
             # ── Atelier lié à cette fiche contrat ? ──
-            if fc.atelier_id:
-                try:
+            try:
+                if getattr(fc, 'atelier_id', None):
                     atelier = fc.atelier
                     if tri == 'par_classe':
                         atelier_base = f"{cl_nom}/Evaluations/{tp_nom}"
                     elif tri == 'par_categorie':
                         atelier_base = f"Evaluations/{cl_nom}/{tp_nom}"
                     else:
-                        # par_eleve : placer l'atelier dans un dossier commun par TP
                         atelier_base = f"_Ateliers/{cl_nom}/{tp_nom}"
                     nb += _ajouter_atelier_au_zip(zf, atelier, atelier_base, erreurs)
-                except Exception as e:
-                    logger.warning("Atelier lié à FC %s : %s", fc.pk, e)
+            except Exception as e:
+                logger.warning("Atelier lié à FC %s : %s", fc.pk, e)
 
         # ════════════════════════════════════════
         # B) ARCHIVES MANUELLES (examens, administratif, ressources, autre)

@@ -61,6 +61,24 @@
     .form-control:focus { outline: none; border-color: #10b981; }
     select[multiple].form-control { min-height: 120px; }
 
+    /* Groupe de checkboxes */
+    .checkbox-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 6px; max-height: 220px; overflow-y: auto;
+        border: 1.5px solid #e2e8f0; border-radius: 8px;
+        padding: 0.6rem; background: #f8fafc;
+    }
+    .checkbox-grid label {
+        display: flex; align-items: center; gap: 8px;
+        padding: 6px 10px; border-radius: 6px;
+        font-size: 0.88rem; color: #1e293b; cursor: pointer;
+        transition: background 0.15s;
+    }
+    .checkbox-grid label:hover { background: #e2e8f0; }
+    .checkbox-grid input[type="checkbox"] {
+        width: 16px; height: 16px; accent-color: #10b981; cursor: pointer; flex-shrink: 0;
+    }
+
     /* Tri – boutons radio visuels */
     .tri-options { display: flex; gap: 12px; flex-wrap: wrap; }
     .tri-option {
@@ -169,19 +187,31 @@
             <div class="tri-options">
                 <label class="tri-option selected" data-tri="par_classe">
                     <input type="radio" name="tri" value="par_classe" checked>
-                    <div class="tri-icon">🏫</div>
+                    <div class="tri-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8.277.084a.5.5 0 0 0-.554 0l-7.5 5A.5.5 0 0 0 .5 6h1.875v7H1.5a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1h-.875V6H15.5a.5.5 0 0 0 .277-.916l-7.5-5zM12.375 6v7h-1.25V6h1.25zm-2.5 0v7h-1.25V6h1.25zm-2.5 0v7h-1.25V6h1.25zm-2.5 0v7h-1.25V6h1.25zM8 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                    </div>
                     <div class="tri-label">Par classe</div>
                     <div class="tri-desc">Dossiers organisés par classe puis par TP</div>
                 </label>
                 <label class="tri-option" data-tri="par_eleve">
                     <input type="radio" name="tri" value="par_eleve">
-                    <div class="tri-icon">👤</div>
+                    <div class="tri-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                        </svg>
+                    </div>
                     <div class="tri-label">Par élève</div>
                     <div class="tri-desc">Un dossier par élève avec toutes ses évaluations</div>
                 </label>
                 <label class="tri-option" data-tri="par_categorie">
                     <input type="radio" name="tri" value="par_categorie">
-                    <div class="tri-icon">📂</div>
+                    <div class="tri-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3H13.5a2 2 0 0 1 2 2v.217a2.11 2.11 0 0 1-.053.073l-1.5 2.25a2 2 0 0 1-1.666.89H2.5a2 2 0 0 1-1.96-1.613zM13.5 4H9.828a3 3 0 0 1-2.12-.879l-.83-.828A1 1 0 0 0 6.173 2H2.5a1 1 0 0 0-1 1v.87L13.846 4h-.346zM1 6.002V13.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V6.69l-.854 1.28a1 1 0 0 1-.833.445H1.073A1 1 0 0 1 1 6.002z"/>
+                        </svg>
+                    </div>
                     <div class="tri-label">Par catégorie</div>
                     <div class="tri-desc">Évaluations, Examens, Administratif… en dossiers séparés</div>
                 </label>
@@ -190,39 +220,39 @@
             <!-- Aperçu structure -->
             <div class="structure-preview" id="structure-preview">
                 <div id="preview-par_classe">
-<span class="folder">📁 TBPMV1/</span>
-    <span class="folder">📁 Evaluations/</span>
-        <span class="folder">📁 TP_Freinage/</span>
-            <span class="file">📄 DUPONT_Jean.pdf</span>
-            <span class="file">📄 MARTIN_Marie.pdf</span>
-    <span class="folder">📁 Examens/</span>
-        <span class="file">📄 Examen_final.pdf</span>
-<span class="folder">📁 TBPMV2/</span>
-    <span class="folder">📁 Evaluations/</span>
+<span class="folder">&#9654; TBPMV1/</span>
+    <span class="folder">&#9654; Evaluations/</span>
+        <span class="folder">&#9654; TP_Freinage/</span>
+            <span class="file">&#9472; DUPONT_Jean.pdf</span>
+            <span class="file">&#9472; MARTIN_Marie.pdf</span>
+    <span class="folder">&#9654; Examens/</span>
+        <span class="file">&#9472; Examen_final.pdf</span>
+<span class="folder">&#9654; TBPMV2/</span>
+    <span class="folder">&#9654; Evaluations/</span>
         …
                 </div>
                 <div id="preview-par_eleve" style="display:none;">
-<span class="folder">📁 DUPONT_Jean (TBPMV1)/</span>
-    <span class="folder">📁 Evaluations/</span>
-        <span class="file">📄 TP_Freinage.pdf</span>
-        <span class="file">📄 TP_Moteur.pdf</span>
-<span class="folder">📁 MARTIN_Marie (TBPMV1)/</span>
-    <span class="folder">📁 Evaluations/</span>
+<span class="folder">&#9654; DUPONT_Jean (TBPMV1)/</span>
+    <span class="folder">&#9654; Evaluations/</span>
+        <span class="file">&#9472; TP_Freinage.pdf</span>
+        <span class="file">&#9472; TP_Moteur.pdf</span>
+<span class="folder">&#9654; MARTIN_Marie (TBPMV1)/</span>
+    <span class="folder">&#9654; Evaluations/</span>
         …
-<span class="folder">📁 _Documents_generaux/</span>
-    <span class="folder">📁 Examens/</span>
-        <span class="file">📄 Examen_final.pdf</span>
+<span class="folder">&#9654; _Documents_generaux/</span>
+    <span class="folder">&#9654; Examens/</span>
+        <span class="file">&#9472; Examen_final.pdf</span>
                 </div>
                 <div id="preview-par_categorie" style="display:none;">
-<span class="folder">📁 Evaluations/</span>
-    <span class="folder">📁 TBPMV1/</span>
-        <span class="folder">📁 TP_Freinage/</span>
-            <span class="file">📄 DUPONT_Jean.pdf</span>
-            <span class="file">📄 MARTIN_Marie.pdf</span>
-<span class="folder">📁 Examens/</span>
-    <span class="file">📄 Examen_final.pdf</span>
-<span class="folder">📁 Administratif/</span>
-    <span class="file">📄 Rapport_annuel.pdf</span>
+<span class="folder">&#9654; Evaluations/</span>
+    <span class="folder">&#9654; TBPMV1/</span>
+        <span class="folder">&#9654; TP_Freinage/</span>
+            <span class="file">&#9472; DUPONT_Jean.pdf</span>
+            <span class="file">&#9472; MARTIN_Marie.pdf</span>
+<span class="folder">&#9654; Examens/</span>
+    <span class="file">&#9472; Examen_final.pdf</span>
+<span class="folder">&#9654; Administratif/</span>
+    <span class="file">&#9472; Rapport_annuel.pdf</span>
                 </div>
             </div>
         </div>
@@ -237,30 +267,37 @@
 
             <div class="form-row-3">
                 <div>
-                    <label class="form-label" for="classes">Classes</label>
-                    <select name="classes" id="classes" multiple class="form-control">
+                    <label class="form-label">Classes</label>
+                    <div class="checkbox-grid" id="classes-grid">
                         {% for classe in classes %}
-                            <option value="{{ classe.id }}">{{ classe.nom }}</option>
+                            <label>
+                                <input type="checkbox" name="classes" value="{{ classe.id }}" data-classe-id="{{ classe.id }}">
+                                {{ classe.nom }}
+                            </label>
                         {% endfor %}
-                    </select>
+                    </div>
                 </div>
                 <div>
-                    <label class="form-label" for="eleves">Élèves</label>
-                    <select name="eleves" id="eleves" multiple class="form-control">
+                    <label class="form-label">Élèves <span class="form-label-hint">(vide = tous)</span></label>
+                    <div class="checkbox-grid" id="eleves-grid">
                         {% for eleve in eleves %}
-                            <option value="{{ eleve.id }}" data-classe="{{ eleve.classe_id }}">
-                                {{ eleve.user.last_name }} {{ eleve.user.first_name }}{% if eleve.classe %} ({{ eleve.classe.nom }}){% endif %}
-                            </option>
+                            <label data-classe="{{ eleve.classe_id }}">
+                                <input type="checkbox" name="eleves" value="{{ eleve.id }}">
+                                {{ eleve.user.last_name }} {{ eleve.user.first_name }}{% if eleve.classe %} <small style="color:#94a3b8;">({{ eleve.classe.nom }})</small>{% endif %}
+                            </label>
                         {% endfor %}
-                    </select>
+                    </div>
                 </div>
                 <div>
-                    <label class="form-label" for="categories">Catégories</label>
-                    <select name="categories" id="categories" multiple class="form-control">
+                    <label class="form-label">Catégories</label>
+                    <div class="checkbox-grid">
                         {% for val, label in categories %}
-                            <option value="{{ val }}">{{ label }}</option>
+                            <label>
+                                <input type="checkbox" name="categories" value="{{ val }}">
+                                {{ label }}
+                            </label>
                         {% endfor %}
-                    </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -296,17 +333,19 @@
         });
     });
 
-    // ── Filtrage élèves par classe sélectionnée ──
-    const classesSelect = document.getElementById('classes');
-    const elevesSelect = document.getElementById('eleves');
-    const allOptions = Array.from(elevesSelect.options);
+    // ── Filtrage élèves par classe cochée ──
+    const classesGrid = document.getElementById('classes-grid');
+    const elevesGrid = document.getElementById('eleves-grid');
+    const allEleveLabels = Array.from(elevesGrid.querySelectorAll('label[data-classe]'));
 
-    classesSelect.addEventListener('change', function() {
-        const selectedClasses = Array.from(this.selectedOptions).map(o => o.value);
-        elevesSelect.innerHTML = '';
-        allOptions.forEach(opt => {
-            if (selectedClasses.length === 0 || selectedClasses.includes(opt.dataset.classe)) {
-                elevesSelect.appendChild(opt.cloneNode(true));
+    classesGrid.addEventListener('change', function() {
+        const checkedClasses = Array.from(classesGrid.querySelectorAll('input:checked')).map(i => i.dataset.classeId);
+        allEleveLabels.forEach(lbl => {
+            if (checkedClasses.length === 0 || checkedClasses.includes(lbl.dataset.classe)) {
+                lbl.style.display = '';
+            } else {
+                lbl.style.display = 'none';
+                lbl.querySelector('input').checked = false;
             }
         });
     });
