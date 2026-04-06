@@ -213,23 +213,22 @@
     {% if fiches %}
     <div class="fiches-grid">
         {% for fiche in fiches %}
-        {% if fiche.validee_par_prof %}
-            {% with etat="validee" badge_class="ok" badge_label="Validée ✓" progress=100 %}
-        {% elif fiche.description_situation or fiche.observation_environnement or fiche.problematique %}
-            {% with etat="en-attente" badge_class="wait" badge_label="En attente" progress=66 %}
-        {% else %}
-            {% with etat="a-remplir" badge_class="fill" badge_label="À remplir" progress=20 %}
-        {% endif %}
-        <div class="fiche-card {{ etat }}">
+        <div class="fiche-card {% if fiche.validee_par_prof %}validee{% elif fiche.description_situation or fiche.observation_environnement or fiche.problematique %}en-attente{% else %}a-remplir{% endif %}">
             <div class="fiche-card-header">
-                <span class="fiche-badge {{ badge_class }}">{{ badge_label }}</span>
+                {% if fiche.validee_par_prof %}
+                <span class="fiche-badge ok">Validée ✓</span>
+                {% elif fiche.description_situation or fiche.observation_environnement or fiche.problematique %}
+                <span class="fiche-badge wait">En attente</span>
+                {% else %}
+                <span class="fiche-badge fill">À remplir</span>
+                {% endif %}
                 <span class="fiche-type-badge">{{ fiche.get_type_evaluation_display }}</span>
             </div>
             <div class="fiche-card-body">
                 <div class="fiche-titre">{{ fiche.titre }}</div>
                 <div class="fiche-date">{{ fiche.date_creation|date:"d/m/Y" }}</div>
                 <div class="fiche-progress-bar">
-                    <div class="fiche-progress-fill {{ badge_class }}" style="width: {{ progress }}%;"></div>
+                    <div class="fiche-progress-fill {% if fiche.validee_par_prof %}ok{% elif fiche.description_situation or fiche.observation_environnement or fiche.problematique %}wait{% else %}fill{% endif %}" style="width: {% if fiche.validee_par_prof %}100{% elif fiche.description_situation or fiche.observation_environnement or fiche.problematique %}66{% else %}20{% endif %}%;"></div>
                 </div>
                 {% if fiche.competences.all %}
                 <div class="fiche-competences">
@@ -259,7 +258,6 @@
                 {% endif %}
             </div>
         </div>
-        {% endwith %}
         {% endfor %}
     </div>
 

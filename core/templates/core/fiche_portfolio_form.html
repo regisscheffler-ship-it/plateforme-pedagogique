@@ -250,6 +250,27 @@
             </div>
 
             {% if fiche %}
+            <!-- Contenu élève (modifiable par le prof) -->
+            <div class="form-section">
+                <div class="form-section-title">Contenu élève (description / observation / problématique)</div>
+
+                <div class="form-group">
+                    <label for="id_description_situation">Description de la situation de travail</label>
+                    <textarea name="description_situation" id="id_description_situation" class="form-control" rows="4"
+                              placeholder="Décrivez le contexte, le lieu, les personnes présentes...">{{ fiche.description_situation|default:'' }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="id_observation_environnement">Observation de l’environnement professionnel</label>
+                    <textarea name="observation_environnement" id="id_observation_environnement" class="form-control" rows="4"
+                              placeholder="Matériels utilisés, conditions de travail, organisation...">{{ fiche.observation_environnement|default:'' }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="id_problematique">Problématique identifiée</label>
+                    <textarea name="problematique" id="id_problematique" class="form-control" rows="3"
+                              placeholder="Quelle question / difficulté l’élève a-t-il rencontrée ?">{{ fiche.problematique|default:'' }}</textarea>
+                </div>
+            </div>
+
             <!-- Validation (uniquement en modification) -->
             <div class="form-section">
                 <div class="form-section-title">Validation</div>

@@ -3111,6 +3111,10 @@ def fiche_portfolio_update(request, fiche_id):
             fiche.type_evaluation = request.POST.get('type_evaluation', fiche.type_evaluation)
             fiche.unite_evaluation = request.POST.get('unite_evaluation', '').strip()
             fiche.activites_professionnelles = request.POST.get('activites_professionnelles', '').strip()
+            # Champs élève (le prof peut aussi corriger)
+            fiche.description_situation = request.POST.get('description_situation', '').strip()
+            fiche.observation_environnement = request.POST.get('observation_environnement', '').strip()
+            fiche.problematique = request.POST.get('problematique', '').strip()
             fiche.commentaire_prof = request.POST.get('commentaire_prof', '').strip()
             fiche.validee_par_prof = request.POST.get('validee_par_prof') == 'on'
             pfmp_id = request.POST.get('pfmp')
