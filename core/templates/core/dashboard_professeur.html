@@ -173,7 +173,6 @@
     .card-archives     { border-left-color: #7a8694;  color: #7a8694;  }
     .card-stats        { border-left-color: #4a7fc1;  color: #4a7fc1;  }
     .card-assistant    { border-left-color: #8b5cf6;  color: #8b5cf6;  }
-    .card-sorties      { border-left-color: #d94f4f;  color: #d94f4f;  }
 
     .card-classes .card-icon-wrapper       { background: #eff6ff; }
     .card-eleves .card-icon-wrapper        { background: #d1fae5; }
@@ -187,7 +186,6 @@
     .card-archives .card-icon-wrapper      { background: #f3f4f6; }
     .card-stats .card-icon-wrapper         { background: #eff6ff; }
     .card-assistant .card-icon-wrapper     { background: #f5f3ff; }
-    .card-sorties .card-icon-wrapper       { background: #fee2e2; }
 
     /* Vignette désactivée (en cours de dev) */
     .card-disabled {
@@ -283,22 +281,6 @@
                 <h3>Gestion Thèmes</h3>
                 <p class="card-count">{{ nb_themes }}</p>
                 <p class="card-description">Thème{{ nb_themes|pluralize }} de cours</p>
-            </div>
-        </a>
-
-        <!-- Gestion Sorties -->
-        <a href="{% url 'core:gestion_sorties' %}" class="dashboard-card card-sorties">
-            <div class="card-icon-wrapper">
-                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-            </div>
-            <div class="card-content">
-                <h3>Gestion Sorties</h3>
-                <p class="card-count">{{ nb_sorties }}</p>
-                <p class="card-description">Élève{{ nb_sorties|pluralize }} sorti{{ nb_sorties|pluralize }}</p>
             </div>
         </a>
 

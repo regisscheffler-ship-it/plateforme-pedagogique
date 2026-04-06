@@ -3003,7 +3003,7 @@ def gestion_portfolio(request):
         Portfolio(eleve=e) for e in eleves_sans_portfolio
     ]
     if portfolios_a_creer:
-        Portfolio.objects.bulk_create(portfolios_a_creer)
+        Portfolio.objects.bulk_create(portfolios_a_creer, ignore_conflicts=True)
 
     # Récupérer les données enrichies
     from django.db.models import Count, Q as Qf
@@ -5267,7 +5267,6 @@ def dashboard_professeur(request):
         'nb_ateliers':           Atelier.objects.filter(actif=True).count(),
         'nb_evaluations':        FicheContrat.objects.filter(createur=request.user, actif=True).count(),
         'nb_archives':           Archive.objects.filter(actif=True).count(),
-        'nb_sorties':            ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).count(),
         'nb_qcm':                QCM.objects.filter(actif=True).count(),
         'nb_modes_operatoires':  ModeOperatoire.objects.filter(actif=True).count(),
         'classes_list':          Classe.objects.all().order_by('nom'),

@@ -21,4 +21,5 @@ ENV GUNICORN_WORKERS=1
 EXPOSE 8000
 
 # Use shell form so env vars are expanded; default to 1 worker to limit memory usage on Render
-CMD sh -lc "gunicorn plateforme.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${GUNICORN_WORKERS:-1}"
+# --timeout 120 prevents workers from being killed during slow WeasyPrint PDF operations
+CMD sh -lc "gunicorn plateforme.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${GUNICORN_WORKERS:-1} --timeout 120"
