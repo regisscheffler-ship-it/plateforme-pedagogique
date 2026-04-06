@@ -3122,6 +3122,27 @@ def fiche_portfolio_update(request, fiche_id):
             fiche.save()
             comp_ids = request.POST.getlist('competences')
             fiche.competences.set(comp_ids)
+
+            # Gestion des photos (max 4 au total)
+            photos_existantes = fiche.photos.count()
+            for photo_file in request.FILES.getlist('photos'):
+                if photos_existantes >= 4:
+                    break
+                PhotoPortfolio.objects.create(
+                    fiche=fiche,
+                    image=photo_file,
+                    legende='',
+                    ordre=photos_existantes,
+                )
+                photos_existantes += 1
+
+            # Suppression de photos
+            for photo_id in request.POST.getlist('supprimer_photo'):
+                try:
+                    PhotoPortfolio.objects.get(id=photo_id, fiche=fiche).delete()
+                except PhotoPortfolio.DoesNotExist:
+                    pass
+
             messages.success(request, 'Fiche mise à jour.')
             return redirect('core:portfolio_detail', portfolio_id=portfolio.id)
 

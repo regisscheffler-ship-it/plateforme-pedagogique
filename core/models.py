@@ -1727,7 +1727,7 @@ class PhotoPortfolio(models.Model):
         FichePortfolio, on_delete=models.CASCADE,
         related_name='photos', verbose_name='Fiche'
     )
-    image = models.FileField(
+    image = models.ImageField(
         upload_to='portfolio/photos/',
         verbose_name='Photo / Document'
     )
