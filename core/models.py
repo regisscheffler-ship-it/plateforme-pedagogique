@@ -1583,3 +1583,146 @@ class LigneModeOperatoire(models.Model):
 
     def __str__(self):
         return f"{self.mode_operatoire.titre} – phase {self.ordre} : {self.phase}"
+
+
+# =====================================================
+# PORTFOLIO BAC PRO
+# =====================================================
+
+class Portfolio(models.Model):
+    """Portfolio global d'un élève BAC Pro — regroupe les fiches d'activité."""
+    eleve = models.OneToOneField(
+        'ProfilUtilisateur', on_delete=models.CASCADE,
+        related_name='portfolio', verbose_name='Élève'
+    )
+    actif = models.BooleanField(default=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Portfolio"
+        verbose_name_plural = "Portfolios"
+        ordering = ['eleve__user__last_name', 'eleve__user__first_name']
+
+    def __str__(self):
+        return f"Portfolio de {self.eleve}"
+
+    @property
+    def nb_fiches(self):
+        return self.fiches.count()
+
+    @property
+    def nb_fiches_validees(self):
+        return self.fiches.filter(validee_par_prof=True).count()
+
+
+class FichePortfolio(models.Model):
+    """
+    Fiche d'activité du portfolio — une par semaine environ.
+    Le prof crée la fiche (titre, type, compétences, activité pro).
+    L'élève complète (description, observation, problématique, photos).
+    Le prof peut corriger/valider.
+    """
+    TYPE_EVALUATION_CHOICES = [
+        ('formative', 'Formative'),
+        ('sommative', 'Sommative'),
+        ('certificative', 'Certificative'),
+    ]
+
+    portfolio = models.ForeignKey(
+        Portfolio, on_delete=models.CASCADE,
+        related_name='fiches', verbose_name='Portfolio'
+    )
+    pfmp = models.ForeignKey(
+        'PFMP', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='fiches_portfolio',
+        verbose_name='PFMP associée'
+    )
+
+    # ── Rempli par le professeur ──
+    titre = models.CharField(max_length=300, verbose_name='Titre')
+    type_evaluation = models.CharField(
+        max_length=20, choices=TYPE_EVALUATION_CHOICES,
+        default='formative', verbose_name="Type d'évaluation"
+    )
+    unite_evaluation = models.CharField(
+        max_length=200, blank=True, default='',
+        verbose_name="Unité d'évaluation"
+    )
+    competences = models.ManyToManyField(
+        'CompetenceProfessionnelle', blank=True,
+        related_name='fiches_portfolio',
+        verbose_name='Compétences évaluées'
+    )
+    activites_professionnelles = models.TextField(
+        blank=True, default='',
+        verbose_name='Activités professionnelles'
+    )
+
+    # ── Rempli par l'élève (modifiable aussi par le prof) ──
+    description_situation = models.TextField(
+        blank=True, default='',
+        verbose_name='Description de la situation professionnelle'
+    )
+    observation_environnement = models.TextField(
+        blank=True, default='',
+        verbose_name="Observation de l'environnement de travail"
+    )
+    problematique = models.TextField(
+        blank=True, default='',
+        verbose_name='Problématique'
+    )
+
+    # ── Validation prof ──
+    validee_par_prof = models.BooleanField(
+        default=False, verbose_name='Validée par le professeur'
+    )
+    commentaire_prof = models.TextField(
+        blank=True, default='',
+        verbose_name='Commentaire du professeur'
+    )
+
+    # ── Méta ──
+    createur = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='fiches_portfolio_creees',
+        verbose_name='Créateur'
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+    ordre = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Fiche portfolio"
+        verbose_name_plural = "Fiches portfolio"
+        ordering = ['-date_creation']
+
+    def __str__(self):
+        return f"{self.titre} – {self.portfolio.eleve}"
+
+
+class PhotoPortfolio(models.Model):
+    """Photo ou document joint à une fiche du portfolio (jusqu'à 4 par fiche)."""
+    fiche = models.ForeignKey(
+        FichePortfolio, on_delete=models.CASCADE,
+        related_name='photos', verbose_name='Fiche'
+    )
+    image = models.FileField(
+        upload_to='portfolio/photos/',
+        verbose_name='Photo / Document'
+    )
+    legende = models.CharField(
+        max_length=200, blank=True, default='',
+        verbose_name='Légende'
+    )
+    ordre = models.PositiveIntegerField(default=0)
+    date_ajout = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Photo portfolio"
+        verbose_name_plural = "Photos portfolio"
+        ordering = ['ordre']
+
+    def __str__(self):
+        return f"Photo {self.ordre} – {self.fiche.titre}"

@@ -11,6 +11,7 @@ from .models import (
     FicheRevision, CarteRevision, QCM, QuestionQCM, SessionQCM,
     SuiviPFMP, HistoriqueClasse,
     ModeOperatoire, LigneModeOperatoire,
+    Portfolio, FichePortfolio, PhotoPortfolio,
 )
 
 
@@ -147,6 +148,39 @@ class QCMAdmin(admin.ModelAdmin):
     search_fields = ['titre']
     list_editable = ['actif']
     readonly_fields = ['date_creation']
+
+
+# ================================
+# PORTFOLIO BAC PRO
+# ================================
+
+class PhotoPortfolioInline(admin.TabularInline):
+    model = PhotoPortfolio
+    extra = 0
+
+
+class FichePortfolioInline(admin.StackedInline):
+    model = FichePortfolio
+    extra = 0
+    show_change_link = True
+    fields = ['titre', 'type_evaluation', 'validee_par_prof', 'date_creation']
+    readonly_fields = ['date_creation']
+
+
+@admin.register(Portfolio)
+class PortfolioAdmin(admin.ModelAdmin):
+    list_display = ['eleve', 'nb_fiches', 'nb_fiches_validees', 'actif', 'date_creation']
+    list_filter = ['actif', 'eleve__classe__niveau']
+    search_fields = ['eleve__user__last_name', 'eleve__user__first_name']
+    inlines = [FichePortfolioInline]
+
+
+@admin.register(FichePortfolio)
+class FichePortfolioAdmin(admin.ModelAdmin):
+    list_display = ['titre', 'portfolio', 'type_evaluation', 'validee_par_prof', 'date_creation']
+    list_filter = ['type_evaluation', 'validee_par_prof']
+    search_fields = ['titre', 'portfolio__eleve__user__last_name']
+    inlines = [PhotoPortfolioInline]
 
 
 @admin.register(QuestionQCM)

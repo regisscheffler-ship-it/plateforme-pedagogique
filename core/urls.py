@@ -207,6 +207,11 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),
 
     # ═══════════════════════════════════════
+    # PORTFOLIO BAC PRO
+    # ═══════════════════════════════════════
+    path('gestion/portfolio/',             views.gestion_portfolio, name='gestion_portfolio'),
+
+    # ═══════════════════════════════════════
     # PFMP
     # ═══════════════════════════════════════
     path('gestion/pfmp/',                  views.gestion_pfmp,  name='gestion_pfmp'),

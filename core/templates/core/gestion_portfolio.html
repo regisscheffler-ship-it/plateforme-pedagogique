@@ -1,0 +1,197 @@
+{% extends 'core/base.html' %}
+{% block title %}Portfolio BAC Pro{% endblock %}
+
+{% block content %}
+<style>
+    .page-container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #d97706;
+        border: 2px solid #d97706; border-radius: 8px;
+        text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        transition: all 0.2s; margin-bottom: 1rem;
+    }
+    .btn-retour:hover { background: #d97706; color: white; }
+
+    .page-header {
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border-left: 5px solid #d97706;
+        padding: 1.6rem 2rem; margin-bottom: 1.8rem;
+        display: flex; align-items: center; gap: 16px;
+    }
+    .page-header-icon {
+        width: 52px; height: 52px; border-radius: 12px;
+        background: #fef3c7; display: flex;
+        align-items: center; justify-content: center; flex-shrink: 0;
+        color: #d97706;
+    }
+    .page-header h1 { margin: 0; font-size: 1.6rem; color: #1e293b; }
+    .page-header p  { margin: 4px 0 0; font-size: 0.88rem; color: #64748b; }
+
+    /* Filtre classe */
+    .filter-bar {
+        background: white; border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 1rem 1.4rem; margin-bottom: 1.4rem;
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .filter-bar label { font-weight: 600; font-size: 0.9rem; color: #374151; }
+    .filter-bar select {
+        padding: 0.5rem 0.8rem; border: 1.5px solid #e2e8f0;
+        border-radius: 8px; font-size: 0.9rem; color: #1e293b; background: white;
+    }
+
+    /* Grille des portfolios */
+    .portfolio-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.2rem;
+    }
+
+    .portfolio-card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        padding: 1.4rem 1.6rem;
+        border-left: 4px solid #d97706;
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-decoration: none; color: inherit;
+        display: block;
+    }
+    .portfolio-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+
+    .portfolio-card-header {
+        display: flex; align-items: center; gap: 12px; margin-bottom: 0.8rem;
+    }
+    .avatar {
+        width: 44px; height: 44px; border-radius: 50%;
+        background: #fef3c7; color: #d97706;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 1rem; flex-shrink: 0;
+    }
+    .portfolio-name { font-weight: 700; font-size: 1rem; color: #1e293b; }
+    .portfolio-classe { font-size: 0.82rem; color: #64748b; }
+
+    .portfolio-stats {
+        display: flex; gap: 1.2rem; margin-top: 0.6rem;
+        padding-top: 0.8rem; border-top: 1px solid #f1f3f5;
+    }
+    .portfolio-stat {
+        display: flex; flex-direction: column; align-items: center;
+    }
+    .portfolio-stat-value {
+        font-size: 1.4rem; font-weight: 700; color: #d97706; line-height: 1;
+    }
+    .portfolio-stat-label {
+        font-size: 0.75rem; color: #94a3b8; margin-top: 2px;
+    }
+
+    .badge-validated {
+        display: inline-block; background: #d1fae5; color: #166534;
+        font-size: 0.72rem; padding: 2px 8px; border-radius: 20px;
+        font-weight: 600;
+    }
+    .badge-pending {
+        display: inline-block; background: #fef3c7; color: #92400e;
+        font-size: 0.72rem; padding: 2px 8px; border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center; padding: 4rem 2rem; color: #94a3b8;
+        background: #f8fafc; border-radius: 14px;
+        border: 2px dashed #e2e8f0;
+    }
+    .empty-state svg { margin-bottom: 1rem; opacity: 0.5; }
+    .empty-state h3 { color: #64748b; margin: 0 0 0.5rem; }
+    .empty-state p { margin: 0; font-size: 0.9rem; }
+</style>
+
+<div class="page-container">
+
+    <a href="{% url 'core:dashboard_professeur' %}" class="btn-retour">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+        Retour
+    </a>
+
+    <div class="page-header">
+        <div class="page-header-icon">
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+        </div>
+        <div>
+            <h1>Portfolio BAC Pro</h1>
+            <p>Fiches d'activités professionnelles — de la Seconde à la Terminale</p>
+        </div>
+    </div>
+
+    <!-- Filtre par classe -->
+    <div class="filter-bar">
+        <label for="classe-filter">Filtrer par classe :</label>
+        <select id="classe-filter" onchange="window.location.href='?classe='+this.value">
+            <option value="">Toutes les classes BAC Pro</option>
+            {% for cl in classes_bac %}
+                <option value="{{ cl.id }}" {% if classe_selectionnee == cl.id|stringformat:"d" %}selected{% endif %}>
+                    {{ cl.nom }}
+                </option>
+            {% endfor %}
+        </select>
+        <span style="margin-left:auto;font-size:0.88rem;color:#64748b;">
+            {{ portfolios|length }} portfolio{{ portfolios|length|pluralize }}
+        </span>
+    </div>
+
+    {% if portfolios %}
+    <div class="portfolio-grid">
+        {% for p in portfolios %}
+        <div class="portfolio-card">
+            <div class="portfolio-card-header">
+                <div class="avatar">
+                    {{ p.eleve.user.first_name|first }}{{ p.eleve.user.last_name|first }}
+                </div>
+                <div>
+                    <div class="portfolio-name">{{ p.eleve.user.last_name }} {{ p.eleve.user.first_name }}</div>
+                    <div class="portfolio-classe">{{ p.eleve.classe.nom }}</div>
+                </div>
+                {% if p.fiches_validees == p.total_fiches and p.total_fiches > 0 %}
+                    <span class="badge-validated" style="margin-left:auto;">Complet</span>
+                {% elif p.total_fiches > 0 %}
+                    <span class="badge-pending" style="margin-left:auto;">En cours</span>
+                {% endif %}
+            </div>
+            <div class="portfolio-stats">
+                <div class="portfolio-stat">
+                    <span class="portfolio-stat-value">{{ p.total_fiches }}</span>
+                    <span class="portfolio-stat-label">Fiche{{ p.total_fiches|pluralize }}</span>
+                </div>
+                <div class="portfolio-stat">
+                    <span class="portfolio-stat-value" style="color:#10b981;">{{ p.fiches_validees }}</span>
+                    <span class="portfolio-stat-label">Validée{{ p.fiches_validees|pluralize }}</span>
+                </div>
+                <div class="portfolio-stat">
+                    <span class="portfolio-stat-value" style="color:#f59e0b;">{{ p.fiches_en_attente }}</span>
+                    <span class="portfolio-stat-label">En attente</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
+        <h3>Aucun portfolio BAC Pro</h3>
+        <p>Les portfolios apparaîtront automatiquement dès que vous aurez des élèves inscrits dans des classes de niveau BAC Pro.</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

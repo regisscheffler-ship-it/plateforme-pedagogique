@@ -109,7 +109,8 @@ from .models import (
     SuiviPFMP, HistoriqueClasse,
     QCM, QuestionQCM, SessionQCM,
     ModeOperatoire, LigneModeOperatoire,
-    MessageEleve, ReponseProf,  # ← AJOUTER CETTE LIGNE
+    MessageEleve, ReponseProf,
+    Portfolio, FichePortfolio, PhotoPortfolio,
 )
 
 
@@ -2968,8 +2969,61 @@ def atelier_fichier_delete(request, pk):
     atelier_id = fichier.dossier.atelier.id
     if request.method == 'POST':
         fichier.delete()
-        messages.success(request, '✅ Fichier supprimé.')
+        messages.success(request, 'Fichier supprimé.')
     return redirect('core:atelier_detail', pk=atelier_id)
+
+
+# ═══════════════════════════════════════════════════
+# PORTFOLIO BAC PRO
+# ═══════════════════════════════════════════════════
+
+@login_required
+def gestion_portfolio(request):
+    """Liste des portfolios BAC Pro — vue professeur."""
+    classes_bac = Classe.objects.filter(
+        niveau__nom='BAC_PRO', actif=True
+    ).order_by('nom')
+
+    classe_id = request.GET.get('classe')
+
+    # Élèves BAC Pro
+    eleves_qs = ProfilUtilisateur.objects.filter(
+        type_utilisateur='eleve',
+        compte_approuve=True,
+        est_sorti=False,
+        classe__niveau__nom='BAC_PRO',
+    ).select_related('user', 'classe').order_by('classe__nom', 'user__last_name')
+
+    if classe_id:
+        eleves_qs = eleves_qs.filter(classe_id=classe_id)
+
+    # Créer automatiquement les portfolios manquants
+    eleves_sans_portfolio = eleves_qs.filter(portfolio__isnull=True)
+    portfolios_a_creer = [
+        Portfolio(eleve=e) for e in eleves_sans_portfolio
+    ]
+    if portfolios_a_creer:
+        Portfolio.objects.bulk_create(portfolios_a_creer)
+
+    # Récupérer les données enrichies
+    from django.db.models import Count, Q as Qf
+    portfolios = (
+        Portfolio.objects
+        .filter(actif=True, eleve__in=eleves_qs)
+        .select_related('eleve__user', 'eleve__classe')
+        .annotate(
+            total_fiches=Count('fiches'),
+            fiches_validees=Count('fiches', filter=Qf(fiches__validee_par_prof=True)),
+            fiches_en_attente=Count('fiches', filter=Qf(fiches__validee_par_prof=False)),
+        )
+        .order_by('eleve__classe__nom', 'eleve__user__last_name')
+    )
+
+    return render(request, 'core/gestion_portfolio.html', {
+        'portfolios': portfolios,
+        'classes_bac': classes_bac,
+        'classe_selectionnee': classe_id,
+    })
 
 
 def gestion_pfmp(request):
@@ -5209,6 +5263,7 @@ def dashboard_professeur(request):
         'nb_travaux_publies':    TravailARendre.objects.filter(actif=True).count(),
         'nb_notifications':      Notification.objects.filter(destinataire=request.user, lue=False).count(),
         'nb_pfmp':               PFMP.objects.filter(actif=True).count(),
+        'nb_portfolios':         Portfolio.objects.filter(actif=True, eleve__classe__niveau__nom='BAC_PRO').count() if Classe.objects.filter(niveau__nom='BAC_PRO').exists() else None,
         'nb_ateliers':           Atelier.objects.filter(actif=True).count(),
         'nb_evaluations':        FicheContrat.objects.filter(createur=request.user, actif=True).count(),
         'nb_archives':           Archive.objects.filter(actif=True).count(),
