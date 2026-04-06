@@ -3155,6 +3155,125 @@ def fiche_portfolio_valider(request, fiche_id):
     return redirect('core:portfolio_detail', portfolio_id=fiche.portfolio_id)
 
 
+# ─────────────────────────────────────────────────────────────
+# PORTFOLIO — vues côté ÉLÈVE
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def mon_portfolio(request):
+    """L'élève consulte son portfolio (liste de ses fiches)."""
+    try:
+        profil = request.user.profil
+    except ProfilUtilisateur.DoesNotExist:
+        return redirect('core:home')
+
+    if not profil.est_eleve():
+        return redirect('core:dashboard_professeur')
+
+    # Auto-créer le portfolio si absent
+    portfolio, _ = Portfolio.objects.get_or_create(eleve=profil)
+
+    fiches = (
+        portfolio.fiches
+        .prefetch_related('competences', 'photos')
+        .order_by('date_creation')
+    )
+    return render(request, 'core/mon_portfolio.html', {
+        'portfolio': portfolio,
+        'fiches': fiches,
+    })
+
+
+@login_required
+def fiche_portfolio_eleve_update(request, fiche_id):
+    """L'élève remplit ses champs de la fiche (description, observation, problématique, photos)."""
+    try:
+        profil = request.user.profil
+    except ProfilUtilisateur.DoesNotExist:
+        return redirect('core:home')
+
+    fiche = get_object_or_404(FichePortfolio, id=fiche_id)
+
+    # Sécurité : seul l'élève propriétaire peut modifier
+    if fiche.portfolio.eleve != profil:
+        messages.error(request, "⛔ Vous n'avez pas accès à cette fiche.")
+        return redirect('core:mon_portfolio')
+
+    if request.method == 'POST':
+        fiche.description_situation = request.POST.get('description_situation', '').strip()
+        fiche.observation_environnement = request.POST.get('observation_environnement', '').strip()
+        fiche.problematique = request.POST.get('problematique', '').strip()
+        fiche.save()
+
+        # Gestion des photos (max 4 au total)
+        photos_existantes = fiche.photos.count()
+        nouvelles_photos = request.FILES.getlist('photos')
+        for photo_file in nouvelles_photos:
+            if photos_existantes >= 4:
+                break
+            legende = request.POST.get(f'legende_{photo_file.name}', '').strip()
+            PhotoPortfolio.objects.create(
+                fiche=fiche,
+                image=photo_file,
+                legende=legende,
+                ordre=photos_existantes,
+            )
+            photos_existantes += 1
+
+        # Suppression de photos
+        for photo_id in request.POST.getlist('supprimer_photo'):
+            try:
+                photo = PhotoPortfolio.objects.get(id=photo_id, fiche=fiche)
+                photo.delete()
+            except PhotoPortfolio.DoesNotExist:
+                pass
+
+        messages.success(request, '✅ Fiche mise à jour.')
+        return redirect('core:mon_portfolio')
+
+    return render(request, 'core/fiche_portfolio_eleve.html', {
+        'fiche': fiche,
+        'portfolio': fiche.portfolio,
+    })
+
+
+@login_required
+def fiche_portfolio_pdf_export(request, portfolio_id):
+    """Génère un PDF de toutes les fiches validées d'un portfolio (prof ou élève propriétaire)."""
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+
+    # Contrôle d'accès : prof ou élève propriétaire
+    try:
+        profil = request.user.profil
+    except ProfilUtilisateur.DoesNotExist:
+        return redirect('core:home')
+
+    if profil.est_eleve() and portfolio.eleve != profil:
+        messages.error(request, "⛔ Accès refusé.")
+        return redirect('core:mon_portfolio')
+
+    fiches = portfolio.fiches.prefetch_related('competences', 'photos').order_by('date_creation')
+
+    html_string = render_to_string('core/fiche_portfolio_pdf.html', {
+        'portfolio': portfolio,
+        'fiches': fiches,
+        'eleve': portfolio.eleve,
+        'request': request,
+    })
+
+    pdf_bytes, ext = html_to_pdf_bytes(html_string, request)
+
+    nom = f"portfolio_{portfolio.eleve.user.last_name}_{portfolio.eleve.user.first_name}{ext}"
+    nom = nom.replace(' ', '_').lower()
+
+    if ext == '.pdf':
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{nom}"'
+    else:
+        response = HttpResponse(pdf_bytes, content_type='text/html')
+    return response
+
+
 def gestion_pfmp(request):
     classes = Classe.objects.all().order_by('nom')
     classe_selectionnee = request.GET.get('classe')
@@ -5474,6 +5593,13 @@ def dashboard_eleve(request):
             actif=True, visible_eleves=True,
             atelier__classe=classe
         ).select_related('atelier').order_by('-date_creation')
+        # Portfolio BAC Pro (uniquement si l'élève est en BAC PRO)
+        if classe.niveau and classe.niveau.nom == 'BAC_PRO':
+            portfolio, _ = Portfolio.objects.get_or_create(eleve=profil)
+            context['mon_portfolio'] = portfolio
+            context['fiches_portfolio'] = portfolio.fiches.prefetch_related(
+                'competences', 'photos'
+            ).order_by('date_creation')
         return render(request, 'core/dashboard_eleve.html', context)
     except ProfilUtilisateur.DoesNotExist:
         messages.error(request, "⛔ Profil non configuré.")

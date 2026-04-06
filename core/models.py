@@ -1615,6 +1615,25 @@ class Portfolio(models.Model):
     def nb_fiches_validees(self):
         return self.fiches.filter(validee_par_prof=True).count()
 
+    @property
+    def nb_fiches_remplies(self):
+        """Fiches remplies par l'élève mais pas encore validées."""
+        return self.fiches.filter(
+            validee_par_prof=False
+        ).exclude(
+            description_situation='', observation_environnement='', problematique=''
+        ).count()
+
+    @property
+    def nb_fiches_vides(self):
+        """Fiches non remplies par l'élève."""
+        return self.fiches.filter(
+            validee_par_prof=False,
+            description_situation='',
+            observation_environnement='',
+            problematique=''
+        ).count()
+
 
 class FichePortfolio(models.Model):
     """

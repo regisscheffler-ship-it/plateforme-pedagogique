@@ -1,0 +1,274 @@
+{% extends 'core/base.html' %}
+{% block title %}Mon Portfolio{% endblock %}
+
+{% block content %}
+<style>
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #d97706;
+        border: 2px solid #d97706; border-radius: 8px;
+        text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        transition: all 0.2s; margin-bottom: 1rem;
+    }
+    .btn-retour:hover { background: #d97706; color: white; }
+
+    .page-header {
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border-left: 5px solid #d97706;
+        padding: 1.6rem 2rem; margin-bottom: 1.8rem;
+        display: flex; align-items: center; gap: 16px;
+    }
+    .page-header-icon {
+        width: 52px; height: 52px; border-radius: 12px;
+        background: #fef3c7; display: flex;
+        align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .page-header-icon svg { width: 28px; height: 28px; stroke: #d97706; fill: none; stroke-width: 2; }
+    .page-header h1 { margin: 0; font-size: 1.6rem; color: #1e293b; }
+    .page-header p  { margin: 4px 0 0; font-size: 0.88rem; color: #64748b; }
+    .page-header-actions { margin-left: auto; }
+
+    /* Stats */
+    .stats-row {
+        display: flex; gap: 1rem; margin-bottom: 1.8rem; flex-wrap: wrap;
+    }
+    .stat-card {
+        background: white; border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 1rem 1.5rem; flex: 1; min-width: 140px;
+        display: flex; align-items: center; gap: 12px;
+    }
+    .stat-icon {
+        width: 42px; height: 42px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    }
+    .stat-icon.total    { background: #fef3c7; }
+    .stat-icon.validees { background: #d1fae5; }
+    .stat-icon.attente  { background: #fef9c3; }
+    .stat-icon.vides    { background: #dbeafe; }
+    .stat-value { font-size: 1.8rem; font-weight: 800; color: #1e293b; line-height: 1; }
+    .stat-label { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+
+    /* Fiches grid */
+    .fiches-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+        gap: 1.2rem;
+    }
+    .fiche-card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        border: 2px solid transparent;
+        overflow: hidden; transition: all 0.2s; text-decoration: none; color: inherit;
+        display: flex; flex-direction: column;
+    }
+    .fiche-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .fiche-card.validee    { border-color: #6ee7b7; }
+    .fiche-card.en-attente { border-color: #fcd34d; }
+    .fiche-card.a-remplir  { border-color: #93c5fd; }
+
+    .fiche-card-header {
+        padding: 1rem 1.2rem 0.7rem;
+        display: flex; align-items: flex-start; gap: 10px;
+    }
+    .fiche-badge {
+        display: inline-block; font-size: 0.7rem; font-weight: 700;
+        padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+    }
+    .fiche-badge.ok   { background: #d1fae5; color: #166534; }
+    .fiche-badge.wait { background: #fef3c7; color: #92400e; }
+    .fiche-badge.fill { background: #dbeafe; color: #1d4ed8; }
+
+    .fiche-type-badge {
+        display: inline-block; font-size: 0.68rem; font-weight: 600;
+        padding: 2px 8px; border-radius: 20px; margin-left: auto;
+        background: #f1f5f9; color: #475569;
+    }
+
+    .fiche-card-body { padding: 0.3rem 1.2rem 1rem; flex: 1; }
+    .fiche-titre { font-weight: 700; font-size: 1rem; color: #1e293b; margin-bottom: 4px; }
+    .fiche-date  { font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px; }
+
+    .fiche-progress-bar {
+        height: 5px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 8px;
+    }
+    .fiche-progress-fill {
+        height: 100%; border-radius: 10px; transition: width 0.3s;
+    }
+    .fiche-progress-fill.ok   { background: #10b981; }
+    .fiche-progress-fill.wait { background: #f59e0b; }
+    .fiche-progress-fill.fill { background: #3b82f6; }
+
+    .fiche-competences {
+        display: flex; flex-wrap: wrap; gap: 4px;
+    }
+    .chip {
+        font-size: 0.68rem; padding: 2px 7px; border-radius: 6px;
+        background: #f1f5f9; color: #475569; font-weight: 600;
+    }
+    .chip-more { background: #e2e8f0; color: #94a3b8; }
+
+    .fiche-commentaire {
+        font-size: 0.8rem; color: #78350f; background: #fef3c7;
+        border-radius: 6px; padding: 6px 10px; margin-top: 8px;
+        border-left: 3px solid #d97706;
+    }
+
+    .fiche-card-footer {
+        padding: 0.7rem 1.2rem; border-top: 1px solid #f1f5f9;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .btn-fill {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 0.45rem 0.9rem; border-radius: 7px; font-size: 0.82rem; font-weight: 600;
+        text-decoration: none; background: #d97706; color: white;
+        transition: background 0.15s;
+    }
+    .btn-fill:hover { background: #b45309; }
+    .btn-fill.done  { background: #f1f5f9; color: #64748b; }
+    .btn-fill.done:hover { background: #e2e8f0; }
+
+    .btn-pdf {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 0.45rem 0.9rem; border-radius: 7px; font-size: 0.82rem; font-weight: 600;
+        text-decoration: none; margin-left: auto;
+        background: white; color: #64748b; border: 1.5px solid #e2e8f0;
+        transition: all 0.15s;
+    }
+    .btn-pdf:hover { border-color: #d97706; color: #d97706; }
+
+    .empty-state {
+        background: white; border-radius: 16px; padding: 4rem 2rem;
+        text-align: center; color: #94a3b8;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .empty-state svg { width: 60px; height: 60px; margin-bottom: 1rem; stroke: #d1d5db; fill: none; stroke-width: 1.5; }
+    .empty-state h3  { font-size: 1.1rem; color: #64748b; margin: 0 0 6px; }
+    .empty-state p   { font-size: 0.9rem; margin: 0; }
+</style>
+
+<div class="page-container">
+    <a href="{% url 'core:dashboard_eleve' %}" class="btn-retour">
+        ← Retour au tableau de bord
+    </a>
+
+    <!-- En-tête -->
+    <div class="page-header">
+        <div class="page-header-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div>
+            <h1>Mon Portfolio BAC Pro</h1>
+            <p>Remplissez vos fiches de suivi de compétences</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="{% url 'core:fiche_portfolio_pdf_export' portfolio.id %}" class="btn-fill" style="background:#6b7280;">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Exporter PDF complet
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    {% with total=fiches|length %}
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon total">📚</div>
+            <div>
+                <div class="stat-value">{{ total }}</div>
+                <div class="stat-label">Fiche(s) au total</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon validees">✅</div>
+            <div>
+                <div class="stat-value">{{ portfolio.nb_fiches_validees }}</div>
+                <div class="stat-label">Validée(s) par le prof</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon attente">⏳</div>
+            <div>
+                <div class="stat-value">{{ portfolio.nb_fiches_remplies }}</div>
+                <div class="stat-label">En attente de validation</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon vides">📝</div>
+            <div>
+                <div class="stat-value">{{ portfolio.nb_fiches_vides }}</div>
+                <div class="stat-label">À remplir</div>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+
+    <!-- Grille des fiches -->
+    {% if fiches %}
+    <div class="fiches-grid">
+        {% for fiche in fiches %}
+        {% if fiche.validee_par_prof %}
+            {% with etat="validee" badge_class="ok" badge_label="Validée ✓" progress=100 %}
+        {% elif fiche.description_situation or fiche.observation_environnement or fiche.problematique %}
+            {% with etat="en-attente" badge_class="wait" badge_label="En attente" progress=66 %}
+        {% else %}
+            {% with etat="a-remplir" badge_class="fill" badge_label="À remplir" progress=20 %}
+        {% endif %}
+        <div class="fiche-card {{ etat }}">
+            <div class="fiche-card-header">
+                <span class="fiche-badge {{ badge_class }}">{{ badge_label }}</span>
+                <span class="fiche-type-badge">{{ fiche.get_type_evaluation_display }}</span>
+            </div>
+            <div class="fiche-card-body">
+                <div class="fiche-titre">{{ fiche.titre }}</div>
+                <div class="fiche-date">{{ fiche.date_creation|date:"d/m/Y" }}</div>
+                <div class="fiche-progress-bar">
+                    <div class="fiche-progress-fill {{ badge_class }}" style="width: {{ progress }}%;"></div>
+                </div>
+                {% if fiche.competences.all %}
+                <div class="fiche-competences">
+                    {% for c in fiche.competences.all|slice:":3" %}
+                    <span class="chip">{{ c.code }}</span>
+                    {% endfor %}
+                    {% if fiche.competences.count > 3 %}
+                    <span class="chip chip-more">+{{ fiche.competences.count|add:"-3" }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if fiche.commentaire_prof %}
+                <div class="fiche-commentaire">
+                    <strong>Prof :</strong> {{ fiche.commentaire_prof|truncatewords:20 }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="fiche-card-footer">
+                {% if fiche.validee_par_prof %}
+                <a href="{% url 'core:fiche_portfolio_eleve_update' fiche.id %}" class="btn-fill done">
+                    Consulter
+                </a>
+                {% else %}
+                <a href="{% url 'core:fiche_portfolio_eleve_update' fiche.id %}" class="btn-fill">
+                    ✏️ Remplir
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <h3>Aucune fiche dans votre portfolio</h3>
+        <p>Votre enseignant n'a pas encore créé de fiche de suivi pour vous.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

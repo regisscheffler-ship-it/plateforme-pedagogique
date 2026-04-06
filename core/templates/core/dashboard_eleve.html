@@ -128,6 +128,66 @@
     .pfmp-dates.date-proche { background: #fef3c7; color: #92400e; border-radius: 8px; padding: 0.5rem 0.8rem; font-weight: 600; }
     .pfmp-dates.date-urgente{ background: #fee2e2; color: #dc2626; border-radius: 8px; padding: 0.5rem 0.8rem; font-weight: 600; }
 
+    /* ═══ SECTION PORTFOLIO ═══ */
+    .portfolio-eleve-container {
+        background: white; border-radius: 16px; padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border-left: 5px solid #d97706;
+    }
+    .portfolio-eleve-header {
+        display: flex; align-items: center; gap: 12px; margin-bottom: 1.4rem;
+    }
+    .portfolio-eleve-header h2 {
+        margin: 0; font-size: 1.15rem; color: #1e293b;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .portfolio-eleve-header h2 svg { width: 22px; height: 22px; stroke: #d97706; fill: none; stroke-width: 2; }
+    .portfolio-eleve-actions { margin-left: auto; display: flex; gap: 0.6rem; align-items: center; }
+
+    .fiche-mini-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;
+    }
+    .fiche-mini-card {
+        border-radius: 10px; border: 1.5px solid #e2e8f0;
+        padding: 1rem 1.2rem; position: relative;
+        transition: box-shadow 0.2s, transform 0.2s;
+        text-decoration: none; color: inherit; display: block;
+    }
+    .fiche-mini-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .fiche-mini-card.validee    { border-color: #6ee7b7; background: #f0fdf4; }
+    .fiche-mini-card.en-attente { border-color: #fcd34d; background: #fffbeb; }
+    .fiche-mini-card.a-remplir  { border-color: #bfdbfe; background: #eff6ff; }
+
+    .fiche-mini-badge {
+        display: inline-block; font-size: 0.7rem; font-weight: 700;
+        padding: 2px 8px; border-radius: 20px; margin-bottom: 6px;
+    }
+    .fiche-mini-badge.ok   { background: #d1fae5; color: #166534; }
+    .fiche-mini-badge.wait { background: #fef3c7; color: #92400e; }
+    .fiche-mini-badge.fill { background: #dbeafe; color: #1d4ed8; }
+
+    .fiche-mini-titre { font-weight: 700; font-size: 0.95rem; color: #1e293b; margin-bottom: 4px; }
+    .fiche-mini-type  { font-size: 0.78rem; color: #94a3b8; }
+    .fiche-mini-arrow {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        color: #cbd5e1; font-size: 1.2rem;
+    }
+    .fiche-mini-commentaire {
+        font-size: 0.8rem; color: #78350f; background: #fef3c7;
+        border-radius: 6px; padding: 4px 8px; margin-top: 6px;
+        border-left: 3px solid #d97706;
+    }
+    .btn-portfolio {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+        text-decoration: none; transition: all 0.15s; border: none; cursor: pointer;
+    }
+    .btn-portfolio.primary   { background: #d97706; color: white; }
+    .btn-portfolio.primary:hover { background: #b45309; }
+    .btn-portfolio.secondary { background: white; color: #d97706; border: 1.5px solid #d97706; }
+    .btn-portfolio.secondary:hover { background: #fef3c7; }
+
     /* ═══ SECTION CARDS ═══ */
     .section-card {
         background: white; border-radius: 16px; padding: 2rem;
@@ -341,6 +401,51 @@
             </div>
             {% endfor %}
         </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══ 2b. MON PORTFOLIO BAC PRO ═══ -->
+    {% if mon_portfolio %}
+    <div class="portfolio-eleve-container">
+        <div class="portfolio-eleve-header">
+            <h2>
+                <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Mon Portfolio
+            </h2>
+            <div class="portfolio-eleve-actions">
+                <a href="{% url 'core:mon_portfolio' %}" class="btn-portfolio secondary">
+                    Voir tout
+                </a>
+            </div>
+        </div>
+
+        {% if fiches_portfolio %}
+        <div class="fiche-mini-grid">
+            {% for fiche in fiches_portfolio %}
+            {% if fiche.validee_par_prof %}
+                <a href="{% url 'core:fiche_portfolio_eleve_update' fiche.id %}" class="fiche-mini-card validee">
+                    <span class="fiche-mini-badge ok">Validée ✓</span>
+            {% elif fiche.description_situation or fiche.observation_environnement or fiche.problematique %}
+                <a href="{% url 'core:fiche_portfolio_eleve_update' fiche.id %}" class="fiche-mini-card en-attente">
+                    <span class="fiche-mini-badge wait">En attente</span>
+            {% else %}
+                <a href="{% url 'core:fiche_portfolio_eleve_update' fiche.id %}" class="fiche-mini-card a-remplir">
+                    <span class="fiche-mini-badge fill">À remplir</span>
+            {% endif %}
+                    <div class="fiche-mini-titre">{{ fiche.titre }}</div>
+                    <div class="fiche-mini-type">{{ fiche.get_type_evaluation_display }}</div>
+                    {% if fiche.commentaire_prof %}
+                    <div class="fiche-mini-commentaire">💬 {{ fiche.commentaire_prof|truncatewords:10 }}</div>
+                    {% endif %}
+                    <span class="fiche-mini-arrow">›</span>
+                </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:#94a3b8; font-style:italic; margin:0;">
+            Aucune fiche de portfolio n'a encore été créée par votre enseignant.
+        </p>
+        {% endif %}
     </div>
     {% endif %}
 

@@ -1,0 +1,350 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Portfolio BAC Pro — {{ eleve.user.get_full_name }}</title>
+<style>
+/* ─── Page A4 ─── */
+@page {
+    size: A4 portrait;
+    margin: 12mm 14mm 14mm 14mm;
+    @bottom-center {
+        content: "Portfolio BAC Pro · " string(student-name) " · Page " counter(page) " / " counter(pages);
+        font-size: 8pt; color: #9ca3af;
+    }
+}
+@page :first {
+    @bottom-center { content: none; }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10pt; color: #1e293b; line-height: 1.5;
+}
+
+/* ─── Page de garde ─── */
+.cover-page {
+    page-break-after: always;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    height: 267mm; /* A4 height minus margins */
+    text-align: center;
+}
+.cover-logo {
+    width: 80px; height: 80px; border-radius: 20px;
+    background: #d97706; display: flex; align-items: center;
+    justify-content: center; margin: 0 auto 24px; color: white;
+    font-size: 36pt; line-height: 1;
+}
+.cover-title {
+    font-size: 26pt; font-weight: 800; color: #d97706;
+    letter-spacing: -0.5px; margin-bottom: 8px;
+}
+.cover-subtitle { font-size: 13pt; color: #64748b; margin-bottom: 32px; }
+.cover-divider {
+    width: 80px; height: 4px; background: #d97706;
+    border-radius: 2px; margin: 0 auto 32px;
+}
+.cover-student-name { font-size: 20pt; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+.cover-class-info   { font-size: 11pt; color: #64748b; }
+.cover-date { margin-top: 40px; font-size: 9pt; color: #94a3b8; }
+.cover-stats {
+    display: flex; gap: 24px; margin-top: 40px; justify-content: center;
+}
+.cover-stat {
+    background: #fef3c7; border-radius: 12px; padding: 14px 24px;
+    text-align: center; min-width: 100px;
+}
+.cover-stat-value { font-size: 22pt; font-weight: 800; color: #d97706; }
+.cover-stat-label { font-size: 8pt; color: #78350f; margin-top: 2px; }
+
+/* ─── Fiche de portfolio ─── */
+.fiche-page {
+    page-break-after: always;
+    page-break-inside: avoid;
+}
+.fiche-page:last-child { page-break-after: auto; }
+
+/* En-tête fiche */
+.fiche-header {
+    background: #fef3c7;
+    border-left: 5px solid #d97706;
+    border-radius: 6px 6px 0 0;
+    padding: 10px 14px 8px;
+    margin-bottom: 0;
+    display: flow-root;
+}
+.fiche-header-left { float: left; }
+.fiche-header-right { float: right; text-align: right; }
+.fiche-numero { font-size: 8pt; color: #92400e; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.fiche-titre-main { font-size: 13pt; font-weight: 800; color: #1e293b; margin-top: 2px; }
+.fiche-student-inline { font-size: 8pt; color: #64748b; margin-top: 2px; }
+.fiche-date-inline { font-size: 8pt; color: #94a3b8; }
+
+/* Badges type + statut */
+.badge-pill {
+    display: inline-block; font-size: 7.5pt; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+}
+.badge-formative    { background: #dbeafe; color: #1d4ed8; }
+.badge-sommative    { background: #fef3c7; color: #92400e; }
+.badge-certificative{ background: #f3e8ff; color: #7c3aed; }
+.badge-validee      { background: #d1fae5; color: #065f46; }
+.badge-attente      { background: #fef9c3; color: #92400e; }
+.badge-vide         { background: #f1f5f9; color: #64748b; }
+
+/* Corps de la fiche */
+.fiche-body {
+    border: 1px solid #e2e8f0; border-top: none;
+    border-radius: 0 0 6px 6px;
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+
+/* Section commune */
+.fiche-section {
+    padding: 8px 14px; border-bottom: 1px solid #f1f5f9;
+}
+.fiche-section:last-child { border-bottom: none; }
+.section-label {
+    font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.5px;
+    font-weight: 700; color: #94a3b8; margin-bottom: 4px;
+}
+.section-content { font-size: 9.5pt; color: #334155; }
+.section-content.empty-content { color: #cbd5e1; font-style: italic; }
+
+/* 2 colonnes */
+.two-cols { display: flow-root; }
+.col-left  { float: left;  width: 49%; padding-right: 6px; }
+.col-right { float: right; width: 49%; padding-left: 6px; }
+
+/* Compétences */
+.competences-list { display: flow-root; }
+.comp-chip {
+    display: inline-block; font-size: 7.5pt; font-weight: 600;
+    padding: 2px 7px; border-radius: 4px;
+    background: #f1f5f9; color: #475569;
+    border: 1px solid #e2e8f0; margin: 2px 3px 2px 0;
+}
+
+/* Sections à remplir par l'élève */
+.eleve-section {
+    background: #f8fafc;
+}
+.eleve-tag {
+    font-size: 7pt; background: #dbeafe; color: #1e40af;
+    padding: 1px 6px; border-radius: 10px; font-weight: 600; margin-left: 6px;
+}
+
+/* Photos */
+.photos-grid {
+    display: flow-root; margin: 6px 0;
+}
+.photo-item {
+    float: left; width: 23%; margin-right: 2%;
+    margin-bottom: 6px;
+}
+.photo-item:nth-child(4) { margin-right: 0; }
+.photo-item img {
+    width: 100%; height: 52mm; object-fit: cover;
+    border-radius: 4px; border: 1px solid #e2e8f0;
+    display: block;
+}
+.photo-legende { font-size: 7pt; color: #94a3b8; text-align: center; margin-top: 2px; }
+
+/* Commentaire prof */
+.prof-comment-block {
+    background: #fffbeb; border-left: 3px solid #d97706;
+    padding: 7px 12px; border-radius: 0 4px 4px 0; margin-top: 6px;
+}
+.prof-comment-label { font-size: 7pt; color: #92400e; font-weight: 700; margin-bottom: 2px; }
+.prof-comment-text  { font-size: 9pt; color: #78350f; }
+
+/* Tampon validation */
+.validated-stamp {
+    float: right; border: 2px solid #10b981; border-radius: 8px;
+    color: #10b981; padding: 4px 10px; font-size: 8pt; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    transform: rotate(-3deg); margin-top: -8px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE DE GARDE
+══════════════════════════════════════════════════ -->
+<div class="cover-page">
+    <div class="cover-logo">📚</div>
+    <div class="cover-title">Portfolio BAC Pro</div>
+    <div class="cover-subtitle">Fiche de suivi de compétences professionnelles</div>
+    <div class="cover-divider"></div>
+    <div class="cover-student-name">
+        {{ eleve.user.get_full_name|upper }}
+    </div>
+    <div class="cover-class-info">
+        {% if eleve.classe %}{{ eleve.classe.nom }} — {% endif %}
+        Année scolaire {{ "now"|date:"Y" }}
+    </div>
+    <div class="cover-stats">
+        <div class="cover-stat">
+            <div class="cover-stat-value">{{ fiches|length }}</div>
+            <div class="cover-stat-label">Fiche(s)</div>
+        </div>
+        <div class="cover-stat">
+            <div class="cover-stat-value">{{ portfolio.nb_fiches_validees }}</div>
+            <div class="cover-stat-label">Validée(s)</div>
+        </div>
+    </div>
+    <div class="cover-date">
+        Document généré le {% now "d/m/Y" %}
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     UNE PAGE PAR FICHE
+══════════════════════════════════════════════════ -->
+{% for fiche in fiches %}
+<div class="fiche-page">
+
+    <!-- En-tête -->
+    <div class="fiche-header">
+        <div class="fiche-header-left">
+            <div class="fiche-numero">Fiche n°{{ forloop.counter }}</div>
+            <div class="fiche-titre-main">{{ fiche.titre }}</div>
+            <div style="margin-top:4px;">
+                {% if fiche.type_evaluation == 'formative' %}
+                    <span class="badge-pill badge-formative">Formative</span>
+                {% elif fiche.type_evaluation == 'sommative' %}
+                    <span class="badge-pill badge-sommative">Sommative</span>
+                {% else %}
+                    <span class="badge-pill badge-certificative">Certificative</span>
+                {% endif %}
+                &nbsp;
+                {% if fiche.validee_par_prof %}
+                    <span class="badge-pill badge-validee">✓ Validée</span>
+                {% elif fiche.description_situation or fiche.observation_environnement %}
+                    <span class="badge-pill badge-attente">En attente</span>
+                {% else %}
+                    <span class="badge-pill badge-vide">Non remplie</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="fiche-header-right">
+            <div class="fiche-student-inline">{{ eleve.user.get_full_name }}</div>
+            {% if eleve.classe %}<div class="fiche-student-inline">{{ eleve.classe.nom }}</div>{% endif %}
+            <div class="fiche-date-inline">{{ fiche.date_creation|date:"d/m/Y" }}</div>
+            {% if fiche.validee_par_prof %}
+            <div class="validated-stamp">✓ Validé</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="fiche-body">
+
+        <!-- Infos prof : compétences + activités + unité -->
+        <div class="fiche-section two-cols">
+            <div class="col-left">
+                <div class="section-label">Compétences visées</div>
+                <div class="section-content">
+                    {% if fiche.competences.all %}
+                    <div class="competences-list">
+                        {% for c in fiche.competences.all %}
+                        <span class="comp-chip" title="{{ c.intitule }}">{{ c.code }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <span class="empty-content">Non précisées</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-right">
+                <div class="section-label">Unité d'évaluation{% if fiche.pfmp %} / PFMP{% endif %}</div>
+                <div class="section-content">
+                    {% if fiche.unite_evaluation %}{{ fiche.unite_evaluation }}{% endif %}
+                    {% if fiche.pfmp %}<br>{{ fiche.pfmp.titre }}{% endif %}
+                    {% if not fiche.unite_evaluation and not fiche.pfmp %}<span class="empty-content">—</span>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if fiche.activites_professionnelles %}
+        <div class="fiche-section">
+            <div class="section-label">Activités professionnelles</div>
+            <div class="section-content">{{ fiche.activites_professionnelles }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Description élève -->
+        <div class="fiche-section eleve-section">
+            <div class="section-label">
+                Description de la situation de travail
+                <span class="eleve-tag">élève</span>
+            </div>
+            <div class="section-content {% if not fiche.description_situation %}empty-content{% endif %}">
+                {{ fiche.description_situation|default:"Non rempli" }}
+            </div>
+        </div>
+
+        <!-- Observation -->
+        <div class="fiche-section eleve-section">
+            <div class="section-label">
+                Observation de l'environnement professionnel
+                <span class="eleve-tag">élève</span>
+            </div>
+            <div class="section-content {% if not fiche.observation_environnement %}empty-content{% endif %}">
+                {{ fiche.observation_environnement|default:"Non rempli" }}
+            </div>
+        </div>
+
+        <!-- Problématique -->
+        <div class="fiche-section eleve-section">
+            <div class="section-label">
+                Problématique
+                <span class="eleve-tag">élève</span>
+            </div>
+            <div class="section-content {% if not fiche.problematique %}empty-content{% endif %}">
+                {{ fiche.problematique|default:"Non rempli" }}
+            </div>
+        </div>
+
+        <!-- Photos -->
+        {% if fiche.photos.all %}
+        <div class="fiche-section">
+            <div class="section-label">Photos ({{ fiche.photos.count }})</div>
+            <div class="photos-grid">
+                {% for photo in fiche.photos.all %}
+                <div class="photo-item">
+                    <img src="{{ photo.image.url }}" alt="{{ photo.legende }}">
+                    {% if photo.legende %}<div class="photo-legende">{{ photo.legende }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Commentaire prof + validation -->
+        {% if fiche.commentaire_prof or fiche.validee_par_prof %}
+        <div class="fiche-section">
+            <div class="section-label">Avis de l'enseignant</div>
+            {% if fiche.commentaire_prof %}
+            <div class="prof-comment-block">
+                <div class="prof-comment-label">Commentaire :</div>
+                <div class="prof-comment-text">{{ fiche.commentaire_prof }}</div>
+            </div>
+            {% endif %}
+            {% if fiche.validee_par_prof %}
+            <div style="margin-top:6px; font-size:8.5pt; color:#065f46; font-weight:600;">
+                ✓ Fiche validée le {{ fiche.date_modification|date:"d/m/Y" }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div><!-- /.fiche-body -->
+</div><!-- /.fiche-page -->
+{% endfor %}
+
+</body>
+</html>
