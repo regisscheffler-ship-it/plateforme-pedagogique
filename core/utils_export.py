@@ -291,6 +291,7 @@ def generer_zip_complet(annee):
             FicheContrat.objects
             .filter(actif=True).filter(q_annee | q_dates)
             .select_related('classe', 'referentiel', 'createur')
+            .defer('atelier')
             .distinct()
         )
 
@@ -828,6 +829,7 @@ def generer_zip_avance(annee, tri='par_classe', classes_ids=None, eleves_ids=Non
         FicheContrat.objects
         .filter(actif=True).filter(q_annee | q_dates)
         .select_related('classe', 'referentiel', 'createur')
+        .defer('atelier')
         .distinct()
     )
     if classes_ids:

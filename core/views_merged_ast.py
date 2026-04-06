@@ -2030,16 +2030,22 @@ def archives_export_avance(request):
         cats = [c for c in cats if c] or None
 
         from core.utils_export import generer_zip_avance
-        zip_bytes, nb_fichiers, erreurs_list = generer_zip_avance(
-            annee=annee,
-            tri=tri,
-            classes_ids=classes_ids,
-            eleves_ids=eleves_ids,
-            categories=cats,
-        )
+        try:
+            zip_bytes, nb_fichiers, erreurs_list = generer_zip_avance(
+                annee=annee,
+                tri=tri,
+                classes_ids=classes_ids,
+                eleves_ids=eleves_ids,
+                categories=cats,
+            )
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).error('Export avancé échoué : %s', exc, exc_info=True)
+            messages.error(request, f'Erreur lors de la génération : {exc}')
+            return redirect('core:archives_export_avance')
 
         if nb_fichiers == 0:
-            messages.warning(request, '⚠️ Aucun fichier trouvé pour ces critères.')
+            messages.warning(request, 'Aucun fichier trouvé pour ces critères.')
             return redirect('core:archives_export_avance')
 
         tri_label = {'par_classe': 'classe', 'par_eleve': 'eleve', 'par_categorie': 'categorie'}.get(tri, tri)
