@@ -1973,6 +1973,89 @@ def archive_detail(request, pk):
     })
 
 
+@login_required
+def archives_export_avance(request):
+    """
+    Export ZIP avancé avec choix du tri (par classe / élève / catégorie),
+    filtres optionnels (classe, élève, catégorie).
+    GET sans paramètre 'go' → affiche le formulaire.
+    GET avec 'go' → génère et télécharge le ZIP.
+    """
+    from core.models import Classe, ProfilUtilisateur, Archive
+
+    # Données pour le formulaire
+    annees_disponibles = sorted(
+        Archive.objects.filter(actif=True)
+        .values_list('annee_scolaire', flat=True).distinct(),
+        reverse=True
+    )
+    # Inclure aussi les années depuis les FicheContrat
+    annees_fc = sorted(
+        Classe.objects.filter(actif=True)
+        .values_list('annee_scolaire', flat=True).distinct(),
+        reverse=True
+    )
+    annees_all = sorted(set(list(annees_disponibles) + [a for a in annees_fc if a]), reverse=True)
+
+    classes = Classe.objects.filter(actif=True).order_by('nom')
+    eleves = (
+        ProfilUtilisateur.objects
+        .filter(type_utilisateur='eleve', compte_approuve=True)
+        .select_related('user', 'classe')
+        .order_by('user__last_name', 'user__first_name')
+    )
+
+    CATEGORIES = [
+        ('evaluations', 'Évaluations'),
+        ('examens', 'Examens'),
+        ('administratif', 'Administratif'),
+        ('ressources', 'Ressources'),
+        ('autre', 'Autre'),
+    ]
+
+    # ── SI DEMANDE DE TÉLÉCHARGEMENT ──
+    if request.GET.get('go'):
+        annee = request.GET.get('annee', '2025-2026')
+        tri = request.GET.get('tri', 'par_classe')
+        if tri not in ('par_classe', 'par_eleve', 'par_categorie'):
+            tri = 'par_classe'
+
+        classes_ids = request.GET.getlist('classes')
+        classes_ids = [int(c) for c in classes_ids if c.isdigit()] or None
+
+        eleves_ids = request.GET.getlist('eleves')
+        eleves_ids = [int(e) for e in eleves_ids if e.isdigit()] or None
+
+        cats = request.GET.getlist('categories')
+        cats = [c for c in cats if c] or None
+
+        from core.utils_export import generer_zip_avance
+        zip_bytes, nb_fichiers, erreurs_list = generer_zip_avance(
+            annee=annee,
+            tri=tri,
+            classes_ids=classes_ids,
+            eleves_ids=eleves_ids,
+            categories=cats,
+        )
+
+        if nb_fichiers == 0:
+            messages.warning(request, '⚠️ Aucun fichier trouvé pour ces critères.')
+            return redirect('core:archives_export_avance')
+
+        tri_label = {'par_classe': 'classe', 'par_eleve': 'eleve', 'par_categorie': 'categorie'}.get(tri, tri)
+        filename = f'archives_{annee}_{tri_label}.zip'
+        response = HttpResponse(zip_bytes, content_type='application/zip')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    return render(request, 'core/archives_export_avance.html', {
+        'annees_disponibles': annees_all,
+        'classes': classes,
+        'eleves': eleves,
+        'categories': CATEGORIES,
+    })
+
+
 def _stats_compteurs_eleves():
     """
     Retourne les compteurs globaux d'élèves (total, actifs, sortis, diplômés).
@@ -2417,7 +2500,7 @@ def _stats_pfmp():
     from django.db.models import Sum
     result = []
     for classe in Classe.objects.order_by('nom'):
-        pfmps = list(PFMP.objects.filter(classe=classe, actif=True).order_by('date_debut'))
+        pfmps = list(PFMP.objects.filter(classes=classe, actif=True).order_by('date_debut'))
         if not pfmps:
             continue
         eleves = list(ProfilUtilisateur.objects.filter(
@@ -2887,16 +2970,15 @@ def gestion_pfmp(request):
     classes = Classe.objects.all().order_by('nom')
     classe_selectionnee = request.GET.get('classe')
     if classe_selectionnee:
-        pfmps = PFMP.objects.filter(classe_id=classe_selectionnee, actif=True).select_related('classe').order_by('date_debut')
+        pfmps = PFMP.objects.filter(classes=classe_selectionnee, actif=True).prefetch_related('classes').order_by('date_debut')
     else:
-        pfmps = PFMP.objects.filter(actif=True).select_related('classe').order_by('classe__nom', 'date_debut')
+        pfmps = PFMP.objects.filter(actif=True).prefetch_related('classes').order_by('date_debut', 'titre')
     if request.method == 'POST':
         titre = request.POST.get('titre')
-        classe_id = request.POST.get('classe')
-        if titre and classe_id:
-            classe = get_object_or_404(Classe, id=classe_id)
+        classes_ids = request.POST.getlist('classes')
+        if titre and classes_ids:
             pfmp = PFMP(
-                classe=classe, titre=titre,
+                titre=titre,
                 description=request.POST.get('description', ''),
                 date_debut=request.POST.get('date_debut') or None,
                 date_fin=request.POST.get('date_fin') or None,
@@ -2911,17 +2993,19 @@ def gestion_pfmp(request):
             elif type_contenu == 'iframe' and request.POST.get('code_iframe'):
                 pfmp.code_iframe = request.POST.get('code_iframe')
             pfmp.save()
-            for eleve in ProfilUtilisateur.objects.filter(classe=classe, type_utilisateur='eleve', compte_approuve=True, est_sorti=False):
+            pfmp.classes.set(classes_ids)
+            classes_noms = ', '.join(Classe.objects.filter(id__in=classes_ids).values_list('nom', flat=True))
+            for eleve in ProfilUtilisateur.objects.filter(classe_id__in=classes_ids, type_utilisateur='eleve', compte_approuve=True, est_sorti=False):
                 Notification.objects.create(
                     destinataire=eleve.user, type_notification='pfmp',
                     titre=f'📋 Nouvelle PFMP : {titre}',
-                    message=f'Une période de PFMP a été ajoutée ({classe.nom}).',
+                    message=f'Une période de PFMP a été ajoutée ({classes_noms}).',
                     lien=f'/pfmp/{pfmp.id}/'
                 )
             messages.success(request, f'✅ PFMP "{titre}" créée !')
             return redirect('core:gestion_pfmp')
         else:
-            messages.error(request, '❌ Le titre et la classe sont obligatoires.')
+            messages.error(request, '❌ Le titre et au moins une classe sont obligatoires.')
     nb_pfmp = PFMP.objects.filter(actif=True).count()
     return render(request, 'core/gestion_pfmp.html', {
         'pfmps': pfmps, 'classes': classes,
@@ -2942,19 +3026,20 @@ def pfmp_create(request):
     classes = Classe.objects.all().order_by('nom')
     if request.method == 'POST':
         titre = request.POST.get('titre')
-        classe_id = request.POST.get('classe')
-        if titre and classe_id:
+        classes_ids = request.POST.getlist('classes')
+        if titre and classes_ids:
             str_date_debut = request.POST.get('date_debut')
             str_date_fin = request.POST.get('date_fin')
             d_debut = datetime.strptime(str_date_debut, '%Y-%m-%d').date() if str_date_debut else None
             d_fin = datetime.strptime(str_date_fin, '%Y-%m-%d').date() if str_date_fin else None
             pfmp = PFMP.objects.create(
-                classe_id=classe_id, titre=titre,
+                titre=titre,
                 description=request.POST.get('description', ''),
                 date_debut=d_debut, date_fin=d_fin,
                 type_contenu=request.POST.get('type_contenu', 'fichier'),
                 createur=request.user
             )
+            pfmp.classes.set(classes_ids)
             if pfmp.type_contenu == 'fichier' and request.FILES.get('fichier'):
                 pfmp.fichier = request.FILES.get('fichier')
             elif pfmp.type_contenu == 'lien':
@@ -2972,7 +3057,7 @@ def pfmp_create(request):
             messages.success(request, f'✅ PFMP "{titre}" créée avec succès !')
             return redirect('core:gestion_pfmp')
         else:
-            messages.error(request, '❌ Le titre et la classe sont obligatoires.')
+            messages.error(request, '❌ Le titre et au moins une classe sont obligatoires.')
     return render(request, 'core/pfmp_create.html', {'classes': classes})
 
 
@@ -2985,9 +3070,9 @@ def pfmp_update(request, pk):
         pfmp.date_debut = request.POST.get('date_debut') or None
         pfmp.date_fin = request.POST.get('date_fin') or None
         pfmp.type_contenu = request.POST.get('type_contenu', '')
-        classe_id = request.POST.get('classe')
-        if classe_id:
-            pfmp.classe = Classe.objects.get(id=classe_id)
+        classes_ids = request.POST.getlist('classes')
+        if classes_ids:
+            pfmp.classes.set(classes_ids)
         if pfmp.type_contenu == 'fichier':
             nouveau_fichier = request.FILES.get('fichier')
             if nouveau_fichier:
@@ -3010,7 +3095,7 @@ def pfmp_detail(request, pk):
     pfmp = get_object_or_404(PFMP, id=pk)
     is_prof = est_professeur(request.user)
     if hasattr(request.user, 'profil') and request.user.profil.est_eleve():
-        if pfmp.classe != request.user.profil.classe:
+        if request.user.profil.classe not in pfmp.classes.all():
             messages.error(request, "⛔ Vous n'avez pas accès à cette section.")
             return redirect('core:dashboard_eleve')
         dossiers = DossierPFMP.objects.filter(pfmp=pfmp, actif=True, visible_eleves=True).order_by('ordre', 'nom')
@@ -3133,7 +3218,7 @@ def saisie_suivi_pfmp(request, pfmp_id):
     """Saisie ou mise à jour des jours effectués / manqués par élève pour une PFMP."""
     pfmp = get_object_or_404(PFMP, id=pfmp_id)
     eleves = ProfilUtilisateur.objects.filter(
-        classe=pfmp.classe, type_utilisateur='eleve',
+        classe__in=pfmp.classes.all(), type_utilisateur='eleve',
         compte_approuve=True, est_sorti=False
     ).select_related('user').order_by('user__last_name', 'user__first_name')
 
@@ -5182,7 +5267,7 @@ def dashboard_eleve(request):
             'mes_rendus': RenduEleve.objects.filter(eleve=profil).select_related('travail').order_by('-date_rendu'),
             'notifications': Notification.objects.filter(destinataire=request.user, lue=False).order_by('-date_creation'),
             'ateliers': Atelier.objects.filter(classe=classe, actif=True, visible_eleves=True).order_by('ordre', 'titre'),
-            'mes_pfmp': PFMP.objects.filter(classe=classe, actif=True).order_by('date_debut'),
+            'mes_pfmp': PFMP.objects.filter(classes=classe, actif=True).order_by('date_debut'),
             # n'afficher que les 6 dernières évaluations validées
             'mes_evaluations': FicheEvaluation.objects.filter(eleve=profil, validee=True).select_related('fiche_contrat').order_by('-date_validation')[:6],
             'today': date.today(),

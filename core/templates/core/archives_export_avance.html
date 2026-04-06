@@ -1,0 +1,325 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+<style>
+    :root { --arc: #7a8694; --arc-light: #f1f3f5; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 8px 18px; background: white; color: var(--arc);
+        border: 2px solid var(--arc); border-radius: 10px;
+        text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        transition: all 0.2s; margin-top: 1.2rem; margin-bottom: 1.5rem;
+    }
+    .btn-retour:hover { background: var(--arc); color: white; }
+    .btn-retour svg { transition: transform 0.2s; }
+    .btn-retour:hover svg { transform: translateX(-3px); }
+
+    .page-header {
+        background: white; border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        border-left: 5px solid #10b981;
+        padding: 1.6rem 1.8rem; margin-bottom: 1.8rem;
+        display: flex; align-items: center; gap: 16px;
+    }
+    .page-header-icon {
+        width: 48px; height: 48px; border-radius: 12px;
+        background: #d1fae5; display: flex;
+        align-items: center; justify-content: center; flex-shrink: 0;
+        color: #10b981;
+    }
+    .page-header h1 { margin: 0; font-size: 1.6rem; color: #1e293b; }
+    .page-header p  { margin: 4px 0 0; font-size: 0.88rem; color: #64748b; }
+
+    .export-card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        padding: 1.6rem 1.8rem; margin-bottom: 1.8rem;
+    }
+    .export-card h2 {
+        font-size: 1.05rem; font-weight: 700; color: #2c3e50;
+        margin: 0 0 1.2rem; padding-bottom: 0.6rem;
+        border-bottom: 2px solid var(--arc-light);
+        display: flex; align-items: center; gap: 8px;
+    }
+
+    .form-grid { display: grid; gap: 1.2rem; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+    .form-label {
+        display: block; margin-bottom: 5px;
+        font-weight: 600; font-size: 0.88rem; color: #374151;
+    }
+    .form-label-hint { color: #94a3b8; font-weight: 400; font-size: 0.82rem; }
+    .form-control {
+        width: 100%; padding: 0.55rem 0.8rem;
+        border: 1.5px solid #e2e8f0; border-radius: 8px;
+        font-size: 0.9rem; color: #1e293b; background: white;
+        transition: border-color 0.2s; box-sizing: border-box;
+    }
+    .form-control:focus { outline: none; border-color: #10b981; }
+    select[multiple].form-control { min-height: 120px; }
+
+    /* Tri – boutons radio visuels */
+    .tri-options { display: flex; gap: 12px; flex-wrap: wrap; }
+    .tri-option {
+        flex: 1; min-width: 160px;
+        border: 2px solid #e2e8f0; border-radius: 12px;
+        padding: 1rem 1.2rem; cursor: pointer;
+        transition: all 0.2s; text-align: center;
+        background: #f8fafc;
+    }
+    .tri-option:hover { border-color: #10b981; background: #f0fdf4; }
+    .tri-option.selected { border-color: #10b981; background: #d1fae5; }
+    .tri-option input { display: none; }
+    .tri-icon { font-size: 1.8rem; margin-bottom: 6px; }
+    .tri-label { font-weight: 700; font-size: 0.92rem; color: #1e293b; }
+    .tri-desc { font-size: 0.78rem; color: #64748b; margin-top: 4px; }
+
+    /* Bouton action */
+    .btn-export {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 12px 28px; background: #10b981; color: white;
+        border: none; border-radius: 10px; font-weight: 700;
+        font-size: 1rem; cursor: pointer; transition: all 0.2s;
+        text-decoration: none;
+    }
+    .btn-export:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+
+    .info-box {
+        background: #eff6ff; border: 1px solid #bfdbfe;
+        border-radius: 10px; padding: 1rem 1.2rem;
+        font-size: 0.88rem; color: #1e40af;
+        display: flex; align-items: flex-start; gap: 10px;
+    }
+    .info-box svg { flex-shrink: 0; margin-top: 2px; }
+
+    /* Structure preview */
+    .structure-preview {
+        background: #1e293b; color: #e2e8f0; border-radius: 10px;
+        padding: 1rem 1.4rem; font-family: 'Cascadia Code', 'Fira Code', monospace;
+        font-size: 0.82rem; line-height: 1.6; margin-top: 0.8rem;
+        max-height: 200px; overflow-y: auto;
+    }
+    .structure-preview .folder { color: #fbbf24; }
+    .structure-preview .file { color: #67e8f9; }
+</style>
+
+<div class="page-container" style="max-width:1200px;width:100%;margin:0 auto;padding:2rem;">
+
+    <a href="{% url 'core:archives' %}" class="btn-retour">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+        </svg>
+        Retour aux archives
+    </a>
+
+    <div class="page-header">
+        <div class="page-header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M21 16V8a2 2 0 0 0-2-2h-3V4a2 2 0 0 0-2-2H10a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM9 4h6v2H9V4zM6 10h12v6H6v-6z"/>
+            </svg>
+        </div>
+        <div>
+            <h1>Export avancé — Archives PDF</h1>
+            <p>Téléchargez un ZIP structuré avec les évaluations en PDF et vos documents, triés par classe, élève ou catégorie</p>
+        </div>
+    </div>
+
+    <div class="info-box" style="margin-bottom: 1.4rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+        </svg>
+        <div>
+            <strong>Comment ça marche :</strong> Les évaluations (fiches contrat + fiches évaluation) seront automatiquement
+            converties en PDF au même format que la « fiche complète élève ».
+            Les documents que vous avez ajoutés manuellement (examens, administratif, ressources) seront inclus tels quels.
+        </div>
+    </div>
+
+    <form method="get" action="{% url 'core:archives_export_avance' %}" id="export-form">
+        <input type="hidden" name="go" value="1">
+
+        <div class="export-card">
+            <h2>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5z"/>
+                </svg>
+                1. Choisir l'année scolaire
+            </h2>
+            <select name="annee" class="form-control" style="max-width:300px;" required>
+                {% for a in annees_disponibles %}
+                    <option value="{{ a }}" {% if a == "2025-2026" %}selected{% endif %}>{{ a }}</option>
+                {% empty %}
+                    <option value="2025-2026">2025-2026</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="export-card">
+            <h2>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
+                </svg>
+                2. Choisir le mode de tri
+            </h2>
+
+            <div class="tri-options">
+                <label class="tri-option selected" data-tri="par_classe">
+                    <input type="radio" name="tri" value="par_classe" checked>
+                    <div class="tri-icon">🏫</div>
+                    <div class="tri-label">Par classe</div>
+                    <div class="tri-desc">Dossiers organisés par classe puis par TP</div>
+                </label>
+                <label class="tri-option" data-tri="par_eleve">
+                    <input type="radio" name="tri" value="par_eleve">
+                    <div class="tri-icon">👤</div>
+                    <div class="tri-label">Par élève</div>
+                    <div class="tri-desc">Un dossier par élève avec toutes ses évaluations</div>
+                </label>
+                <label class="tri-option" data-tri="par_categorie">
+                    <input type="radio" name="tri" value="par_categorie">
+                    <div class="tri-icon">📂</div>
+                    <div class="tri-label">Par catégorie</div>
+                    <div class="tri-desc">Évaluations, Examens, Administratif… en dossiers séparés</div>
+                </label>
+            </div>
+
+            <!-- Aperçu structure -->
+            <div class="structure-preview" id="structure-preview">
+                <div id="preview-par_classe">
+<span class="folder">📁 TBPMV1/</span>
+    <span class="folder">📁 Evaluations/</span>
+        <span class="folder">📁 TP_Freinage/</span>
+            <span class="file">📄 DUPONT_Jean.pdf</span>
+            <span class="file">📄 MARTIN_Marie.pdf</span>
+    <span class="folder">📁 Examens/</span>
+        <span class="file">📄 Examen_final.pdf</span>
+<span class="folder">📁 TBPMV2/</span>
+    <span class="folder">📁 Evaluations/</span>
+        …
+                </div>
+                <div id="preview-par_eleve" style="display:none;">
+<span class="folder">📁 DUPONT_Jean (TBPMV1)/</span>
+    <span class="folder">📁 Evaluations/</span>
+        <span class="file">📄 TP_Freinage.pdf</span>
+        <span class="file">📄 TP_Moteur.pdf</span>
+<span class="folder">📁 MARTIN_Marie (TBPMV1)/</span>
+    <span class="folder">📁 Evaluations/</span>
+        …
+<span class="folder">📁 _Documents_generaux/</span>
+    <span class="folder">📁 Examens/</span>
+        <span class="file">📄 Examen_final.pdf</span>
+                </div>
+                <div id="preview-par_categorie" style="display:none;">
+<span class="folder">📁 Evaluations/</span>
+    <span class="folder">📁 TBPMV1/</span>
+        <span class="folder">📁 TP_Freinage/</span>
+            <span class="file">📄 DUPONT_Jean.pdf</span>
+            <span class="file">📄 MARTIN_Marie.pdf</span>
+<span class="folder">📁 Examens/</span>
+    <span class="file">📄 Examen_final.pdf</span>
+<span class="folder">📁 Administratif/</span>
+    <span class="file">📄 Rapport_annuel.pdf</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="export-card">
+            <h2>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+                </svg>
+                3. Filtres <span class="form-label-hint">(optionnel — laisser vide = tout inclure)</span>
+            </h2>
+
+            <div class="form-row-3">
+                <div>
+                    <label class="form-label" for="classes">Classes</label>
+                    <select name="classes" id="classes" multiple class="form-control">
+                        {% for classe in classes %}
+                            <option value="{{ classe.id }}">{{ classe.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="eleves">Élèves</label>
+                    <select name="eleves" id="eleves" multiple class="form-control">
+                        {% for eleve in eleves %}
+                            <option value="{{ eleve.id }}" data-classe="{{ eleve.classe_id }}">
+                                {{ eleve.user.last_name }} {{ eleve.user.first_name }}{% if eleve.classe %} ({{ eleve.classe.nom }}){% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="categories">Catégories</label>
+                    <select name="categories" id="categories" multiple class="form-control">
+                        {% for val, label in categories %}
+                            <option value="{{ val }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-top: 0.5rem;">
+            <button type="submit" class="btn-export" id="btn-dl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                </svg>
+                Télécharger le ZIP
+            </button>
+            <p style="margin-top: 8px; font-size: 0.82rem; color: #94a3b8;">
+                La génération peut prendre quelques instants selon le nombre d'évaluations.
+            </p>
+        </div>
+    </form>
+</div>
+
+<script>
+    // ── Sélection visuelle du tri ──
+    document.querySelectorAll('.tri-option').forEach(opt => {
+        opt.addEventListener('click', function() {
+            document.querySelectorAll('.tri-option').forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input').checked = true;
+
+            // Mise à jour preview
+            const tri = this.dataset.tri;
+            document.querySelectorAll('[id^="preview-"]').forEach(p => p.style.display = 'none');
+            const preview = document.getElementById('preview-' + tri);
+            if (preview) preview.style.display = 'block';
+        });
+    });
+
+    // ── Filtrage élèves par classe sélectionnée ──
+    const classesSelect = document.getElementById('classes');
+    const elevesSelect = document.getElementById('eleves');
+    const allOptions = Array.from(elevesSelect.options);
+
+    classesSelect.addEventListener('change', function() {
+        const selectedClasses = Array.from(this.selectedOptions).map(o => o.value);
+        elevesSelect.innerHTML = '';
+        allOptions.forEach(opt => {
+            if (selectedClasses.length === 0 || selectedClasses.includes(opt.dataset.classe)) {
+                elevesSelect.appendChild(opt.cloneNode(true));
+            }
+        });
+    });
+
+    // ── Feedback: bouton loading ──
+    document.getElementById('export-form').addEventListener('submit', function() {
+        const btn = document.getElementById('btn-dl');
+        btn.innerHTML = '<svg class="spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/></svg> Génération en cours…';
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        // Ré-activer après 60s de sécurité
+        setTimeout(() => { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = 'Télécharger le ZIP'; }, 60000);
+    });
+</script>
+
+{% endblock %}

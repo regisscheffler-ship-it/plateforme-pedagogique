@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 15mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11pt; color: #222; line-height: 1.45; }
+
+  .header { text-align: center; margin-bottom: 14px; border-bottom: 3px solid #6f42c1; padding-bottom: 10px; }
+  .header h1 { font-size: 18pt; color: #6f42c1; margin-bottom: 4px; }
+  .header .sub { font-size: 10pt; color: #666; }
+
+  .section { margin-bottom: 14px; }
+  .section-title { font-size: 12pt; font-weight: bold; color: #6f42c1; border-bottom: 1.5px solid #d5c5f0; padding-bottom: 3px; margin-bottom: 8px; }
+
+  .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  .meta-table td { padding: 4px 8px; border: 0.5px solid #ccc; font-size: 10pt; }
+  .meta-table td.label { background: #f4f0fa; font-weight: bold; width: 30%; color: #555; }
+
+  .description { background: #fafafa; border: 0.5px solid #ddd; padding: 8px 10px; border-radius: 4px; font-size: 10pt; white-space: pre-wrap; }
+
+  .dossier { margin-bottom: 10px; }
+  .dossier-nom { font-weight: bold; font-size: 11pt; color: #444; margin-bottom: 4px; }
+  .fichier-list { list-style: none; padding-left: 0; }
+  .fichier-list li { padding: 3px 0 3px 12px; font-size: 10pt; border-left: 2px solid #d5c5f0; margin-bottom: 2px; }
+  .fichier-type { display: inline-block; font-size: 8pt; padding: 1px 5px; border-radius: 3px; color: #fff; margin-right: 6px; vertical-align: middle; }
+  .type-fichier { background: #198754; }
+  .type-lien { background: #0d6efd; }
+  .type-iframe { background: #fd7e14; }
+
+  .url-block { background: #f0f6ff; border: 0.5px solid #b8daff; padding: 6px 10px; font-size: 9pt; font-family: monospace; word-break: break-all; border-radius: 3px; margin-bottom: 3px; }
+
+  .mo-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-top: 6px; }
+  .mo-table th { background: #6f42c1; color: #fff; padding: 4px 6px; text-align: left; }
+  .mo-table td { border: 0.5px solid #ccc; padding: 3px 6px; vertical-align: top; }
+  .mo-table tr:nth-child(even) td { background: #faf8ff; }
+
+  .empty { color: #999; font-style: italic; font-size: 10pt; }
+</style>
+</head>
+<body>
+
+<!-- EN-TÊTE -->
+<div class="header">
+  <h1>Récapitulatif Atelier</h1>
+  <div class="sub">{{ atelier.titre }} — {{ atelier.classe.nom }}</div>
+</div>
+
+<!-- INFOS GÉNÉRALES -->
+<div class="section">
+  <div class="section-title">Informations générales</div>
+  <table class="meta-table">
+    <tr><td class="label">Titre</td><td>{{ atelier.titre }}</td></tr>
+    <tr><td class="label">Classe</td><td>{{ atelier.classe.nom }}</td></tr>
+    {% if atelier.createur %}<tr><td class="label">Créateur</td><td>{{ atelier.createur.get_full_name }}</td></tr>{% endif %}
+    <tr><td class="label">Date de création</td><td>{{ atelier.date_creation|date:"d/m/Y" }}</td></tr>
+    {% if atelier.type_contenu %}<tr><td class="label">Contenu principal</td><td>{{ atelier.get_type_contenu_display }}</td></tr>{% endif %}
+    {% if atelier.lien_externe %}<tr><td class="label">Lien externe</td><td>{{ atelier.lien_externe }}</td></tr>{% endif %}
+  </table>
+</div>
+
+<!-- DESCRIPTION -->
+{% if atelier.description %}
+<div class="section">
+  <div class="section-title">Description</div>
+  <div class="description">{{ atelier.description }}</div>
+</div>
+{% endif %}
+
+<!-- DOSSIERS ET FICHIERS -->
+{% if dossiers %}
+<div class="section">
+  <div class="section-title">Dossiers et fichiers</div>
+  {% for dossier in dossiers %}
+  <div class="dossier">
+    <div class="dossier-nom">📁 {{ dossier.nom }}{% if dossier.description %} — <span style="font-weight:normal;font-size:10pt;color:#666">{{ dossier.description }}</span>{% endif %}</div>
+    {% if dossier.fichiers_list %}
+    <ul class="fichier-list">
+      {% for f in dossier.fichiers_list %}
+      <li>
+        {% if f.type_contenu == 'fichier' %}<span class="fichier-type type-fichier">Fichier</span>
+        {% elif f.type_contenu == 'lien' %}<span class="fichier-type type-lien">Lien</span>
+        {% elif f.type_contenu == 'iframe' %}<span class="fichier-type type-iframe">Intégré</span>
+        {% endif %}
+        {{ f.nom }}
+        {% if f.type_contenu == 'lien' and f.lien_externe %}<br><span style="font-size:8pt;color:#0d6efd">{{ f.lien_externe }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">Aucun fichier dans ce dossier.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- URLS EXTRAITES (iframes) -->
+{% if urls %}
+<div class="section">
+  <div class="section-title">Liens intégrés extraits (iframes)</div>
+  {% for url in urls %}
+  <div class="url-block">{{ url }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- MODES OPÉRATOIRES -->
+{% if modes_operatoires %}
+<div class="section">
+  <div class="section-title">Modes opératoires</div>
+  {% for mo in modes_operatoires %}
+  <p style="font-weight:bold;margin:6px 0 3px;">{{ mo.titre }}{% if mo.description %} — <span style="font-weight:normal;font-size:10pt">{{ mo.description }}</span>{% endif %}</p>
+  {% if mo.lignes_list %}
+  <table class="mo-table">
+    <thead><tr><th>#</th><th>Phase</th><th>Opérations</th><th>Matériels</th><th>Contrôle</th></tr></thead>
+    <tbody>
+    {% for l in mo.lignes_list %}
+    <tr>
+      <td>{{ l.ordre }}</td>
+      <td>{{ l.phase }}</td>
+      <td>{{ l.operations|truncatewords:30 }}</td>
+      <td>{{ l.materiels|truncatewords:20 }}</td>
+      <td>{{ l.controle|truncatewords:20 }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+</body>
+</html>

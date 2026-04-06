@@ -980,9 +980,10 @@ class PFMP(models.Model):
         ('iframe', 'Intégration (iframe)'),
     ]
 
-    classe = models.ForeignKey(
-        Classe, on_delete=models.CASCADE, 
-        related_name='pfmp', verbose_name='Classe'
+    # Ancien FK gardé temporairement pour la migration de données
+    classes = models.ManyToManyField(
+        Classe, related_name='pfmp', blank=True,
+        verbose_name='Classes concernées'
     )
     titre = models.CharField(
         max_length=200, verbose_name='Titre',
@@ -1022,10 +1023,11 @@ class PFMP(models.Model):
     class Meta:
         verbose_name = "PFMP"
         verbose_name_plural = "PFMP"
-        ordering = ['classe__nom', 'date_debut']
+        ordering = ['date_debut', 'titre']
 
     def __str__(self):
-        return f"{self.titre} - {self.classe.nom}"
+        classes_str = ", ".join(c.nom for c in self.classes.all()) or "Sans classe"
+        return f"{self.titre} - {classes_str}"
 
     def est_en_cours(self):
         from datetime import date

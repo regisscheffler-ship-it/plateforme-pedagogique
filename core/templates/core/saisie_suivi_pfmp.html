@@ -71,12 +71,12 @@
         </div>
         <div>
             <h1>Suivi de présence PFMP</h1>
-            <p>{{ pfmp.titre }} — {{ pfmp.classe.nom }}</p>
+            <p>{{ pfmp.titre }} — {{ pfmp.classes.all|join:", " }}</p>
         </div>
     </div>
 
     <div class="pfmp-info">
-        <div><strong>Classe :</strong> {{ pfmp.classe.nom }}</div>
+        <div><strong>Classes :</strong> {{ pfmp.classes.all|join:", " }}</div>
         {% if pfmp.date_debut %}<div><strong>Du :</strong> {{ pfmp.date_debut|date:"d/m/Y" }}</div>{% endif %}
         {% if pfmp.date_fin   %}<div><strong>Au :</strong> {{ pfmp.date_fin|date:"d/m/Y" }}</div>{% endif %}
         <div><strong>Élèves :</strong> {{ eleves_avec_suivi|length }}</div>
@@ -128,7 +128,7 @@
         </button>
     </form>
     {% else %}
-        <div style="text-align:center;padding:3rem;color:#94a3b8;">Aucun élève actif dans la classe {{ pfmp.classe.nom }}.</div>
+        <div style="text-align:center;padding:3rem;color:#94a3b8;">Aucun élève actif dans les classes sélectionnées.</div>
     {% endif %}
 </div>
 {% endblock %}

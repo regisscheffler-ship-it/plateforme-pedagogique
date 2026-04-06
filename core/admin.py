@@ -26,7 +26,7 @@ admin.site.register(TypeRessource)
 @admin.register(SuiviPFMP)
 class SuiviPFMPAdmin(admin.ModelAdmin):
     list_display = ['pfmp', 'eleve', 'nb_jours_effectues', 'nb_jours_manques_justifies', 'nb_jours_manques_injustifies', 'date_maj']
-    list_filter  = ['pfmp__classe']
+    list_filter  = ['pfmp__classes']
     search_fields = ['eleve__user__last_name', 'pfmp__titre']
     autocomplete_fields = []
 

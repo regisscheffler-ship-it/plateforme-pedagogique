@@ -263,7 +263,7 @@
     <div class="form-card">
 
         <div class="alert-info">
-            Modification de : <span style="font-style:italic;">{{ pfmp.titre }}</span> — {{ pfmp.classe.nom }}
+            Modification de : <span style="font-style:italic;">{{ pfmp.titre }}</span> — {{ pfmp.classes.all|join:", " }}
         </div>
 
         <form method="POST" enctype="multipart/form-data">
@@ -277,14 +277,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Classe <span class="required">*</span></label>
-                    <select name="classe" class="form-control" required>
+                    <label>Classes concernées <span class="required">*</span></label>
+                    <select name="classes" class="form-control" required multiple style="min-height:120px;">
                         {% for classe in classes %}
-                        <option value="{{ classe.id }}" {% if pfmp.classe_id == classe.id %}selected{% endif %}>
+                        <option value="{{ classe.id }}" {% if classe in pfmp.classes.all %}selected{% endif %}>
                             {{ classe.nom }}
                         </option>
                         {% endfor %}
                     </select>
+                    <small style="color:#6c757d;">Maintenez Ctrl (ou Cmd) pour sélectionner plusieurs classes</small>
                 </div>
 
                 <div class="form-group">

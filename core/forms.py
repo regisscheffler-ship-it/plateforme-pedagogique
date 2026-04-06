@@ -95,9 +95,9 @@ class ThemeForm(forms.ModelForm):
 class PFMPForm(forms.ModelForm):
     class Meta:
         model = PFMP
-        fields = ['classe', 'titre', 'description', 'date_debut', 'date_fin', 'type_contenu', 'fichier', 'lien_externe', 'code_iframe']
+        fields = ['classes', 'titre', 'description', 'date_debut', 'date_fin', 'type_contenu', 'fichier', 'lien_externe', 'code_iframe']
         widgets = {
-            'classe': forms.Select(attrs={'class': 'form-control'}),
+            'classes': forms.SelectMultiple(attrs={'class': 'form-control', 'size': '5'}),
             'titre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Stage Janvier'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'date_debut': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),

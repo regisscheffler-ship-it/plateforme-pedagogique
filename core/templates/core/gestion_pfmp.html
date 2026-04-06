@@ -359,7 +359,7 @@
         {% for pfmp in pfmps %}
         <div class="pfmp-card">
             <h3>{{ pfmp.titre }}</h3>
-            <span class="pfmp-classe">{{ pfmp.classe.nom }}</span>
+            <span class="pfmp-classe">{{ pfmp.classes.all|join:", " }}</span>
 
             <div class="pfmp-meta">
                 <div class="pfmp-meta-item">

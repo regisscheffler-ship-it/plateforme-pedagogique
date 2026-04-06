@@ -290,7 +290,7 @@ def generer_zip_complet(annee):
         fiches = (
             FicheContrat.objects
             .filter(actif=True).filter(q_annee | q_dates)
-            .select_related('classe', 'referentiel', 'createur')
+            .select_related('classe', 'referentiel', 'createur', 'atelier')
             .distinct()
         )
 
@@ -354,6 +354,13 @@ def generer_zip_complet(annee):
                     ]),
                 )
                 nb += 1
+
+            # C) Atelier lié ?
+            if fc.atelier_id:
+                try:
+                    nb += _ajouter_atelier_au_zip(zf, fc.atelier, base, erreurs)
+                except Exception as e:
+                    logger.warning("Atelier lié à FC %s : %s", fc.pk, e)
 
         # ════════════════════════════════════
         # 2. TRAVAUX RENDUS
@@ -494,11 +501,15 @@ Fichiers exportés : {nb}
 Erreurs de lecture : {len(erreurs)}
 
 STRUCTURE DES DOSSIERS :
-  01_Evaluations/   → Notes par compétence (CSV)
+  01_Evaluations/   → Notes par compétence (CSV) + ateliers liés
   02_Travaux_Eleves/ → Fichiers rendus par les élèves
   03_Archives/       → Documents archivés
   04_QCM/            → Résultats des QCM (CSV)
   05_Cours/          → Fichiers de cours (PDF…)
+
+Quand un TP est lié à un atelier, celui-ci est exporté dans
+un sous-dossier Atelier_<nom>/ avec un récap PDF et un fichier
+liens_integres.txt contenant les URLs intégrées.
 
 Les fichiers CSV s'ouvrent avec Excel / LibreOffice Calc.
 Séparateur : point-virgule (;)
@@ -507,6 +518,446 @@ Séparateur : point-virgule (;)
             readme += f"\n\nFICHIERS NON LISIBLES ({len(erreurs)}) :\n"
             readme += '\n'.join(f"  • {e}" for e in erreurs)
 
+        zf.writestr('_LISEZ_MOI.txt', readme)
+
+    buf.seek(0)
+    return buf.getvalue(), nb, erreurs
+
+
+# ───────────────────────────────────────────────
+# GÉNÉRATION PDF (WeasyPrint) — fiche complète
+# ───────────────────────────────────────────────
+
+def _render_fiche_complete_pdf(fiche_eval):
+    """
+    Génère un PDF A4 (bytes) de la fiche complète d'un élève
+    (fiche contrat page 1 + fiche évaluation page 2)
+    en utilisant WeasyPrint et le template fiche_complete_pdf.html.
+    Retourne None en cas d'erreur.
+    """
+    try:
+        from weasyprint import HTML
+    except ImportError:
+        logger.warning("WeasyPrint non disponible — fallback impossible")
+        return None
+
+    from django.template.loader import render_to_string
+    from itertools import groupby as _groupby
+
+    try:
+        fc = fiche_eval.fiche_contrat
+        eleve = fiche_eval.eleve
+
+        # Calcul note si absente
+        if fiche_eval.note_sur_20 is None:
+            try:
+                fiche_eval.calculer_note_sur_20()
+            except Exception:
+                pass
+
+        # ── Page 1 : données contrat ──
+        lignes_contrat = fc.lignes.select_related(
+            'competence_pro', 'sous_competence', 'critere', 'indicateur'
+        ).order_by('ordre')
+
+        cps_vus = set()
+        competences_vises = []
+        for ligne in lignes_contrat:
+            if ligne.competence_pro and ligne.competence_pro.id not in cps_vus:
+                cps_vus.add(ligne.competence_pro.id)
+                competences_vises.append(ligne.competence_pro)
+        competences_vises.sort(key=lambda x: x.code)
+
+        savoirs_bruts = fc.savoirs_associes or ""
+        savoirs_dedupliques = list(dict.fromkeys(
+            l.strip() for l in savoirs_bruts.splitlines() if l.strip()
+        ))
+
+        # ── Page 2 : données évaluation ──
+        from core.models import EvaluationLigne
+        nb_lignes_total = fc.lignes.count()
+        poids_auto = round(100 / nb_lignes_total, 2) if nb_lignes_total > 0 else 10.0
+
+        def get_cp(l):
+            return l.ligne_contrat.competence_pro
+
+        def get_sc(l):
+            return l.ligne_contrat.sous_competence
+
+        lignes_eval = EvaluationLigne.objects.filter(
+            fiche_evaluation=fiche_eval
+        ).select_related(
+            'ligne_contrat__competence_pro',
+            'ligne_contrat__sous_competence',
+            'ligne_contrat__critere',
+            'ligne_contrat__indicateur'
+        ).order_by(
+            'ligne_contrat__competence_pro__code',
+            'ligne_contrat__sous_competence__ordre',
+            'ligne_contrat__ordre'
+        )
+
+        for le in lignes_eval:
+            if not le.ligne_contrat.poids or le.ligne_contrat.poids == 0:
+                le.ligne_contrat.poids = poids_auto
+
+        groupes_competences = []
+        for cp, lignes_cp in _groupby(lignes_eval, key=get_cp):
+            lignes_cp_list = list(lignes_cp)
+            sous_competences = []
+            for sc, lignes_sc in _groupby(lignes_cp_list, key=get_sc):
+                sous_competences.append({
+                    'sous_competence': sc,
+                    'lignes': list(lignes_sc)
+                })
+            groupes_competences.append({
+                'competence_pro': cp,
+                'lignes': lignes_cp_list,
+                'sous_competences': sous_competences,
+            })
+
+        html_string = render_to_string('core/fiche_complete_pdf.html', {
+            'fiche_contrat': fc,
+            'fiche_eval': fiche_eval,
+            'eleve': eleve,
+            'competences_vises': competences_vises,
+            'savoirs_dedupliques': savoirs_dedupliques,
+            'groupes_competences': groupes_competences,
+            'poids_auto': poids_auto,
+        })
+
+        pdf_bytes = HTML(string=html_string).write_pdf()
+        return pdf_bytes
+
+    except Exception as e:
+        logger.error("Erreur génération PDF fiche complète : %s", e)
+        return None
+
+
+# ───────────────────────────────────────────────
+# ATELIERS : extraction URLs + PDF récap + liens.txt
+# ───────────────────────────────────────────────
+
+_RE_SRC = re.compile(r'(?:src|href)\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+
+
+def _extraire_urls_iframe(code_iframe):
+    """Extrait toutes les URLs (src=, href=) d'un code HTML iframe/embed."""
+    if not code_iframe:
+        return []
+    urls = _RE_SRC.findall(code_iframe)
+    # Normaliser
+    result = []
+    for u in urls:
+        u = u.strip()
+        if u.startswith('//'):
+            u = 'https:' + u
+        if u.startswith('http'):
+            result.append(u)
+    return result
+
+
+def _collecter_urls_atelier(atelier):
+    """
+    Collecte toutes les URLs liées à un atelier :
+    lien principal, iframes principal, fichiers de dossiers.
+    Retourne une liste de (source, url).
+    """
+    urls = []
+    # Lien principal
+    if atelier.lien_externe:
+        urls.append(('Lien principal', atelier.lien_externe))
+    # Iframe principal
+    for u in _extraire_urls_iframe(atelier.code_iframe):
+        urls.append(('Iframe principal', u))
+    # Fichiers dans les dossiers
+    from core.models import DossierAtelier, FichierAtelier
+    for dossier in DossierAtelier.objects.filter(atelier=atelier, actif=True):
+        for fic in FichierAtelier.objects.filter(dossier=dossier, actif=True):
+            if fic.lien_externe:
+                urls.append((f'Dossier "{dossier.nom}" / {fic.nom}', fic.lien_externe))
+            for u in _extraire_urls_iframe(fic.code_iframe):
+                urls.append((f'Dossier "{dossier.nom}" / {fic.nom} (iframe)', u))
+    return urls
+
+
+def _generer_liens_txt(atelier):
+    """Génère le contenu texte d'un fichier liens_integres.txt pour un atelier."""
+    urls = _collecter_urls_atelier(atelier)
+    if not urls:
+        return None
+    lines = [f"LIENS INTÉGRÉS — Atelier : {atelier.titre}", f"Classe : {atelier.classe.nom}", "=" * 50, ""]
+    for source, url in urls:
+        lines.append(f"[{source}]")
+        lines.append(f"  {url}")
+        lines.append("")
+    return '\n'.join(lines)
+
+
+def _render_atelier_recap_pdf(atelier):
+    """
+    Génère un PDF A4 (bytes) récapitulatif d'un atelier
+    via WeasyPrint et le template atelier_recap_pdf.html.
+    Retourne None en cas d'erreur.
+    """
+    try:
+        from weasyprint import HTML
+    except ImportError:
+        logger.warning("WeasyPrint non disponible pour récap atelier")
+        return None
+
+    from django.template.loader import render_to_string
+    from core.models import DossierAtelier, FichierAtelier, ModeOperatoire
+
+    try:
+        # Dossiers + fichiers
+        dossiers = DossierAtelier.objects.filter(atelier=atelier, actif=True).order_by('ordre', 'nom')
+        dossiers_data = []
+        for d in dossiers:
+            fichiers = list(FichierAtelier.objects.filter(dossier=d, actif=True).order_by('ordre', 'nom'))
+            d.fichiers_list = fichiers
+            dossiers_data.append(d)
+
+        # URLs extraites
+        all_urls = []
+        for u in _extraire_urls_iframe(atelier.code_iframe):
+            all_urls.append(u)
+        for d in dossiers:
+            for fic in FichierAtelier.objects.filter(dossier=d, actif=True):
+                for u in _extraire_urls_iframe(fic.code_iframe):
+                    all_urls.append(u)
+
+        # Modes opératoires
+        modes = ModeOperatoire.objects.filter(atelier=atelier, actif=True)
+        for mo in modes:
+            mo.lignes_list = list(mo.lignes.order_by('ordre'))
+
+        html_string = render_to_string('core/atelier_recap_pdf.html', {
+            'atelier': atelier,
+            'dossiers': dossiers_data,
+            'urls': all_urls,
+            'modes_operatoires': modes,
+        })
+
+        return HTML(string=html_string).write_pdf()
+
+    except Exception as e:
+        logger.error("Erreur PDF récap atelier %s : %s", atelier.pk, e)
+        return None
+
+
+def _ajouter_atelier_au_zip(zf, atelier, base_path, erreurs):
+    """
+    Ajoute au ZIP le récap PDF + liens.txt + fichiers téléchargeables
+    d'un atelier sous base_path/Atelier_<titre>/.
+    Retourne le nombre de fichiers ajoutés.
+    """
+    from core.models import DossierAtelier, FichierAtelier
+
+    nb = 0
+    atelier_dir = f"{base_path}/Atelier_{safe(atelier.titre)}"
+
+    # 1) PDF récapitulatif
+    pdf = _render_atelier_recap_pdf(atelier)
+    if pdf:
+        zf.writestr(uniq(zf, f"{atelier_dir}/recap_atelier.pdf"), pdf)
+        nb += 1
+
+    # 2) Liens intégrés (texte)
+    liens = _generer_liens_txt(atelier)
+    if liens:
+        zf.writestr(uniq(zf, f"{atelier_dir}/liens_integres.txt"), liens)
+        nb += 1
+
+    # 3) Fichiers téléchargeables dans les dossiers
+    for dossier in DossierAtelier.objects.filter(atelier=atelier, actif=True):
+        for fic in FichierAtelier.objects.filter(dossier=dossier, actif=True, type_contenu='fichier'):
+            if fic.fichier and fic.fichier.name:
+                path = f"{atelier_dir}/{safe(dossier.nom)}/{safe(fic.nom)}{ext_of(fic.fichier)}"
+                if ajouter(zf, fic.fichier, path, erreurs):
+                    nb += 1
+
+    # 4) Fichier principal de l'atelier
+    if atelier.type_contenu == 'fichier' and atelier.fichier and atelier.fichier.name:
+        path = f"{atelier_dir}/{safe(atelier.titre)}{ext_of(atelier.fichier)}"
+        if ajouter(zf, atelier.fichier, path, erreurs):
+            nb += 1
+
+    return nb
+
+
+# ───────────────────────────────────────────────
+# EXPORT ZIP AVANCÉ avec tri : par classe / élève / catégorie
+# ───────────────────────────────────────────────
+
+def generer_zip_avance(annee, tri='par_classe', classes_ids=None, eleves_ids=None, categories=None):
+    """
+    Génère un ZIP structuré selon le tri choisi.
+
+    tri : 'par_classe' | 'par_eleve' | 'par_categorie'
+
+    Structure par_classe :
+        <Classe>/Evaluations/<TP>/<Eleve>.pdf
+        <Classe>/<Catégorie>/<fichier>
+
+    Structure par_eleve :
+        <Eleve> (<Classe>)/Evaluations/<TP>.pdf
+        _Documents_generaux/<Catégorie>/<fichier>
+
+    Structure par_categorie :
+        Evaluations/<Classe>/<TP>/<Eleve>.pdf
+        <Catégorie>/<fichier>
+
+    Retourne (zip_bytes, nb_fichiers, liste_erreurs).
+    """
+    from core.models import (
+        Archive, Classe, FicheContrat, FicheEvaluation,
+        ProfilUtilisateur, Atelier,
+    )
+
+    d1, d2 = annee_dates(annee)
+    q_annee = Q(classe__annee_scolaire=annee)
+    q_dates = Q(date_creation__date__range=(d1, d2))
+
+    erreurs = []
+    nb = 0
+    buf = io.BytesIO()
+
+    # ── Filtrer les évaluations ──
+    fiches_qs = (
+        FicheContrat.objects
+        .filter(actif=True).filter(q_annee | q_dates)
+        .select_related('classe', 'referentiel', 'createur', 'atelier')
+        .distinct()
+    )
+    if classes_ids:
+        fiches_qs = fiches_qs.filter(classe_id__in=classes_ids)
+
+    # ── Filtrer les archives manuelles ──
+    archives_qs = Archive.objects.filter(actif=True, annee_scolaire=annee)
+    if categories:
+        archives_qs = archives_qs.filter(categorie__in=categories)
+
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+
+        # ════════════════════════════════════════
+        # A) ÉVALUATIONS → PDF fiche complète par élève
+        # ════════════════════════════════════════
+        for fc in fiches_qs:
+            cl_nom = safe(fc.classe.nom) if fc.classe else 'Sans_classe'
+            tp_nom = safe(fc.titre_tp)
+
+            evals_qs = (
+                FicheEvaluation.objects
+                .filter(fiche_contrat=fc)
+                .select_related('eleve__user', 'eleve__classe')
+                .order_by('eleve__user__last_name')
+            )
+            if eleves_ids:
+                evals_qs = evals_qs.filter(eleve_id__in=eleves_ids)
+
+            for fiche_eval in evals_qs:
+                eleve = fiche_eval.eleve
+                if not eleve or not eleve.user:
+                    continue
+
+                nom_eleve = safe(f"{eleve.user.last_name}_{eleve.user.first_name}")
+
+                # Générer le PDF de la fiche complète
+                pdf_data = _render_fiche_complete_pdf(fiche_eval)
+                if not pdf_data:
+                    erreurs.append(f"PDF échoué : {nom_eleve} / {tp_nom}")
+                    continue
+
+                # Selon le tri, déterminer le chemin dans le ZIP
+                if tri == 'par_classe':
+                    path = f"{cl_nom}/Evaluations/{tp_nom}/{nom_eleve}.pdf"
+                elif tri == 'par_eleve':
+                    path = f"{nom_eleve} ({cl_nom})/Evaluations/{tp_nom}.pdf"
+                elif tri == 'par_categorie':
+                    path = f"Evaluations/{cl_nom}/{tp_nom}/{nom_eleve}.pdf"
+                else:
+                    path = f"{cl_nom}/Evaluations/{tp_nom}/{nom_eleve}.pdf"
+
+                zf.writestr(uniq(zf, path), pdf_data)
+                nb += 1
+
+            # ── Atelier lié à cette fiche contrat ? ──
+            if fc.atelier_id:
+                try:
+                    atelier = fc.atelier
+                    if tri == 'par_classe':
+                        atelier_base = f"{cl_nom}/Evaluations/{tp_nom}"
+                    elif tri == 'par_categorie':
+                        atelier_base = f"Evaluations/{cl_nom}/{tp_nom}"
+                    else:
+                        # par_eleve : placer l'atelier dans un dossier commun par TP
+                        atelier_base = f"_Ateliers/{cl_nom}/{tp_nom}"
+                    nb += _ajouter_atelier_au_zip(zf, atelier, atelier_base, erreurs)
+                except Exception as e:
+                    logger.warning("Atelier lié à FC %s : %s", fc.pk, e)
+
+        # ════════════════════════════════════════
+        # B) ARCHIVES MANUELLES (examens, administratif, ressources, autre)
+        # ════════════════════════════════════════
+        for arc in archives_qs.order_by('categorie', 'titre'):
+            if not arc.fichier or not arc.fichier.name:
+                continue
+
+            cat_label = safe(arc.get_categorie_display())
+            titre = safe(arc.titre)
+            ext = ext_of(arc.fichier)
+
+            # Déterminer la classe si possible via fiche_contrat_id
+            arc_classe = ''
+            fc_id = extract_id(arc.description, 'fiche_contrat_id:')
+            if fc_id:
+                try:
+                    fc_obj = FicheContrat.objects.select_related('classe').get(id=fc_id)
+                    if fc_obj.classe:
+                        arc_classe = safe(fc_obj.classe.nom)
+                except FicheContrat.DoesNotExist:
+                    pass
+
+            if tri == 'par_classe':
+                base = f"{arc_classe or '_General'}/{cat_label}"
+            elif tri == 'par_eleve':
+                base = f"_Documents_generaux/{cat_label}"
+            elif tri == 'par_categorie':
+                if arc_classe:
+                    base = f"{cat_label}/{arc_classe}"
+                else:
+                    base = cat_label
+            else:
+                base = cat_label
+
+            path = f"{base}/{titre}{ext}"
+            if ajouter(zf, arc.fichier, path, erreurs):
+                nb += 1
+
+        # ════════════════════════════════════════
+        # LISEZ-MOI
+        # ════════════════════════════════════════
+        tri_labels = {
+            'par_classe': 'Par classe',
+            'par_eleve': 'Par élève',
+            'par_categorie': 'Par catégorie',
+        }
+        readme = f"""EXPORT ARCHIVES AVANCÉ — {annee}
+{'=' * 45}
+Tri : {tri_labels.get(tri, tri)}
+Fichiers exportés : {nb}
+Erreurs : {len(erreurs)}
+
+Les fiches d'évaluation complètes sont au format PDF (2 pages A4).
+Les documents manuels (examens, administratif, ressources) sont
+inclus dans leur format d'origine.
+Quand un TP est lié à un atelier, un sous-dossier Atelier_<nom>/
+contient un récap PDF et un fichier liens_integres.txt.
+"""
+        if erreurs:
+            readme += f"\n\nERREURS ({len(erreurs)}) :\n"
+            readme += '\n'.join(f"  • {e}" for e in erreurs)
         zf.writestr('_LISEZ_MOI.txt', readme)
 
     buf.seek(0)
