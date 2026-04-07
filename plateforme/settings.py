@@ -142,14 +142,7 @@ USE_TZ = True
 # ===================================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-
-# Pendant les tests, éviter l'utilisation du manifest staticfiles (collectstatic
-# n'est pas exécuté dans l'environnement de test). Utiliser le storage simple.
-import sys
-if 'test' in sys.argv:
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # ===================================================================
 # FICHIERS MEDIA — Cloudinary en prod si identifiants fournis, local en dev
@@ -171,10 +164,7 @@ if USE_CLOUDINARY:
         api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
         secure=True,
     )
-    # Use modern DEFAULT_FILE_STORAGE and STORAGES mapping for Django
-    # Use an auto-selecting Cloudinary storage that picks resource_type
-    # (image / video / raw) from the file extension so PDFs are stored as raw.
-    DEFAULT_FILE_STORAGE = 'core.storage.AutoMediaCloudinaryStorage'
+    # STORAGES replaces DEFAULT_FILE_STORAGE (removed in Django 6)
     STORAGES = {
         'default': {
             'BACKEND': 'core.storage.AutoMediaCloudinaryStorage',
@@ -187,7 +177,7 @@ if USE_CLOUDINARY:
 else:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    # STORAGES replaces DEFAULT_FILE_STORAGE (removed in Django 6)
     STORAGES = {
         'default': {
             'BACKEND': 'django.core.files.storage.FileSystemStorage',
@@ -202,6 +192,13 @@ CLOUDINARY_STORAGE = {
     'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
 }
+
+# En mode test, utiliser le storage simple (pas de manifest)
+import sys
+if 'test' in sys.argv:
+    STORAGES['staticfiles'] = {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    }
 
 # ===================================================================
 # AUTHENTIFICATION — Redirections
