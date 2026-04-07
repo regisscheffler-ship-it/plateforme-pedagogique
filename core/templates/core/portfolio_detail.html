@@ -204,9 +204,9 @@
             <p>{{ portfolio.eleve.classe.nom }} — Portfolio BAC Pro</p>
         </div>
         <div class="header-actions">
-            <a href="{% url 'core:fiche_portfolio_pdf_export' portfolio.id %}" class="btn-primary" style="background:#6b7280;">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Exporter PDF
+            <a href="{% url 'core:fiche_portfolio_pdf_export' portfolio.id %}" class="btn-primary" style="background:#6b7280;" target="_blank">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><rect x="6" y="14" width="12" height="8"></rect><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path></svg>
+                Imprimer le portfolio
             </a>
             <a href="{% url 'core:fiche_portfolio_create' portfolio.id %}" class="btn-primary">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke-linecap="round"></line><line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round"></line></svg>
@@ -251,6 +251,7 @@
                 <span class="badge-type badge-{{ fiche.type_evaluation }}">{{ fiche.get_type_evaluation_display }}</span>
                 <span class="fiche-titre">{{ fiche.titre }}</span>
                 <span class="fiche-date">{{ fiche.date_creation|date:"d/m/Y" }}</span>
+                {% with nb_ph=fiche.photos.all|length %}{% if nb_ph %}<span style="font-size:0.72rem;background:#f1f5f9;color:#64748b;border-radius:10px;padding:2px 8px;flex-shrink:0;">🖼️ {{ nb_ph }}</span>{% endif %}{% endwith %}
                 <span class="badge-status {% if fiche.validee_par_prof %}ok{% else %}pending{% endif %}">
                     {% if fiche.validee_par_prof %}
                     <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
@@ -317,16 +318,12 @@
                     <div class="photos-row">
                         {% for photo in fiche.photos.all %}
                         {% if photo.image %}
-                            {% with photo.image.url as url %}
-                            {% if ".pdf" in url|lower or ".doc" in url|lower %}
-                            <a class="photo-doc" href="{{ url }}" target="_blank">
-                                <svg width="20" height="20" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                <span style="margin-top:4px;">{{ photo.legende|default:photo.image.name|slice:"-12:" }}</span>
-                            </a>
-                            {% else %}
-                            <img src="{{ url }}" class="photo-thumb" alt="{{ photo.legende }}" title="{{ photo.legende }}">
-                            {% endif %}
-                            {% endwith %}
+                        <a href="{{ photo.image.url }}" target="_blank" style="display:inline-block;">
+                            <img src="{{ photo.image.url }}" class="photo-thumb"
+                                 alt="{{ photo.legende }}"
+                                 title="{% if photo.legende %}{{ photo.legende }}{% else %}Voir la photo{% endif %}"
+                                 onerror="this.style.display='none';this.parentElement.classList.add('photo-doc');this.parentElement.innerHTML+='📎';">
+                        </a>
                         {% endif %}
                         {% endfor %}
                     </div>

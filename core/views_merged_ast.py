@@ -3264,39 +3264,25 @@ def fiche_portfolio_eleve_update(request, fiche_id):
 
 @login_required
 def fiche_portfolio_pdf_export(request, portfolio_id):
-    """Génère un PDF de toutes les fiches validées d'un portfolio (prof ou élève propriétaire)."""
+    """Page HTML imprimable du portfolio (prof uniquement). Impression via window.print()."""
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
 
-    # Contrôle d'accès : prof ou élève propriétaire
+    # Contrôle d'accès : profs seulement (même accès que portfolio_detail)
     try:
         profil = request.user.profil
     except ProfilUtilisateur.DoesNotExist:
         return redirect('core:home')
 
-    if profil.est_eleve() and portfolio.eleve != profil:
-        messages.error(request, "⛔ Accès refusé.")
+    if profil.est_eleve():
+        messages.error(request, "⛔ Accès réservé aux professeurs.")
         return redirect('core:mon_portfolio')
 
     fiches = portfolio.fiches.prefetch_related('competences', 'photos').order_by('date_creation')
 
-    html_string = render_to_string('core/fiche_portfolio_pdf.html', {
+    return render(request, 'core/fiche_portfolio_print.html', {
         'portfolio': portfolio,
         'fiches': fiches,
-        'eleve': portfolio.eleve,
-        'request': request,
     })
-
-    pdf_bytes, ext = html_to_pdf_bytes(html_string, request)
-
-    nom = f"portfolio_{portfolio.eleve.user.last_name}_{portfolio.eleve.user.first_name}{ext}"
-    nom = nom.replace(' ', '_').lower()
-
-    if ext == '.pdf':
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{nom}"'
-    else:
-        response = HttpResponse(pdf_bytes, content_type='text/html')
-    return response
 
 
 def gestion_pfmp(request):
