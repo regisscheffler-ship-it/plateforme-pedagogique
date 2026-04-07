@@ -320,6 +320,47 @@
                 <div class="hint-text">Ex : Comment optimiser… ? Pourquoi faut-il… ?</div>
             </div>
         </div>
+        <!-- ═══ ZONES ÉLÈVE — SUITE ═══ -->
+        <div class="info-section">
+            <div class="section-heading">
+                Analyse et consignes
+                <span class="tag-eleve">Élève</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                <div class="eleve-zone" style="border-color:#bfdbfe;">
+                    <div class="eleve-zone-title" style="color:#1d4ed8;">&#128214; Pour cela, je dois connaître</div>
+                    <textarea name="savoirs_necessaires" class="form-textarea"
+                              placeholder="Savoirs, notions, connaissances théoriques nécessaires…"
+                              {% if fiche.validee_par_prof %}disabled{% endif %}>{{ fiche.savoirs_necessaires }}</textarea>
+                    <div class="hint-text">Ex : Je dois connaître les normes…, les propriétés…</div>
+                </div>
+                <div class="eleve-zone" style="border-color:#d1d5db;">
+                    <div class="eleve-zone-title">&#128295; Je dispose (matériels, matériaux)</div>
+                    <textarea name="materiels_disponibles" class="form-textarea"
+                              placeholder="Outils, matériaux et équipements à disposition…"
+                              {% if fiche.validee_par_prof %}disabled{% endif %}>{{ fiche.materiels_disponibles }}</textarea>
+                    <div class="hint-text">Ex : J’ai à disposition…, l’atelier possède…</div>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="eleve-zone" style="border-color:#6ee7b7;">
+                    <div class="eleve-zone-title" style="color:#065f46;">&#128203; Consigne de l’entreprise</div>
+                    <textarea name="consigne_entreprise" class="form-textarea" style="min-height:80px;"
+                              placeholder="Quelle est la consigne ou mission donnée par le tuteur…"
+                              {% if fiche.validee_par_prof %}disabled{% endif %}>{{ fiche.consigne_entreprise }}</textarea>
+                    <div class="hint-text">Ex : Le chef de chantier m’a demandé de…</div>
+                </div>
+                <div class="eleve-zone" style="border-color:#fca5a5;">
+                    <div class="eleve-zone-title" style="color:#b91c1c;">&#9888;&#65039; Risques et EPI</div>
+                    <textarea name="risques_epi" class="form-textarea" style="min-height:80px;"
+                              placeholder="Risques identifiés et équipements de protection utilisés…"
+                              {% if fiche.validee_par_prof %}disabled{% endif %}>{{ fiche.risques_epi }}</textarea>
+                    <div class="hint-text">Ex : Risque de coupure → port de gants…</div>
+                </div>
+            </div>
+        </div>
 
         <!-- ═══ PHOTOS ═══ -->
         <div class="info-section">

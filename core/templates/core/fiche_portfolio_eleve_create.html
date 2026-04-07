@@ -216,6 +216,41 @@
                 <div class="hint-text">Ex : Comment optimiser… ? Pourquoi faut-il… ?</div>
             </div>
         </div>
+        <!-- ANALYSE ET CONSIGNES -->
+        <div class="info-section">
+            <div class="section-heading">
+                Analyse et consignes
+                <span class="tag-eleve">Élève</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                <div class="eleve-zone" style="border-color:#bfdbfe;">
+                    <div class="eleve-zone-title" style="color:#1d4ed8;">&#128214; Pour cela, je dois connaître</div>
+                    <textarea name="savoirs_necessaires" class="form-textarea"
+                              placeholder="Savoirs, notions, connaissances théoriques nécessaires…">{{ request.POST.savoirs_necessaires|default:'' }}</textarea>
+                    <div class="hint-text">Ex : Je dois connaître les normes…</div>
+                </div>
+                <div class="eleve-zone" style="border-color:#d1d5db;">
+                    <div class="eleve-zone-title">&#128295; Je dispose (matériels, matériaux)</div>
+                    <textarea name="materiels_disponibles" class="form-textarea"
+                              placeholder="Outils, matériaux et équipements à disposition…">{{ request.POST.materiels_disponibles|default:'' }}</textarea>
+                    <div class="hint-text">Ex : J’ai à disposition…</div>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="eleve-zone" style="border-color:#6ee7b7;">
+                    <div class="eleve-zone-title" style="color:#065f46;">&#128203; Consigne de l’entreprise</div>
+                    <textarea name="consigne_entreprise" class="form-textarea" style="min-height:70px;"
+                              placeholder="Consigne ou mission donnée par le tuteur…">{{ request.POST.consigne_entreprise|default:'' }}</textarea>
+                </div>
+                <div class="eleve-zone" style="border-color:#fca5a5;">
+                    <div class="eleve-zone-title" style="color:#b91c1c;">&#9888;&#65039; Risques et EPI</div>
+                    <textarea name="risques_epi" class="form-textarea" style="min-height:70px;"
+                              placeholder="Risques identifiés, équipements de protection…">{{ request.POST.risques_epi|default:'' }}</textarea>
+                </div>
+            </div>
+        </div>
 
         <!-- PHOTOS -->
         <div class="info-section" style="border-bottom:none;">

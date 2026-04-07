@@ -1,9 +1,16 @@
+"""Réécriture complète de fiche_portfolio_print.html pour correspondre au template papier."""
+import os
+
+BASE = r"C:\Users\regis\OneDrive - CR HDF\Documents\plateforme_pedagogique v2 Copilote\plateforme-pedagogique"
+path = os.path.join(BASE, "core", "templates", "core", "fiche_portfolio_print.html")
+
+TEMPLATE = """\
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Portfolio — {{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }}</title>
+<title>Portfolio \u2014 {{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }}</title>
 <style>
 /* =============================================================
    RESET & BASE
@@ -14,7 +21,7 @@
 
 body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0; font-size: 11px; }
 
-/* ─── BARRE D'ACTIONS (masquée à l'impression) ─────────────── */
+/* ─── BARRE D'ACTIONS (masqu\u00e9e \u00e0 l'impression) ─────────────── */
 .action-bar {
     background: white; padding: 10px 20px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.12);
@@ -80,7 +87,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
 .badge-ok   { background:#d1fae5; color:#065f46; }
 .badge-wait { background:#fef3c7; color:#92400e; }
 
-/* ─── FICHE : EN-TÊTE ──────────────────────────────────────── */
+/* ─── FICHE : EN-T\u00caTE ──────────────────────────────────────── */
 .fiche-header {
     display: flex; align-items: flex-start; gap: 10px;
     border-bottom: 3px solid #d97706; padding-bottom: 8px; margin-bottom: 8px;
@@ -122,7 +129,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
 }
 .type-box.checked { background: #1e293b; color: white; }
 
-/* ─── TABLE UNITÉ / COMPÉTENCES / ACTIVITÉS ─────────────────── */
+/* ─── TABLE UNIT\u00c9 / COMP\u00c9TENCES / ACTIVIT\u00c9S ─────────────────── */
 .fiche-table {
     width: 100%; border-collapse: collapse; font-size: 9.5px;
     margin-bottom: 7px;
@@ -190,7 +197,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
 }
 .text-bloc .empty { color: #d1d5db; font-style: italic; font-size: 9px; }
 
-/* Orange : description, observation, problématique */
+/* Orange : description, observation, probl\u00e9matique */
 .bloc-orange { border-color: #f59e0b; }
 .bloc-orange .bloc-title { color: #92400e; }
 
@@ -198,7 +205,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
 .bloc-bleu { border-color: #3b82f6; }
 .bloc-bleu .bloc-title { color: #1d4ed8; }
 
-/* Gris : matériels */
+/* Gris : mat\u00e9riels */
 .bloc-gris { border-color: #94a3b8; }
 .bloc-gris .bloc-title { color: #374151; }
 
@@ -236,7 +243,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
     </button>
     <span class="bar-info">
         {{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }}
-        &mdash; {{ portfolio.nb_fiches_validees }}/{{ fiches|length }} validée(s)
+        &mdash; {{ portfolio.nb_fiches_validees }}/{{ fiches|length }} valid\u00e9e(s)
     </span>
 </div>
 
@@ -245,14 +252,14 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="sheet">
     <div class="cover-title">Portfolio BAC Pro</div>
-    <p style="font-size:11px;color:#64748b;margin-bottom:16px;">Document de suivi des activités professionnelles</p>
+    <p style="font-size:11px;color:#64748b;margin-bottom:16px;">Document de suivi des activit\u00e9s professionnelles</p>
 
     <div class="cover-student-box">
-        <div class="label">Élève</div>
+        <div class="label">\u00c9l\u00e8ve</div>
         <div class="value">{{ portfolio.eleve.user.last_name|upper }} {{ portfolio.eleve.user.first_name }}</div>
         <div class="sub">
             {% if portfolio.eleve.classe %}{{ portfolio.eleve.classe.nom }}{% endif %}
-            {% if portfolio.eleve.classe and portfolio.eleve.classe.niveau %} — {{ portfolio.eleve.classe.niveau.nom }}{% endif %}
+            {% if portfolio.eleve.classe and portfolio.eleve.classe.niveau %} \u2014 {{ portfolio.eleve.classe.niveau.nom }}{% endif %}
         </div>
     </div>
 
@@ -263,7 +270,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
         </div>
         <div class="cover-stat green">
             <span class="cover-stat-value">{{ portfolio.nb_fiches_validees }}</span>
-            <span class="cover-stat-label">Validée{% if portfolio.nb_fiches_validees > 1 %}s{% endif %}</span>
+            <span class="cover-stat-label">Valid\u00e9e{% if portfolio.nb_fiches_validees > 1 %}s{% endif %}</span>
         </div>
         <div class="cover-stat" style="border-color:#fcd34d;">
             <span class="cover-stat-value" style="color:#f59e0b;">{{ portfolio.nb_fiches_remplies }}</span>
@@ -271,7 +278,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
         </div>
         <div class="cover-stat" style="border-color:#cbd5e1;">
             <span class="cover-stat-value" style="color:#94a3b8;">{{ portfolio.nb_fiches_vides }}</span>
-            <span class="cover-stat-label">À remplir</span>
+            <span class="cover-stat-label">\u00c0 remplir</span>
         </div>
     </div>
 
@@ -282,7 +289,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
             <span class="num">{{ forloop.counter }}.</span>
             <span class="titre">{{ fiche.titre }}</span>
             <span class="badge-sm badge-{{ fiche.type_evaluation }}">{{ fiche.get_type_evaluation_display }}</span>
-            {% if fiche.validee_par_prof %}<span class="badge-sm badge-ok">✓ Validée</span>
+            {% if fiche.validee_par_prof %}<span class="badge-sm badge-ok">\u2713 Valid\u00e9e</span>
             {% else %}<span class="badge-sm badge-wait">En attente</span>{% endif %}
         </div>
         {% empty %}
@@ -297,7 +304,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
 {% for fiche in fiches %}
 <div class="sheet">
 
-    <!-- ── EN-TÊTE : Logo | Titre | Type ─────────────────────── -->
+    <!-- ── EN-T\u00caTE : Logo | Titre | Type ─────────────────────── -->
     <div class="fiche-header">
         <img src="{% static 'logoL_LOUCHEUR.jpg' %}" alt="Logo" class="fiche-header-logo"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
@@ -315,28 +322,28 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
             </div>
             <div class="type-row">
                 <div class="type-item">
-                    <span class="type-box {% if fiche.type_evaluation == 'formative' %}checked{% endif %}">{% if fiche.type_evaluation == 'formative' %}✓{% endif %}</span>
+                    <span class="type-box {% if fiche.type_evaluation == 'formative' %}checked{% endif %}">{% if fiche.type_evaluation == 'formative' %}\u2713{% endif %}</span>
                     Formative
                 </div>
                 <div class="type-item">
-                    <span class="type-box {% if fiche.type_evaluation == 'sommative' %}checked{% endif %}">{% if fiche.type_evaluation == 'sommative' %}✓{% endif %}</span>
+                    <span class="type-box {% if fiche.type_evaluation == 'sommative' %}checked{% endif %}">{% if fiche.type_evaluation == 'sommative' %}\u2713{% endif %}</span>
                     Sommative
                 </div>
                 <div class="type-item">
-                    <span class="type-box {% if fiche.type_evaluation == 'certificative' %}checked{% endif %}">{% if fiche.type_evaluation == 'certificative' %}✓{% endif %}</span>
+                    <span class="type-box {% if fiche.type_evaluation == 'certificative' %}checked{% endif %}">{% if fiche.type_evaluation == 'certificative' %}\u2713{% endif %}</span>
                     Certificative
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ── TABLEAU : Unité | Compétences | Activités ────────────── -->
+    <!-- ── TABLEAU : Unit\u00e9 | Comp\u00e9tences | Activit\u00e9s ────────────── -->
     <table class="fiche-table">
         <thead>
             <tr>
-                <th class="col-unite">Unité d’évaluation</th>
-                <th class="col-comp">Compétences évaluées</th>
-                <th class="col-activ">Activités Professionnelles</th>
+                <th class="col-unite">Unit\u00e9 d\u2019\u00e9valuation</th>
+                <th class="col-comp">Comp\u00e9tences \u00e9valu\u00e9es</th>
+                <th class="col-activ">Activit\u00e9s Professionnelles</th>
             </tr>
         </thead>
         <tbody>
@@ -348,7 +355,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
                         <span class="comp-code">{{ c.code }}</span>
                         <span>{{ c.nom }}</span>
                     </div>
-                    {% empty %}<span style="color:#d1d5db;font-style:italic;font-size:9px;">Non renseigné</span>{% endfor %}
+                    {% empty %}<span style="color:#d1d5db;font-style:italic;font-size:9px;">Non renseign\u00e9</span>{% endfor %}
                 </td>
                 <td class="col-activ">{{ fiche.activites_professionnelles|default:""|linebreaksbr }}</td>
             </tr>
@@ -362,14 +369,13 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
             {% for photo in fiche.photos.all|slice:":4" %}
             <div class="photo-thumb">
                 <img src="{{ photo.image.url }}" alt="{{ photo.legende|default:'Photo' }}"
-                     onerror="this.parentNode.innerHTML='<div class=photo-placeholder>&#128247;</div>';">
-
+                     onerror="this.parentNode.innerHTML='<div class=photo-placeholder>&#128247;</div>';">\n
                 {% if photo.legende %}
                 <div class="caption">{{ photo.legende }}</div>
                 {% endif %}
             </div>
             {% empty %}
-            <div class="photo-placeholder" style="grid-column:span 4;font-size:9px;color:#94a3b8;font-style:italic;">Aucune photo ajoutée</div>
+            <div class="photo-placeholder" style="grid-column:span 4;font-size:9px;color:#94a3b8;font-style:italic;">Aucune photo ajout\u00e9e</div>
             {% endfor %}
         </div>
     </div>
@@ -378,7 +384,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
     <div class="text-bloc bloc-orange">
         <div class="bloc-title">Description de la situation Professionnelle :</div>
         <div class="bloc-body">
-            {% if fiche.description_situation %}{{ fiche.description_situation }}{% else %}<span class="empty">Non renseigné</span>{% endif %}
+            {% if fiche.description_situation %}{{ fiche.description_situation }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}
         </div>
     </div>
 
@@ -386,30 +392,30 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
     <div class="text-bloc bloc-orange">
         <div class="bloc-title">Observation de son environnement de travail :</div>
         <div class="bloc-body">
-            {% if fiche.observation_environnement %}{{ fiche.observation_environnement }}{% else %}<span class="empty">Non renseigné</span>{% endif %}
+            {% if fiche.observation_environnement %}{{ fiche.observation_environnement }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}
         </div>
     </div>
 
-    <!-- ── PROBLÉMATIQUE ─────────────────────────────────────── -->
+    <!-- ── PROBL\u00c9MATIQUE ─────────────────────────────────────── -->
     <div class="text-bloc bloc-orange" style="min-height:36px;">
-        <div class="bloc-title">Problématique :</div>
+        <div class="bloc-title">Probl\u00e9matique :</div>
         <div class="bloc-body">
-            {% if fiche.problematique %}{{ fiche.problematique }}{% else %}<span class="empty">Non renseigné</span>{% endif %}
+            {% if fiche.problematique %}{{ fiche.problematique }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}
         </div>
     </div>
 
-    <!-- ── GRILLE 2 COLONNES : Savoirs | Matériels ─────────── -->
+    <!-- ── GRILLE 2 COLONNES : Savoirs | Mat\u00e9riels ─────────── -->
     <div class="grid-2">
         <div class="text-bloc bloc-bleu" style="margin-bottom:0;">
-            <div class="bloc-title">Pour cela, je dois connaître :</div>
+            <div class="bloc-title">Pour cela, je dois conna\u00eetre :</div>
             <div class="bloc-body">
-                {% if fiche.savoirs_necessaires %}{{ fiche.savoirs_necessaires }}{% else %}<span class="empty">Non renseigné</span>{% endif %}
+                {% if fiche.savoirs_necessaires %}{{ fiche.savoirs_necessaires }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}
             </div>
         </div>
         <div class="text-bloc bloc-gris" style="margin-bottom:0;">
-            <div class="bloc-title">Je dispose (matériels, matériaux) :</div>
+            <div class="bloc-title">Je dispose (mat\u00e9riels, mat\u00e9riaux) :</div>
             <div class="bloc-body">
-                {% if fiche.materiels_disponibles %}{{ fiche.materiels_disponibles }}{% else %}<span class="empty">Non renseigné</span>{% endif %}
+                {% if fiche.materiels_disponibles %}{{ fiche.materiels_disponibles }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}
             </div>
         </div>
     </div>
@@ -417,15 +423,15 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
     <!-- ── GRILLE 2 COLONNES : Consigne | Risques/EPI ──── -->
     <div class="grid-2">
         <div class="text-bloc bloc-vert" style="margin-bottom:0;">
-            <div class="bloc-title">Consigne de l’entreprise :</div>
+            <div class="bloc-title">Consigne de l\u2019entreprise :</div>
             <div class="bloc-body">
-                {% if fiche.consigne_entreprise %}{{ fiche.consigne_entreprise }}{% else %}<span class="empty">Non renseigné</span>{% endif %}
+                {% if fiche.consigne_entreprise %}{{ fiche.consigne_entreprise }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}
             </div>
         </div>
         <div class="text-bloc bloc-rouge" style="margin-bottom:0;">
-            <div class="bloc-title">Identifier les risques et déduire les EPI :</div>
+            <div class="bloc-title">Identifier les risques et d\u00e9duire les EPI :</div>
             <div class="bloc-body">
-                {% if fiche.risques_epi %}{{ fiche.risques_epi }}{% else %}<span class="empty">Non renseigné</span>{% endif %}
+                {% if fiche.risques_epi %}{{ fiche.risques_epi }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}
             </div>
         </div>
     </div>
@@ -443,10 +449,10 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
         {% if fiche.validee_par_prof %}
         <div class="stamp-validated">
             <svg width="12" height="12" fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
-            Fiche validée — {{ fiche.date_modification|date:"d/m/Y" }}
+            Fiche valid\u00e9e \u2014 {{ fiche.date_modification|date:"d/m/Y" }}
         </div>
         {% else %}
-        <span style="font-size:9px;color:#94a3b8;font-style:italic;">En attente de validation par l’enseignant</span>
+        <span style="font-size:9px;color:#94a3b8;font-style:italic;">En attente de validation par l\u2019enseignant</span>
         {% endif %}
     </div>
 
@@ -455,3 +461,9 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
 
 </body>
 </html>
+"""
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(TEMPLATE)
+
+print(f"OK: {path} ({len(TEMPLATE)} caractères)")

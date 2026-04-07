@@ -1692,6 +1692,22 @@ class FichePortfolio(models.Model):
         blank=True, default='',
         verbose_name='Problématique'
     )
+    savoirs_necessaires = models.TextField(
+        blank=True, default='',
+        verbose_name='Pour cela, je dois connaître'
+    )
+    materiels_disponibles = models.TextField(
+        blank=True, default='',
+        verbose_name='Je dispose (matériels, matériaux)'
+    )
+    consigne_entreprise = models.TextField(
+        blank=True, default='',
+        verbose_name="Consigne de l'entreprise"
+    )
+    risques_epi = models.TextField(
+        blank=True, default='',
+        verbose_name='Identifier les risques et déduire les EPI'
+    )
 
     # ── Validation prof ──
     validee_par_prof = models.BooleanField(

@@ -250,6 +250,23 @@
             </div>
 
             {% if fiche %}
+                     <!-- Savoirs & Materiels (champs prof) -->
+            <div class="form-section">
+                <div class="form-section-title">Savoirs &amp; Matériels (Enseignant)</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_savoirs">Pour cela, je dois connaître</label>
+                        <textarea name="savoirs_necessaires" id="id_savoirs" class="form-control" rows="4"
+                                  placeholder="Notions, savoirs théoriques nécessaires…">{{ fiche.savoirs_necessaires|default:'' }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_materiels">Je dispose (matériels, matériaux)</label>
+                        <textarea name="materiels_disponibles" id="id_materiels" class="form-control" rows="4"
+                                  placeholder="Outils, matériaux, équipements disponibles…">{{ fiche.materiels_disponibles|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
             <!-- Contenu élève (modifiable par le prof) -->
             <div class="form-section">
                 <div class="form-section-title">Contenu élève (description / observation / problématique)</div>
@@ -269,9 +286,21 @@
                     <textarea name="problematique" id="id_problematique" class="form-control" rows="3"
                               placeholder="Quelle question / difficulté l’élève a-t-il rencontrée ?">{{ fiche.problematique|default:'' }}</textarea>
                 </div>
+                <div class="form-row" style="margin-top: 0.8rem;">
+                    <div class="form-group">
+                        <label for="id_consigne">Consigne de l’entreprise</label>
+                        <textarea name="consigne_entreprise" id="id_consigne" class="form-control" rows="3"
+                                  placeholder="Consigne donnée par le tuteur ou l’entreprise…">{{ fiche.consigne_entreprise|default:'' }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_risques">Identifier les risques et déduire les EPI</label>
+                        <textarea name="risques_epi" id="id_risques" class="form-control" rows="3"
+                                  placeholder="Risques identifiés, équipements de protection…">{{ fiche.risques_epi|default:'' }}</textarea>
+                    </div>
+                </div>
             </div>
 
-            <!-- Photos (uniquement en modification) -->
+                        <!-- Photos (uniquement en modification) -->
             <div class="form-section">
                 <div class="form-section-title">Photos de l'élève</div>
 

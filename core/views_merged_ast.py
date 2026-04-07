@@ -3111,10 +3111,15 @@ def fiche_portfolio_update(request, fiche_id):
             fiche.type_evaluation = request.POST.get('type_evaluation', fiche.type_evaluation)
             fiche.unite_evaluation = request.POST.get('unite_evaluation', '').strip()
             fiche.activites_professionnelles = request.POST.get('activites_professionnelles', '').strip()
+            # Champs prof
+            fiche.savoirs_necessaires = request.POST.get('savoirs_necessaires', '').strip()
+            fiche.materiels_disponibles = request.POST.get('materiels_disponibles', '').strip()
             # Champs élève (le prof peut aussi corriger)
             fiche.description_situation = request.POST.get('description_situation', '').strip()
             fiche.observation_environnement = request.POST.get('observation_environnement', '').strip()
             fiche.problematique = request.POST.get('problematique', '').strip()
+            fiche.consigne_entreprise = request.POST.get('consigne_entreprise', '').strip()
+            fiche.risques_epi = request.POST.get('risques_epi', '').strip()
             fiche.commentaire_prof = request.POST.get('commentaire_prof', '').strip()
             fiche.validee_par_prof = request.POST.get('validee_par_prof') == 'on'
             pfmp_id = request.POST.get('pfmp')
@@ -3210,6 +3215,8 @@ def fiche_portfolio_eleve_create(request):
             description_situation=request.POST.get('description_situation', '').strip(),
             observation_environnement=request.POST.get('observation_environnement', '').strip(),
             problematique=request.POST.get('problematique', '').strip(),
+            consigne_entreprise=request.POST.get('consigne_entreprise', '').strip(),
+            risques_epi=request.POST.get('risques_epi', '').strip(),
             createur=request.user,
         )
         fiche.save()
@@ -3278,6 +3285,8 @@ def fiche_portfolio_eleve_update(request, fiche_id):
         fiche.description_situation = request.POST.get('description_situation', '').strip()
         fiche.observation_environnement = request.POST.get('observation_environnement', '').strip()
         fiche.problematique = request.POST.get('problematique', '').strip()
+        fiche.consigne_entreprise = request.POST.get('consigne_entreprise', '').strip()
+        fiche.risques_epi = request.POST.get('risques_epi', '').strip()
         fiche.save()
 
         # Gestion des photos (max 8 au total)
