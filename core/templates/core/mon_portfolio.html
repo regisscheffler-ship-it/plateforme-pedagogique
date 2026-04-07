@@ -176,28 +176,36 @@
     {% with total=fiches|length %}
     <div class="stats-row">
         <div class="stat-card">
-            <div class="stat-icon total">📚</div>
+            <div class="stat-icon total">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
             <div>
                 <div class="stat-value">{{ total }}</div>
                 <div class="stat-label">Fiche(s) au total</div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon validees">✅</div>
+            <div class="stat-icon validees">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
             <div>
                 <div class="stat-value">{{ portfolio.nb_fiches_validees }}</div>
                 <div class="stat-label">Validée(s) par le prof</div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon attente">⏳</div>
+            <div class="stat-icon attente">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
             <div>
                 <div class="stat-value">{{ portfolio.nb_fiches_remplies }}</div>
                 <div class="stat-label">En attente de validation</div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon vides">📝</div>
+            <div class="stat-icon vides">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
             <div>
                 <div class="stat-value">{{ portfolio.nb_fiches_vides }}</div>
                 <div class="stat-label">À remplir</div>
@@ -250,7 +258,8 @@
                 </a>
                 {% else %}
                 <a href="{% url 'core:fiche_portfolio_eleve_update' fiche.id %}" class="btn-fill">
-                    ✏️ Remplir
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    Remplir
                 </a>
                 {% endif %}
             </div>
