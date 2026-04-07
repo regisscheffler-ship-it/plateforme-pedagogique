@@ -1,10 +1,25 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title>Portfolio — {{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }}</title>
-<style>
+"""
+Réécriture de fiche_portfolio_print.html :
+- Page A4 pleine hauteur : les blocs texte s'étendent pour remplir la page
+- Outil de recadrage photo (position X/Y) avant impression
+"""
+import os
+
+BASE = r"C:\Users\regis\OneDrive - CR HDF\Documents\plateforme_pedagogique v2 Copilote\plateforme-pedagogique"
+path = os.path.join(BASE, "core", "templates", "core", "fiche_portfolio_print.html")
+
+# On construit le template en morceaux pour éviter les problèmes de triple-quotes
+parts = []
+
+parts.append('{% load static %}\n')
+parts.append('<!DOCTYPE html>\n')
+parts.append('<html lang="fr">\n')
+parts.append('<head>\n')
+parts.append('<meta charset="UTF-8">\n')
+parts.append('<title>Portfolio \u2014 {{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }}</title>\n')
+
+# ─── STYLES ───────────────────────────────────────────────────────────────────
+parts.append("""<style>
 /* =================================================================
    RESET & BASE
 ================================================================= */
@@ -313,7 +328,10 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
 </style>
 </head>
 <body>
+""")
 
+# ─── BARRE D'ACTIONS ─────────────────────────────────────────────────────────
+parts.append("""
 <!-- BARRE D'ACTIONS -->
 <div class="no-print action-bar">
     <a href="{% url 'core:portfolio_detail' portfolio.id %}" class="btn btn-back">
@@ -326,10 +344,10 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
     </button>
     <span class="bar-info">
         {{ portfolio.eleve.user.last_name }} {{ portfolio.eleve.user.first_name }}
-        &mdash; {{ portfolio.nb_fiches_validees }}/{{ fiches|length }} validée(s)
+        &mdash; {{ portfolio.nb_fiches_validees }}/{{ fiches|length }} valid\u00e9e(s)
     </span>
     <span class="bar-info" style="color:#d97706;font-size:0.78rem;">
-        ✂︎ Survolez une photo puis cliquez <strong>Recadrer</strong> pour ajuster avant impression
+        \u2702\ufe0e Survolez une photo puis cliquez <strong>Recadrer</strong> pour ajuster avant impression
     </span>
 </div>
 
@@ -340,42 +358,45 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
             <svg width="16" height="16" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 2 6 6 2 6"></polyline><polyline points="18 22 18 18 22 18"></polyline><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             Recadrer la photo
         </div>
-        <!-- Aperçu live du recadrage -->
+        <!-- Aper\u00e7u live du recadrage -->
         <div class="crop-preview-container">
-            <img id="cropPreviewImg" src="" alt="Aperçu">
+            <img id="cropPreviewImg" src="" alt="Aper\u00e7u">
         </div>
         <!-- Sliders -->
         <div class="crop-slider-row">
-            <label>↔ Horizontal :</label>
+            <label>\u2194 Horizontal :</label>
             <input type="range" id="cropX" min="0" max="100" value="50" oninput="updateCropPreview()">
             <span class="val" id="cropXVal">50%</span>
         </div>
         <div class="crop-slider-row">
-            <label>↕ Vertical :</label>
+            <label>\u2195 Vertical :</label>
             <input type="range" id="cropY" min="0" max="100" value="50" oninput="updateCropPreview()">
             <span class="val" id="cropYVal">50%</span>
         </div>
         <div class="crop-modal-actions">
-            <button class="crop-btn-reset" onclick="resetCrop()" title="Revenir au centre">&#8635; Réinitialiser</button>
+            <button class="crop-btn-reset" onclick="resetCrop()" title="Revenir au centre">&#8635; R\u00e9initialiser</button>
             <button class="crop-btn-cancel" onclick="closeCropModal()">Annuler</button>
             <button class="crop-btn-apply" onclick="applyCrop()">&#10003; Appliquer</button>
         </div>
     </div>
 </div>
+""")
 
+# ─── COUVERTURE ───────────────────────────────────────────────────────────────
+parts.append("""
 <!-- ================================================================ -->
 <!-- COUVERTURE                                                        -->
 <!-- ================================================================ -->
 <div class="sheet">
     <div class="cover-title">Portfolio BAC Pro</div>
-    <p style="font-size:11px;color:#64748b;margin-bottom:16px;">Document de suivi des activités professionnelles</p>
+    <p style="font-size:11px;color:#64748b;margin-bottom:16px;">Document de suivi des activit\u00e9s professionnelles</p>
 
     <div class="cover-student-box">
-        <div class="label">Élève</div>
+        <div class="label">\u00c9l\u00e8ve</div>
         <div class="value">{{ portfolio.eleve.user.last_name|upper }} {{ portfolio.eleve.user.first_name }}</div>
         <div class="sub">
             {% if portfolio.eleve.classe %}{{ portfolio.eleve.classe.nom }}{% endif %}
-            {% if portfolio.eleve.classe and portfolio.eleve.classe.niveau %} — {{ portfolio.eleve.classe.niveau.nom }}{% endif %}
+            {% if portfolio.eleve.classe and portfolio.eleve.classe.niveau %} \u2014 {{ portfolio.eleve.classe.niveau.nom }}{% endif %}
         </div>
     </div>
 
@@ -386,7 +407,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
         </div>
         <div class="cover-stat green">
             <span class="cover-stat-value">{{ portfolio.nb_fiches_validees }}</span>
-            <span class="cover-stat-label">Validée{% if portfolio.nb_fiches_validees > 1 %}s{% endif %}</span>
+            <span class="cover-stat-label">Valid\u00e9e{% if portfolio.nb_fiches_validees > 1 %}s{% endif %}</span>
         </div>
         <div class="cover-stat" style="border-color:#fcd34d;">
             <span class="cover-stat-value" style="color:#f59e0b;">{{ portfolio.nb_fiches_remplies }}</span>
@@ -394,7 +415,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
         </div>
         <div class="cover-stat" style="border-color:#cbd5e1;">
             <span class="cover-stat-value" style="color:#94a3b8;">{{ portfolio.nb_fiches_vides }}</span>
-            <span class="cover-stat-label">À remplir</span>
+            <span class="cover-stat-label">\u00c0 remplir</span>
         </div>
     </div>
 
@@ -406,7 +427,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
             <span class="titre">{{ fiche.titre }}</span>
             <span class="badge-sm badge-{{ fiche.type_evaluation }}">{{ fiche.get_type_evaluation_display }}</span>
             {% if fiche.validee_par_prof %}
-            <span class="badge-sm badge-ok">✓ Validée</span>
+            <span class="badge-sm badge-ok">\u2713 Valid\u00e9e</span>
             {% else %}
             <span class="badge-sm badge-wait">En attente</span>
             {% endif %}
@@ -416,14 +437,17 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
         {% endfor %}
     </div>
 </div>
+""")
 
+# ─── FICHES ──────────────────────────────────────────────────────────────────
+parts.append("""
 <!-- ================================================================ -->
 <!-- UNE PAGE A4 PAR FICHE                                            -->
 <!-- ================================================================ -->
 {% for fiche in fiches %}
 <div class="sheet sheet-fiche">
 
-    <!-- EN-TÊTE : Logo | Titre | Type -->
+    <!-- EN-T\u00caTE : Logo | Titre | Type -->
     <div class="fiche-header">
         <img src="{% static 'logoL_LOUCHEUR.jpg' %}" alt="Logo" class="fiche-header-logo"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
@@ -439,28 +463,28 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
             </div>
             <div class="type-row">
                 <div class="type-item">
-                    <span class="type-box {% if fiche.type_evaluation == 'formative' %}checked{% endif %}">{% if fiche.type_evaluation == 'formative' %}✓{% endif %}</span>
+                    <span class="type-box {% if fiche.type_evaluation == 'formative' %}checked{% endif %}">{% if fiche.type_evaluation == 'formative' %}\u2713{% endif %}</span>
                     Formative
                 </div>
                 <div class="type-item">
-                    <span class="type-box {% if fiche.type_evaluation == 'sommative' %}checked{% endif %}">{% if fiche.type_evaluation == 'sommative' %}✓{% endif %}</span>
+                    <span class="type-box {% if fiche.type_evaluation == 'sommative' %}checked{% endif %}">{% if fiche.type_evaluation == 'sommative' %}\u2713{% endif %}</span>
                     Sommative
                 </div>
                 <div class="type-item">
-                    <span class="type-box {% if fiche.type_evaluation == 'certificative' %}checked{% endif %}">{% if fiche.type_evaluation == 'certificative' %}✓{% endif %}</span>
+                    <span class="type-box {% if fiche.type_evaluation == 'certificative' %}checked{% endif %}">{% if fiche.type_evaluation == 'certificative' %}\u2713{% endif %}</span>
                     Certificative
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- TABLEAU : Unité | Compétences | Activités -->
+    <!-- TABLEAU : Unit\u00e9 | Comp\u00e9tences | Activit\u00e9s -->
     <table class="fiche-table">
         <thead>
             <tr>
-                <th class="col-unite">Unité d’évaluation</th>
-                <th class="col-comp">Compétences évaluées</th>
-                <th class="col-activ">Activités Professionnelles</th>
+                <th class="col-unite">Unit\u00e9 d\u2019\u00e9valuation</th>
+                <th class="col-comp">Comp\u00e9tences \u00e9valu\u00e9es</th>
+                <th class="col-activ">Activit\u00e9s Professionnelles</th>
             </tr>
         </thead>
         <tbody>
@@ -472,7 +496,7 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
                         <span class="comp-code">{{ c.code }}</span>
                         <span>{{ c.nom }}</span>
                     </div>
-                    {% empty %}<span style="color:#d1d5db;font-style:italic;font-size:9px;">Non renseigné</span>
+                    {% empty %}<span style="color:#d1d5db;font-style:italic;font-size:9px;">Non renseign\u00e9</span>
                     {% endfor %}
                 </td>
                 <td class="col-activ">{{ fiche.activites_professionnelles|default:""|linebreaksbr }}</td>
@@ -496,14 +520,14 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
                 <button class="crop-btn no-print"
                         onclick="openCropModal('{{ photo.id }}', '{{ photo.image.url }}')"
                         title="Recadrer cette photo">
-                    ✂ Recadrer
+                    \u2702 Recadrer
                 </button>
                 {% if photo.legende %}
                 <div class="caption">{{ photo.legende }}</div>
                 {% endif %}
             </div>
             {% empty %}
-            <div class="photo-placeholder" style="grid-column:span 4;font-size:9px;color:#94a3b8;font-style:italic;">Aucune photo ajoutée</div>
+            <div class="photo-placeholder" style="grid-column:span 4;font-size:9px;color:#94a3b8;font-style:italic;">Aucune photo ajout\u00e9e</div>
             {% endfor %}
         </div>
     </div>
@@ -514,42 +538,42 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
         <!-- Description de la situation (flex:2) -->
         <div class="text-bloc bloc-orange grow" style="flex:2;">
             <div class="bloc-title">Description de la situation professionnelle :</div>
-            <div class="bloc-body">{% if fiche.description_situation %}{{ fiche.description_situation }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+            <div class="bloc-body">{% if fiche.description_situation %}{{ fiche.description_situation }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}</div>
         </div>
 
         <!-- Observation (flex:2) -->
         <div class="text-bloc bloc-orange grow" style="flex:2;">
-            <div class="bloc-title">Observation de l’environnement de travail :</div>
-            <div class="bloc-body">{% if fiche.observation_environnement %}{{ fiche.observation_environnement }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+            <div class="bloc-title">Observation de l\u2019environnement de travail :</div>
+            <div class="bloc-body">{% if fiche.observation_environnement %}{{ fiche.observation_environnement }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}</div>
         </div>
 
-        <!-- Problématique (flex:1) -->
+        <!-- Probl\u00e9matique (flex:1) -->
         <div class="text-bloc bloc-orange grow" style="flex:1;">
-            <div class="bloc-title">Problématique :</div>
-            <div class="bloc-body">{% if fiche.problematique %}{{ fiche.problematique }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+            <div class="bloc-title">Probl\u00e9matique :</div>
+            <div class="bloc-body">{% if fiche.problematique %}{{ fiche.problematique }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}</div>
         </div>
 
-        <!-- Grille : Savoirs | Matériels -->
+        <!-- Grille : Savoirs | Mat\u00e9riels -->
         <div class="fiche-grid-2" style="flex:1.2;">
             <div class="text-bloc bloc-bleu">
-                <div class="bloc-title">Pour cela, je dois connaître :</div>
-                <div class="bloc-body">{% if fiche.savoirs_necessaires %}{{ fiche.savoirs_necessaires }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+                <div class="bloc-title">Pour cela, je dois conna\u00eetre :</div>
+                <div class="bloc-body">{% if fiche.savoirs_necessaires %}{{ fiche.savoirs_necessaires }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}</div>
             </div>
             <div class="text-bloc bloc-gris">
-                <div class="bloc-title">Je dispose (matériels, matériaux) :</div>
-                <div class="bloc-body">{% if fiche.materiels_disponibles %}{{ fiche.materiels_disponibles }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+                <div class="bloc-title">Je dispose (mat\u00e9riels, mat\u00e9riaux) :</div>
+                <div class="bloc-body">{% if fiche.materiels_disponibles %}{{ fiche.materiels_disponibles }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}</div>
             </div>
         </div>
 
         <!-- Grille : Consigne | Risques EPI -->
         <div class="fiche-grid-2" style="flex:1.2;">
             <div class="text-bloc bloc-vert">
-                <div class="bloc-title">Consigne de l’entreprise :</div>
-                <div class="bloc-body">{% if fiche.consigne_entreprise %}{{ fiche.consigne_entreprise }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+                <div class="bloc-title">Consigne de l\u2019entreprise :</div>
+                <div class="bloc-body">{% if fiche.consigne_entreprise %}{{ fiche.consigne_entreprise }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}</div>
             </div>
             <div class="text-bloc bloc-rouge">
-                <div class="bloc-title">Identifier les risques et déduire les EPI :</div>
-                <div class="bloc-body">{% if fiche.risques_epi %}{{ fiche.risques_epi }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+                <div class="bloc-title">Identifier les risques et d\u00e9duire les EPI :</div>
+                <div class="bloc-body">{% if fiche.risques_epi %}{{ fiche.risques_epi }}{% else %}<span class="empty">Non renseign\u00e9</span>{% endif %}</div>
             </div>
         </div>
 
@@ -567,16 +591,19 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
         {% if fiche.validee_par_prof %}
         <div class="stamp-validated">
             <svg width="12" height="12" fill="none" stroke="#10b981" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
-            Fiche validée — {{ fiche.date_modification|date:"d/m/Y" }}
+            Fiche valid\u00e9e \u2014 {{ fiche.date_modification|date:"d/m/Y" }}
         </div>
         {% else %}
-        <span style="font-size:9px;color:#94a3b8;font-style:italic;">En attente de validation par l’enseignant</span>
+        <span style="font-size:9px;color:#94a3b8;font-style:italic;">En attente de validation par l\u2019enseignant</span>
         {% endif %}
     </div>
 
 </div>
 {% endfor %}
+""")
 
+# ─── JAVASCRIPT ───────────────────────────────────────────────────────────────
+parts.append("""
 <script>
 /* ================================================================
    RECADRAGE PHOTO (object-position X/Y)
@@ -590,10 +617,10 @@ function openCropModal(photoId, src) {
     var previewImg = document.getElementById('cropPreviewImg');
     previewImg.src = src;
 
-    // Restaurer les valeurs existantes de l'image imprimée
+    // Restaurer les valeurs existantes de l'image imprim\u00e9e
     var printImg = document.getElementById('printImg_' + photoId);
     var pos = (printImg && printImg.style.objectPosition) ? printImg.style.objectPosition : '50% 50%';
-    var parts = pos.replace(/%/g, '').trim().split(/\s+/);
+    var parts = pos.replace(/%/g, '').trim().split(/\\s+/);
     var x = parseFloat(parts[0]) || 50;
     var y = parseFloat(parts[1] !== undefined ? parts[1] : 50) || 50;
 
@@ -641,3 +668,11 @@ document.getElementById('cropModal').addEventListener('click', function(e) {
 </script>
 </body>
 </html>
+""")
+
+# ─── ÉCRITURE DU FICHIER ──────────────────────────────────────────────────────
+content = ''.join(parts)
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(content)
+
+print(f"OK: {path}  ({len(content):,} caractères)")
