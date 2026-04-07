@@ -310,6 +310,24 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
     border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer;
     font-size: 11px; margin-right: auto;
 }
+
+/* Photos agrandies dans fiche-body (après problématique) */
+.fiche-body .photos-section {
+    flex: 2; display: flex; flex-direction: column; margin-bottom: 0;
+}
+.fiche-body .photos-section .photos-row {
+    flex: 1; align-items: stretch; min-height: 0;
+}
+.fiche-body .photos-section .photo-thumb {
+    display: flex; flex-direction: column; height: 100%;
+}
+.fiche-body .photos-section .photo-crop-wrap {
+    flex: 1; height: auto !important; overflow: hidden;
+}
+.fiche-body .photos-section .photo-crop-wrap img {
+    width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block;
+}
+
 </style>
 </head>
 <body>
@@ -480,7 +498,30 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
         </tbody>
     </table>
 
-    <!-- PHOTOS (4 max) avec bouton recadrer -->
+
+    <!-- ==== ZONE QUI GRANDIT POUR REMPLIR LA PAGE ==== -->
+    <div class="fiche-body">
+
+        <!-- Description de la situation (flex:2) -->
+        <div class="text-bloc bloc-orange grow" style="flex:2;">
+            <div class="bloc-title">Description de la situation professionnelle :</div>
+            <div class="bloc-body">{% if fiche.description_situation %}{{ fiche.description_situation }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+        </div>
+
+        <!-- Observation (réduit, ~taille ancienne section photos) -->
+        <div class="text-bloc bloc-orange grow" style="flex:0.85; min-height:60px;">
+            <div class="bloc-title">Observation de l’environnement de travail :</div>
+            <div class="bloc-body">{% if fiche.observation_environnement %}{{ fiche.observation_environnement }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+        </div>
+
+        <!-- Problématique (flex:1) -->
+        <div class="text-bloc bloc-orange grow" style="flex:1;">
+            <div class="bloc-title">Problématique :</div>
+            <div class="bloc-body">{% if fiche.problematique %}{{ fiche.problematique }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
+        </div>
+
+
+        <!-- PHOTOS (agrandies, flex:2 — déplacées après problématique) -->
     <div class="photos-section">
         <div class="section-label">Photos :</div>
         <div class="photos-row">
@@ -507,27 +548,6 @@ body { font-family: Arial, Helvetica, sans-serif; background: #4b5563; margin: 0
             {% endfor %}
         </div>
     </div>
-
-    <!-- ==== ZONE QUI GRANDIT POUR REMPLIR LA PAGE ==== -->
-    <div class="fiche-body">
-
-        <!-- Description de la situation (flex:2) -->
-        <div class="text-bloc bloc-orange grow" style="flex:2;">
-            <div class="bloc-title">Description de la situation professionnelle :</div>
-            <div class="bloc-body">{% if fiche.description_situation %}{{ fiche.description_situation }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
-        </div>
-
-        <!-- Observation (flex:2) -->
-        <div class="text-bloc bloc-orange grow" style="flex:2;">
-            <div class="bloc-title">Observation de l’environnement de travail :</div>
-            <div class="bloc-body">{% if fiche.observation_environnement %}{{ fiche.observation_environnement }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
-        </div>
-
-        <!-- Problématique (flex:1) -->
-        <div class="text-bloc bloc-orange grow" style="flex:1;">
-            <div class="bloc-title">Problématique :</div>
-            <div class="bloc-body">{% if fiche.problematique %}{{ fiche.problematique }}{% else %}<span class="empty">Non renseigné</span>{% endif %}</div>
-        </div>
 
         <!-- Grille : Savoirs | Matériels -->
         <div class="fiche-grid-2" style="flex:1.2;">
