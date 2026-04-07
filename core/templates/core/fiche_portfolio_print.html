@@ -254,7 +254,7 @@
     </div>
 
     <!-- COMPÉTENCES + ACTIVITÉS (bloc enseignant) -->
-    {% if fiche.competences.all or fiche.activites_professionnelles or fiche.unite_evaluation %}
+        {% if fiche.competences.all or fiche.activites_professionnelles or fiche.unite_evaluation %}
     <div class="bloc bloc-jaune">
         <strong>Informations enseignant</strong>
         {% if fiche.unite_evaluation %}
@@ -262,9 +262,9 @@
         {% endif %}
         {% if fiche.competences.all %}
         <div style="margin-top:4px;">Compétences évaluées :</div>
-        <div class="comp-chips">
+        <div style="margin-top:3px;">
             {% for c in fiche.competences.all %}
-            <span class="comp-chip" title="{{ c.nom }}">{{ c.code }}</span>
+            <div style="font-size:10px;padding:1px 0;"><span class="comp-chip">{{ c.code }}</span> {{ c.nom }}</div>
             {% endfor %}
         </div>
         {% endif %}

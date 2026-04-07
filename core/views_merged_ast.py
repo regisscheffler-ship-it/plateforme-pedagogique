@@ -3123,10 +3123,10 @@ def fiche_portfolio_update(request, fiche_id):
             comp_ids = request.POST.getlist('competences')
             fiche.competences.set(comp_ids)
 
-            # Gestion des photos (max 4 au total)
+            # Gestion des photos (max 8 au total)
             photos_existantes = fiche.photos.count()
             for photo_file in request.FILES.getlist('photos'):
-                if photos_existantes >= 4:
+                if photos_existantes >= 8:
                     break
                 PhotoPortfolio.objects.create(
                     fiche=fiche,
@@ -3185,6 +3185,56 @@ def fiche_portfolio_valider(request, fiche_id):
 # ─────────────────────────────────────────────────────────────
 
 @login_required
+def fiche_portfolio_eleve_create(request):
+    """L'élève crée une nouvelle fiche dans son portfolio."""
+    try:
+        profil = request.user.profil
+    except ProfilUtilisateur.DoesNotExist:
+        return redirect('core:home')
+
+    if not profil.est_eleve():
+        return redirect('core:dashboard_professeur')
+
+    portfolio, _ = Portfolio.objects.get_or_create(eleve=profil)
+
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '').strip()
+        if not titre:
+            messages.error(request, 'Le titre est obligatoire.')
+            return render(request, 'core/fiche_portfolio_eleve_create.html', {'portfolio': portfolio})
+
+        fiche = FichePortfolio(
+            portfolio=portfolio,
+            titre=titre,
+            type_evaluation=request.POST.get('type_evaluation', 'formative'),
+            description_situation=request.POST.get('description_situation', '').strip(),
+            observation_environnement=request.POST.get('observation_environnement', '').strip(),
+            problematique=request.POST.get('problematique', '').strip(),
+            createur=request.user,
+        )
+        fiche.save()
+
+        photos_count = 0
+        for photo_file in request.FILES.getlist('photos'):
+            if photos_count >= 8:
+                break
+            PhotoPortfolio.objects.create(
+                fiche=fiche,
+                image=photo_file,
+                legende='',
+                ordre=photos_count,
+            )
+            photos_count += 1
+
+        messages.success(request, '✅ Fiche créée avec succès.')
+        return redirect('core:fiche_portfolio_eleve_update', fiche_id=fiche.id)
+
+    return render(request, 'core/fiche_portfolio_eleve_create.html', {
+        'portfolio': portfolio,
+    })
+
+
+@login_required
 def mon_portfolio(request):
     """L'élève consulte son portfolio (liste de ses fiches)."""
     try:
@@ -3230,11 +3280,11 @@ def fiche_portfolio_eleve_update(request, fiche_id):
         fiche.problematique = request.POST.get('problematique', '').strip()
         fiche.save()
 
-        # Gestion des photos (max 4 au total)
+        # Gestion des photos (max 8 au total)
         photos_existantes = fiche.photos.count()
         nouvelles_photos = request.FILES.getlist('photos')
         for photo_file in nouvelles_photos:
-            if photos_existantes >= 4:
+            if photos_existantes >= 8:
                 break
             legende = request.POST.get(f'legende_{photo_file.name}', '').strip()
             PhotoPortfolio.objects.create(

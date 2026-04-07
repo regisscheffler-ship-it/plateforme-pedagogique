@@ -271,9 +271,12 @@
             {% if fiche.competences.all %}
             <div style="margin-top: 8px;">
                 <div class="info-label">Compétences évaluées</div>
-                <div class="competence-chips">
+                <div style="margin-top:4px;">
                     {% for c in fiche.competences.all %}
-                    <span class="chip" title="{{ c.intitule }}">{{ c.code }}</span>
+                    <div style="display:flex;align-items:baseline;gap:6px;padding:2px 0;font-size:0.85rem;">
+                        <span class="chip" style="flex-shrink:0;">{{ c.code }}</span>
+                        <span style="color:#334155;">{{ c.nom }}</span>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -346,20 +349,20 @@
 
             {% if not fiche.validee_par_prof %}
             {% with nb_photos=fiche.photos.count %}
-            {% if nb_photos < 4 %}
+            {% if nb_photos < 8 %}
             <label class="photo-upload-zone no-print" for="id_photos">
                 <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
                     <polyline points="21 15 16 10 5 21"/>
                 </svg>
-                Ajouter des photos ({{ nb_photos }}/4)
+                Ajouter des photos ({{ nb_photos }}/8)
             </label>
             <input type="file" id="id_photos" name="photos" multiple accept="image/*"
                    style="display:none;" onchange="previewFiles(this)">
             <p class="photo-count-hint no-print">JPEG ou PNG, 5 Mo max par photo</p>
             {% else %}
             <p style="color:#94a3b8; font-style:italic; font-size:0.82rem;" class="no-print">
-                Limite de 4 photos atteinte.
+                Limite de 8 photos atteinte.
             </p>
             {% endif %}
             {% endwith %}
@@ -394,7 +397,7 @@
 
 <script>
 function previewFiles(input) {
-    const max = 4;
+    const max = 8;
     const existing = {{ fiche.photos.count }};
     const available = max - existing;
     if (input.files.length > available) {

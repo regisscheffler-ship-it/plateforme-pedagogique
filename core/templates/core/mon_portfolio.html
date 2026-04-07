@@ -164,6 +164,12 @@
             <h1>Mon Portfolio BAC Pro</h1>
             <p>Remplissez vos fiches de suivi de compétences</p>
         </div>
+        <div class="page-header-actions">
+            <a href="{% url 'core:fiche_portfolio_eleve_create' %}" style="display:inline-flex;align-items:center;gap:6px;padding:0.6rem 1.2rem;background:#d97706;color:white;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.9rem;transition:background 0.2s;" onmouseover="this.style.background='#b45309'" onmouseout="this.style.background='#d97706'">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round"/></svg>
+                Nouvelle fiche
+            </a>
+        </div>
     </div>
 
     <!-- Stats -->
@@ -224,10 +230,10 @@
                 {% if fiche.competences.all %}
                 <div class="fiche-competences">
                     {% for c in fiche.competences.all|slice:":3" %}
-                    <span class="chip">{{ c.code }}</span>
+                    <span class="chip" title="{{ c.nom }}">{{ c.code }}</span>
                     {% endfor %}
-                    {% if fiche.competences.count > 3 %}
-                    <span class="chip chip-more">+{{ fiche.competences.count|add:"-3" }}</span>
+                    {% if fiche.competences.all|length > 3 %}
+                    <span class="chip chip-more">+{{ fiche.competences.all|length|add:"-3" }}</span>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -256,7 +262,10 @@
     <div class="empty-state">
         <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         <h3>Aucune fiche dans votre portfolio</h3>
-        <p>Votre enseignant n'a pas encore créé de fiche de suivi pour vous.</p>
+        <p>Votre enseignant peut en créer, ou vous pouvez créer votre première fiche vous-même.</p>
+        <a href="{% url 'core:fiche_portfolio_eleve_create' %}" style="display:inline-flex;align-items:center;gap:6px;padding:0.6rem 1.4rem;background:#d97706;color:white;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.9rem;margin-top:1rem;">
+            + Créer ma première fiche
+        </a>
     </div>
     {% endif %}
 </div>

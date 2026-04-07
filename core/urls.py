@@ -217,6 +217,7 @@ urlpatterns = [
     path('gestion/portfolio/fiche/<int:fiche_id>/valider/',        views.fiche_portfolio_valider,        name='fiche_portfolio_valider'),
     # Côté élève
     path('mon-portfolio/',                                         views.mon_portfolio,                  name='mon_portfolio'),
+    path('mon-portfolio/fiche/creer/',                             views.fiche_portfolio_eleve_create,   name='fiche_portfolio_eleve_create'),
     path('mon-portfolio/fiche/<int:fiche_id>/modifier/',           views.fiche_portfolio_eleve_update,   name='fiche_portfolio_eleve_update'),
     path('gestion/portfolio/<int:portfolio_id>/pdf/',              views.fiche_portfolio_pdf_export,     name='fiche_portfolio_pdf_export'),
 
