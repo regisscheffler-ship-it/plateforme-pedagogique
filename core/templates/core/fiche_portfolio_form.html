@@ -249,8 +249,7 @@
                 {% endif %}
             </div>
 
-            {% if fiche %}
-                     <!-- Savoirs & Materiels (champs prof) -->
+            <!-- Savoirs & Materiels (champs prof) -->
             <div class="form-section">
                 <div class="form-section-title">Savoirs &amp; Matériels (Enseignant)</div>
                 <div class="form-row">
@@ -324,6 +323,7 @@
                 </div>
                 {% endif %}
 
+                {% if fiche %}
                 {% with nb_photos=fiche.photos.count %}
                 {% if nb_photos < 8 %}
                 <div class="form-group">
@@ -335,8 +335,16 @@
                 <p style="color:#94a3b8;font-size:0.88rem;font-style:italic;">Limite de 8 photos atteinte.</p>
                 {% endif %}
                 {% endwith %}
+                {% else %}
+                <div class="form-group">
+                    <label for="id_photos">Ajouter des photos (0/8)</label>
+                    <input type="file" name="photos" id="id_photos" multiple accept="image/*" class="form-control">
+                    <p style="font-size:0.78rem;color:#94a3b8;margin-top:4px;">JPEG ou PNG, 5 Mo max par photo</p>
+                </div>
+                {% endif %}
             </div>
 
+            {% if fiche %}
             <!-- Validation (uniquement en modification) -->
             <div class="form-section">
                 <div class="form-section-title">Validation</div>
