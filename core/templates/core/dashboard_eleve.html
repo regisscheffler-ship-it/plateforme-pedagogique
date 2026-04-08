@@ -87,7 +87,7 @@
     @media (max-width: 992px) { .grid-2-cols { grid-template-columns: 1fr; } }
 
     .grid-4-cols {
-        display: grid; grid-template-columns: repeat(3, 1fr);
+        display: grid; grid-template-columns: repeat(4, 1fr);
         gap: 1.5rem; margin-bottom: 1.5rem;
         align-items: stretch;
     }
@@ -643,44 +643,8 @@
             {% endif %}
         </div>
 
-        <!-- MES ÉVALUATIONS -->
-        <div class="section-card evaluations">
-            <div class="card-header">
-                <svg style="stroke:#6b7fd4;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 11l3 3L22 4"></path>
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                </svg>
-                <h2>Mes évaluations</h2>
-                <span class="card-count" style="color:#6b7fd4;">{{ mes_evaluations|length }}</span>
-            </div>
-
-            {% if mes_evaluations %}
-            <div>
-                {% for ev in mes_evaluations %}
-                <a href="{% url 'core:eleve_voir_fiche_evaluation' ev.pk %}" class="list-item">
-                    <div class="icon-box" style="background:#eef0ff;">
-                        <svg viewBox="0 0 24 24" stroke="#6b7fd4" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 11l3 3L22 4"></path>
-                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                        </svg>
-                    </div>
-                    <div class="list-item-content">
-                        <div class="list-item-title">{{ ev.fiche_contrat.titre_tp }}</div>
-                        <div class="list-item-subtitle">
-                            {% if ev.note_sur_20 %}Note : {{ ev.note_sur_20 }}/20{% else %}Validée{% endif %}
-                            &nbsp;·&nbsp;{{ ev.date_validation|date:"d/m/Y" }}
-                        </div>
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="empty-state">Aucune évaluation disponible pour le moment</div>
-            {% endif %}
-        </div>
-
         <!-- MES RENDUS -->
-        <div class="section-card rendus" style="grid-column: span 2;">
+        <div class="section-card rendus">
             <div class="card-header">
                 <svg style="stroke:#d94f4f;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -735,6 +699,17 @@
             {% endif %}
         </div>
 
+        <!-- MES ÉVALUATIONS -->
+        <div class="section-card evaluations" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <svg style="stroke:#6b7fd4;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 11l3 3L22 4"></path>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                <h2>Mes évaluations</h2>
+            </div>
+            <p style="color:#94a3b8;font-style:italic;margin:0.5rem 0 0;">Bientôt disponible.</p>
+        </div>
 
     </div>
 
