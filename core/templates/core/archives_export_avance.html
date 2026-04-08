@@ -281,9 +281,9 @@
                     <label class="form-label">Élèves <span class="form-label-hint">(vide = tous)</span></label>
                     <div class="checkbox-grid" id="eleves-grid">
                         {% for eleve in eleves %}
-                            <label data-classe="{{ eleve.classe_id }}">
+                            <label data-classe="{{ eleve.classe_id }}"{% if eleve.est_sorti %} style="opacity:0.6;"{% endif %}>
                                 <input type="checkbox" name="eleves" value="{{ eleve.id }}">
-                                {{ eleve.user.last_name }} {{ eleve.user.first_name }}{% if eleve.classe %} <small style="color:#94a3b8;">({{ eleve.classe.nom }})</small>{% endif %}
+                                {{ eleve.user.last_name }} {{ eleve.user.first_name }}{% if eleve.classe %} <small style="color:#94a3b8;">({{ eleve.classe.nom }})</small>{% endif %}{% if eleve.est_sorti %} <small style="color:#ef4444;">(sorti)</small>{% endif %}
                             </label>
                         {% endfor %}
                     </div>

@@ -532,19 +532,21 @@ Séparateur : point-virgule (;)
 def _render_fiche_complete_pdf(fiche_eval):
     """
     Génère un PDF A4 (bytes) de la fiche complète d'un élève
-    (fiche contrat page 1 + fiche évaluation page 2)
-    en utilisant WeasyPrint et le template fiche_complete_pdf.html.
+    (fiche contrat page 1 + fiche évaluation page 2).
+    Essaie WeasyPrint en premier, puis xhtml2pdf en fallback.
     Retourne None en cas d'erreur.
     """
+    _weasyprint_available = False
     try:
-        from weasyprint import HTML
+        from weasyprint import HTML as _WeasyHTML
+        _weasyprint_available = True
     except ImportError:
-        logger.warning("WeasyPrint non disponible — fallback impossible")
-        return None
+        logger.warning("WeasyPrint non disponible — tentative xhtml2pdf")
 
     from django.template.loader import render_to_string
     from itertools import groupby as _groupby
 
+    html_string = None
     try:
         fc = fiche_eval.fiche_contrat
         eleve = fiche_eval.eleve
@@ -627,21 +629,23 @@ def _render_fiche_complete_pdf(fiche_eval):
             'poids_auto': poids_auto,
         })
 
-        pdf_bytes = HTML(string=html_string).write_pdf()
-        return pdf_bytes
+        if _weasyprint_available:
+            try:
+                return _WeasyHTML(string=html_string).write_pdf()
+            except Exception as e:
+                logger.warning("WeasyPrint échoué (%s) — fallback xhtml2pdf", e)
 
-    except Exception as e:
-        logger.warning("WeasyPrint échoué (%s) — fallback xhtml2pdf", e)
         # Fallback xhtml2pdf (pisa)
-        try:
-            from xhtml2pdf import pisa as _pisa
-            buf_pisa = io.BytesIO()
-            status = _pisa.CreatePDF(io.BytesIO(html_string.encode('utf-8')), dest=buf_pisa)
-            if not status.err:
-                return buf_pisa.getvalue()
-            logger.error("xhtml2pdf a aussi échoué pour fiche complète")
-        except Exception as e2:
-            logger.error("Fallback xhtml2pdf échoué : %s", e2)
+        from xhtml2pdf import pisa as _pisa
+        buf_pisa = io.BytesIO()
+        status = _pisa.CreatePDF(io.BytesIO(html_string.encode('utf-8')), dest=buf_pisa)
+        if not status.err:
+            return buf_pisa.getvalue()
+        logger.error("xhtml2pdf a aussi échoué pour fiche complète")
+        return None
+
+    except Exception as e2:
+        logger.error("Erreur génération PDF fiche complète : %s", e2)
         return None
 
 
@@ -707,19 +711,21 @@ def _generer_liens_txt(atelier):
 
 def _render_atelier_recap_pdf(atelier):
     """
-    Génère un PDF A4 (bytes) récapitulatif d'un atelier
-    via WeasyPrint et le template atelier_recap_pdf.html.
+    Génère un PDF A4 (bytes) récapitulatif d'un atelier.
+    Essaie WeasyPrint en premier, puis xhtml2pdf en fallback.
     Retourne None en cas d'erreur.
     """
+    _weasyprint_available = False
     try:
-        from weasyprint import HTML
+        from weasyprint import HTML as _WeasyHTML
+        _weasyprint_available = True
     except ImportError:
-        logger.warning("WeasyPrint non disponible pour récap atelier")
-        return None
+        logger.warning("WeasyPrint non disponible pour récap atelier — tentative xhtml2pdf")
 
     from django.template.loader import render_to_string
     from core.models import DossierAtelier, FichierAtelier, ModeOperatoire
 
+    html_string = None
     try:
         # Dossiers + fichiers
         dossiers = DossierAtelier.objects.filter(atelier=atelier, actif=True).order_by('ordre', 'nom')
@@ -750,7 +756,20 @@ def _render_atelier_recap_pdf(atelier):
             'modes_operatoires': modes,
         })
 
-        return HTML(string=html_string).write_pdf()
+        if _weasyprint_available:
+            try:
+                return _WeasyHTML(string=html_string).write_pdf()
+            except Exception as e:
+                logger.warning("WeasyPrint échoué récap atelier (%s) — fallback xhtml2pdf", e)
+
+        # Fallback xhtml2pdf
+        from xhtml2pdf import pisa as _pisa
+        buf_pisa = io.BytesIO()
+        status = _pisa.CreatePDF(io.BytesIO(html_string.encode('utf-8')), dest=buf_pisa)
+        if not status.err:
+            return buf_pisa.getvalue()
+        logger.error("xhtml2pdf a aussi échoué pour récap atelier %s", atelier.pk)
+        return None
 
     except Exception as e:
         logger.error("Erreur PDF récap atelier %s : %s", atelier.pk, e)
@@ -837,7 +856,7 @@ def generer_zip_avance(annee, tri='par_classe', classes_ids=None, eleves_ids=Non
     # ── Filtrer les évaluations ──
     fiches_qs = (
         FicheContrat.objects
-        .filter(actif=True).filter(q_annee | q_dates)
+        .filter(q_annee | q_dates)  # actif=True retiré : les fiches archivées ont actif=False
         .select_related('classe', 'referentiel', 'createur')
         .defer('atelier')
         .distinct()
@@ -952,7 +971,7 @@ def generer_zip_avance(annee, tri='par_classe', classes_ids=None, eleves_ids=Non
         from core.models import QCM, SessionQCM
         qcms_qs = (
             QCM.objects
-            .filter(actif=True).filter(q_annee | q_dates)
+            .filter(q_annee | q_dates)  # actif=True retiré : cohérence avec FicheContrat
             .select_related('classe')
             .distinct()
         )

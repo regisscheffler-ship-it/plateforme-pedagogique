@@ -1615,9 +1615,10 @@ def archives(request):
 
 def archives_export(request):
     """Génère un ZIP téléchargeable contenant les archives filtrées par année scolaire
-    et optionnellement par catégorie. Inclut les fichiers liés et des JSON décrivant
-    les archives et les objets référencés (fiche_contrat / qcm) lorsque présents.
+    et optionnellement par catégorie. Contient uniquement des fichiers PDF et CSV.
     """
+    from core.utils_export import generer_zip_archives
+
     annee = request.GET.get('annee') or request.GET.get('annee_scolaire')
     categorie = request.GET.get('categorie') or None
     if not annee:
@@ -1632,255 +1633,15 @@ def archives_export(request):
         messages.warning(request, '⚠️ Aucun document trouvé pour ces critères.')
         return redirect('core:archives')
 
-    bio = io.BytesIO()
-    with zipfile.ZipFile(bio, 'w', zipfile.ZIP_DEFLATED) as z:
-        meta_list = []
-        for idx, archive in enumerate(qs.order_by('categorie', '-date_creation')):
-            meta = {
-                'id': archive.id,
-                'titre': archive.titre,
-                'description': archive.description,
-                'categorie': archive.categorie,
-                'annee_scolaire': archive.annee_scolaire,
-                'createur': archive.createur.get_full_name() if archive.createur else None,
-                'date_creation': archive.date_creation.isoformat() if archive.date_creation else None,
-            }
-            # Déterminer la classe cible pour cet archive (par défaut Sans_classe)
-            safe_classe = 'Sans_classe'
-            # Tentative: extraire fiche_contrat_id pour associer la classe
-            try:
-                if archive.description and 'fiche_contrat_id:' in archive.description:
-                    part_try = archive.description.split('fiche_contrat_id:')[1].split('|')[0].strip()
-                    fc_try = int(part_try)
-                    fc_obj_try = FicheContrat.objects.filter(id=fc_try).first()
-                    if fc_obj_try and fc_obj_try.classe:
-                        safe_classe = fc_obj_try.classe.nom.replace(' ', '_')
-            except Exception:
-                pass
+    zip_bytes, nb_fichiers, erreurs = generer_zip_archives(annee, categorie)
 
-            # Inclure le fichier si présent
-            if archive.fichier:
-                try:
-                    filename = os.path.basename(archive.fichier.name)
-                    # Placer dans <Classe>/<categorie>/
-                    cat = archive.categorie or 'autre'
-                    arc_folder = f"{safe_classe}/{cat}"
-                    # Essayez d'ouvrir via storage
-                    try:
-                        with archive.fichier.open('rb') as fh:
-                            data = fh.read()
-                    except Exception:
-                        # Fallback sur path si disponible
-                        try:
-                            with open(archive.fichier.path, 'rb') as fh:
-                                data = fh.read()
-                        except Exception:
-                            data = None
-                    if data:
-                        # Si déjà PDF, laisser tel quel
-                        lower = filename.lower()
-                        try:
-                            if data[:4] == b'%PDF':
-                                out_name = f"{arc_folder}/{idx}_{os.path.splitext(filename)[0]}.pdf"
-                                z.writestr(out_name, data)
-                            elif lower.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                                try:
-                                    import fitz
-                                    img_stream = data
-                                    doc_img = fitz.open()
-                                    # Créer page à taille de l'image
-                                    img = fitz.Pixmap(fitz.open('png' if lower.endswith('.png') else 'jpeg', img_stream))
-                                    rect = fitz.Rect(0, 0, img.width, img.height)
-                                    page = doc_img.new_page(width=img.width, height=img.height)
-                                    page.insert_image(rect, stream=img_stream)
-                                    try:
-                                        pdf_bytes = doc_img.write()
-                                    except Exception:
-                                        try:
-                                            pdf_bytes = doc_img.tobytes()
-                                        except Exception:
-                                            pdf_bytes = None
-                                    doc_img.close()
-                                    if pdf_bytes:
-                                        out_name = f"{arc_folder}/{idx}_{os.path.splitext(filename)[0]}.pdf"
-                                        z.writestr(out_name, pdf_bytes)
-                                    else:
-                                        # fallback: write original file
-                                        out_name = f"{arc_folder}/{idx}_{filename}"
-                                        z.writestr(out_name, data)
-                                except Exception:
-                                    out_name = f"{arc_folder}/{idx}_{filename}"
-                                    z.writestr(out_name, data)
-                            else:
-                                # Autres types: on essaye d'inclure tel quel (métadonnées indiquent non-PDF)
-                                out_name = f"{arc_folder}/{idx}_{filename}"
-                                z.writestr(out_name, data)
-                        except Exception:
-                            meta['fichier_inclus'] = False
-                            meta['fichier_nom'] = archive.fichier.name
-                        else:
-                            meta['fichier_inclus'] = True
-                            meta['fichier_nom'] = out_name
-                except Exception:
-                    meta['fichier_inclus'] = False
-            else:
-                meta['fichier_inclus'] = False
+    if nb_fichiers == 0:
+        messages.warning(request, '⚠️ Aucun fichier exportable trouvé pour ces critères.')
+        return redirect('core:archives')
 
-            # Si la description référence une fiche_contrat ou un qcm, joindre leur export.
-            if archive.description and 'fiche_contrat_id:' in archive.description:
-                try:
-                    part = archive.description.split('fiche_contrat_id:')[1].split('|')[0].strip()
-                    fc_id = int(part)
-                    try:
-                        fc = FicheContrat.objects.get(id=fc_id)
-                        # Sérialisation simplifiée
-                        fc_data = {
-                            'id': fc.id,
-                            'titre': getattr(fc, 'titre', getattr(fc, 'titre_tp', '')),
-                            'createur': fc.createur.get_full_name() if fc.createur else None,
-                        }
-                        # Organiser par dossier de classe dans le ZIP
-                        classe_nom = fc.classe.nom if fc.classe else 'Sans_classe'
-                        safe_classe = classe_nom.replace(' ', '_')
-                        # Tentative de générer un PDF résumé via PyMuPDF (si disponible)
-                        try:
-                            import fitz
-                            doc = fitz.open()
-                            page = doc.new_page()
-                            ftitre = getattr(fc, 'titre', getattr(fc, 'titre_tp', ''))
-                            header = f"Fiche contrat: {ftitre}\nClasse: {classe_nom}\nCreateur: {fc.createur.get_full_name() if fc.createur else ''}\n\n"
-                            evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
-                            body = json.dumps({
-                                'fiche': fc_data,
-                                'evaluations': [
-                                    {'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20}
-                                    for ev in evs
-                                ]
-                            }, ensure_ascii=False, indent=2)
-                            # Générer un PDF plus lisible via le helper
-                            evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
-                            pdf_bytes = _render_fiche_contrat_pdf_bytes(fc, evs)
-                            if not pdf_bytes:
-                                # fallback: render print template to HTML then to PDF (xhtml2pdf)
-                                try:
-                                    lignes_contrat = fc.lignes.select_related('competence_pro', 'sous_competence', 'critere', 'indicateur').order_by('ordre')
-                                    cps_vus = set()
-                                    competences_vises = []
-                                    for ligne in lignes_contrat:
-                                        if ligne.competence_pro and ligne.competence_pro.id not in cps_vus:
-                                            cps_vus.add(ligne.competence_pro.id)
-                                            competences_vises.append(ligne.competence_pro)
-                                    competences_vises.sort(key=lambda x: getattr(x, 'code', ''))
-                                    nb_lignes = lignes_contrat.count()
-                                    poids_auto = round(100 / nb_lignes, 2) if nb_lignes > 0 else 10.0
-                                    savoirs_bruts = getattr(fc, 'savoirs_associes', '') or ''
-                                    savoirs_dedupliques = list(dict.fromkeys(l.strip() for l in savoirs_bruts.splitlines() if l.strip()))
-                                    html = render_to_string('core/fiche_contrat_print.html', {
-                                        'fiche_contrat': fc,
-                                        'eleves': evs,
-                                        'competences_vises': competences_vises,
-                                        'poids_auto': poids_auto,
-                                        'savoirs_dedupliques': savoirs_dedupliques,
-                                    })
-                                    buf = io.BytesIO()
-                                    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=buf, encoding='utf-8')
-                                    if not pisa_status.err:
-                                        pdf_bytes = buf.getvalue()
-                                except Exception:
-                                    pdf_bytes = None
-                            if pdf_bytes:
-                                z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.pdf', pdf_bytes)
-                            else:
-                                # Fallback JSON for fiche_contrat
-                                ev_list = []
-                                for ev in evs:
-                                    ev_list.append({'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20})
-                                z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.json', json.dumps(fc_data, ensure_ascii=False, indent=2))
-                                # Tenter de générer un PDF par élève; sinon écrire JSON
-                                for ev in evs:
-                                    pdf_ev = _render_fiche_evaluation_pdf_bytes(ev)
-                                    if not pdf_ev:
-                                        # fallback: render evaluation print template to PDF
-                                        try:
-                                            # build context similar to generer_fiches_evaluation
-                                            lignes = ev.lignes_evaluation.select_related('ligne_contrat__competence_pro', 'ligne_contrat__sous_competence', 'ligne_contrat__critere', 'ligne_contrat__indicateur').order_by('ligne_contrat__ordre')
-                                            from itertools import groupby
-                                            def get_cp(l): return l.ligne_contrat.competence_pro
-                                            def get_sc(l): return l.ligne_contrat.sous_competence
-                                            groupes_competences = []
-                                            for cp, lignes_cp in groupby(lignes, key=get_cp):
-                                                lignes_cp_list = list(lignes_cp)
-                                                sous_competences = []
-                                                for sc, lignes_sc in groupby(lignes_cp_list, key=get_sc):
-                                                    sous_competences.append({'sous_competence': sc, 'lignes': list(lignes_sc)})
-                                                groupes_competences.append({'competence_pro': cp, 'lignes': lignes_cp_list, 'sous_competences': sous_competences})
-                                            html = render_to_string('core/fiche_evaluation_print.html', {
-                                                'fiche_contrat': fc,
-                                                'donnees_impression': [{'eleve': ev.eleve, 'evaluation': ev, 'groupes_competences': groupes_competences}],
-                                                'poids_auto': round(100 / max(1, fc.lignes.count()), 2),
-                                            })
-                                            buf = io.BytesIO()
-                                            pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=buf, encoding='utf-8')
-                                            if not pisa_status.err:
-                                                pdf_ev = buf.getvalue()
-                                        except Exception:
-                                            pdf_ev = None
-                                    safe_nom = (ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else f'eleve_{ev.id}').replace(' ', '_')
-                                    if pdf_ev:
-                                        z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluation_{ev.id}_{safe_nom}.pdf', pdf_ev)
-                                    else:
-                                        z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluation_{ev.id}_{safe_nom}.json', json.dumps({'id': ev.id, 'eleve': safe_nom, 'note': ev.note_sur_20}, ensure_ascii=False, indent=2))
-                        except Exception:
-                            # Si PyMuPDF absent ou erreur, écrire JSON dans le dossier de la classe
-                            evs = FicheEvaluation.objects.filter(fiche_contrat=fc).select_related('eleve__user')
-                            ev_list = []
-                            for ev in evs:
-                                ev_list.append({'id': ev.id, 'eleve': ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else None, 'note': ev.note_sur_20})
-                            z.writestr(f'{safe_classe}/{archive.categorie}/fiche_contrat_{fc.id}.json', json.dumps(fc_data, ensure_ascii=False, indent=2))
-                            # Générer PDF individuel par élève si possible
-                            for ev in evs:
-                                pdf_ev = _render_fiche_evaluation_pdf_bytes(ev)
-                                safe_nom = (ev.eleve.user.get_full_name() if ev.eleve and ev.eleve.user else f'eleve_{ev.id}').replace(' ', '_')
-                                if pdf_ev:
-                                    z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluation_{ev.id}_{safe_nom}.pdf', pdf_ev)
-                                else:
-                                    z.writestr(f'{safe_classe}/{archive.categorie}/fiche_evaluation_{ev.id}_{safe_nom}.json', json.dumps({'id': ev.id, 'eleve': safe_nom, 'note': ev.note_sur_20}, ensure_ascii=False, indent=2))
-                        meta['fiche_contrat_inclus'] = True
-                        meta['fiche_contrat_id'] = fc.id
-                    except FicheContrat.DoesNotExist:
-                        meta['fiche_contrat_inclus'] = False
-                except Exception:
-                    meta['fiche_contrat_inclus'] = False
-
-            if archive.description and 'qcm_id:' in archive.description:
-                try:
-                    raw = archive.description.split('qcm_id:')[1].split('|')[0].strip()
-                    qcm_id_val = int(raw)
-                    try:
-                        qcm_obj = QCM.objects.get(id=qcm_id_val)
-                        qcm_data = {'id': qcm_obj.id, 'titre': qcm_obj.titre, 'date_creation': qcm_obj.date_creation.isoformat() if qcm_obj.date_creation else None}
-                        z.writestr(f'data/qcm_{qcm_obj.id}.json', json.dumps(qcm_data, ensure_ascii=False, indent=2))
-                        # Sessions terminées
-                        sessions = SessionQCM.objects.filter(qcm=qcm_obj, termine=True).select_related('eleve__user')
-                        sessions_list = []
-                        for s in sessions:
-                            sessions_list.append({'id': s.id, 'eleve': s.eleve.user.get_full_name() if s.eleve and s.eleve.user else None, 'score': s.score})
-                        z.writestr(f'data/qcm_sessions_{qcm_obj.id}.json', json.dumps(sessions_list, ensure_ascii=False, indent=2))
-                        meta['qcm_inclus'] = True
-                        meta['qcm_id'] = qcm_obj.id
-                    except QCM.DoesNotExist:
-                        meta['qcm_inclus'] = False
-                except Exception:
-                    meta['qcm_inclus'] = False
-
-            meta_list.append(meta)
-
-        # Écrire le fichier de métadonnées
-        z.writestr('data/archives_metadata.json', json.dumps(meta_list, ensure_ascii=False, indent=2))
-
-    bio.seek(0)
-    filename = f'archives_{annee}.zip'
-    resp = HttpResponse(bio.read(), content_type='application/zip')
+    cat_label = f'_{categorie}' if categorie and categorie != 'all' else ''
+    filename = f'archives_{annee}{cat_label}.zip'
+    resp = HttpResponse(zip_bytes, content_type='application/zip')
     resp['Content-Disposition'] = f'attachment; filename="{filename}"'
     return resp
 
@@ -2003,7 +1764,7 @@ def archives_export_avance(request):
         ProfilUtilisateur.objects
         .filter(type_utilisateur='eleve', compte_approuve=True)
         .select_related('user', 'classe')
-        .order_by('user__last_name', 'user__first_name')
+        .order_by('est_sorti', 'user__last_name', 'user__first_name')  # actifs en premier
     )
 
     CATEGORIES = [
@@ -3071,6 +2832,13 @@ def fiche_portfolio_create(request, portfolio_id):
                 type_evaluation=request.POST.get('type_evaluation', 'formative'),
                 unite_evaluation=request.POST.get('unite_evaluation', '').strip(),
                 activites_professionnelles=request.POST.get('activites_professionnelles', '').strip(),
+                savoirs_necessaires=request.POST.get('savoirs_necessaires', '').strip(),
+                materiels_disponibles=request.POST.get('materiels_disponibles', '').strip(),
+                description_situation=request.POST.get('description_situation', '').strip(),
+                observation_environnement=request.POST.get('observation_environnement', '').strip(),
+                problematique=request.POST.get('problematique', '').strip(),
+                consigne_entreprise=request.POST.get('consigne_entreprise', '').strip(),
+                risques_epi=request.POST.get('risques_epi', '').strip(),
                 createur=request.user,
             )
             pfmp_id = request.POST.get('pfmp')
@@ -3080,7 +2848,21 @@ def fiche_portfolio_create(request, portfolio_id):
             comp_ids = request.POST.getlist('competences')
             if comp_ids:
                 fiche.competences.set(comp_ids)
-            messages.success(request, f'Fiche « {titre} » créée.')
+
+            # Photos
+            photos_count = 0
+            for photo_file in request.FILES.getlist('photos'):
+                if photos_count >= 8:
+                    break
+                PhotoPortfolio.objects.create(
+                    fiche=fiche,
+                    image=photo_file,
+                    legende='',
+                    ordre=photos_count,
+                )
+                photos_count += 1
+
+            messages.success(request, f'Fiche « {titre} » créée.')
             return redirect('core:portfolio_detail', portfolio_id=portfolio.id)
 
     return render(request, 'core/fiche_portfolio_form.html', {
@@ -4006,45 +3788,44 @@ def export_fiche_contrat_archive(request, pk):
                     elif fa.type_contenu == 'lien' and fa.lien_externe:
                         zf.writestr(f'ateliers/{atelier.titre}/{dossier.nom}/{fa.nom}_link.txt', fa.lien_externe)
 
-        # Temporary helper: force HTML output (fallback) to ensure archive downloads
-        def render_to_pdf_bytes(template_name, context, filename_base, request):
-            # Render template to HTML and return as .html bytes
-            html = render_to_string(template_name, context, request=request)
-            return html.encode('utf-8'), f'{filename_base}.html'
-
-        # 2) Fiche contrat (page imprimable)
+        # 2) Fiche contrat (page imprimable) → PDF uniquement
         try:
             lignes_contrat, competences_vises, savoirs_dedupliques = _get_donnees_page1_contrat(fiche_contrat)
             context = {'fiche_contrat': fiche_contrat, 'lignes_contrat': lignes_contrat,
                        'competences_vises': competences_vises, 'savoirs_dedupliques': savoirs_dedupliques}
-            data, fname = render_to_pdf_bytes('core/fiche_contrat_print.html', context, f'fiche_contrat_{fiche_contrat.id}', request)
-            zf.writestr(fname, data)
+            html_fc = render_to_string('core/fiche_contrat_print.html', context, request=request)
+            data_fc, ext_fc = html_to_pdf_bytes(html_fc, request)
+            if ext_fc == '.pdf':
+                zf.writestr(f'fiche_contrat_{fiche_contrat.id}.pdf', data_fc)
         except Exception:
             pass
 
-        # 3) Fiches évaluations (compile toutes les fiches dans un PDF/HTML)
+        # 3) Fiches évaluations → PDF uniquement
         try:
-            # reuse generer_fiches_evaluation context
             fiches_eleves = FicheEvaluation.objects.filter(fiche_contrat=fiche_contrat).select_related('eleve__user')
             donnees_impression = []
             for fe in fiches_eleves:
                 groupes = _get_donnees_page2_evaluation(fe, fiche_contrat)[1]
                 donnees_impression.append({'eleve': fe.eleve, 'evaluation': fe, 'groupes_competences': groupes})
-            context_eval = {'fiche_contrat': fiche_contrat, 'donnees_impression': donnees_impression, 'poids_auto': round(100 / (fiche_contrat.lignes.count() or 1), 2)}
-            data_eval, fname_eval = render_to_pdf_bytes('core/fiche_evaluation_print.html', context_eval, f'fiches_evaluation_{fiche_contrat.id}', request)
-            zf.writestr(fname_eval, data_eval)
+            context_eval = {'fiche_contrat': fiche_contrat, 'donnees_impression': donnees_impression,
+                            'poids_auto': round(100 / (fiche_contrat.lignes.count() or 1), 2)}
+            html_eval = render_to_string('core/fiche_evaluation_print.html', context_eval, request=request)
+            data_eval, ext_eval = html_to_pdf_bytes(html_eval, request)
+            if ext_eval == '.pdf':
+                zf.writestr(f'fiches_evaluation_{fiche_contrat.id}.pdf', data_eval)
         except Exception:
             pass
 
-        # 4) Modes opératoires liés à l'atelier
+        # 4) Modes opératoires liés à l'atelier → PDF uniquement
         try:
             if atelier:
                 for mo in atelier.modes_operatoires.filter(actif=True).order_by('date_creation'):
-                    # Build simple context and render
                     lignes = list(mo.lignes.order_by('ordre'))
                     ctx_mo = {'mode_operatoire': mo, 'lignes': lignes}
-                    data_mo, fname_mo = render_to_pdf_bytes('core/mode_operatoire_print.html', ctx_mo, f'mode_operatoire_{mo.id}', request)
-                    zf.writestr(f'modes_operatoires/{fname_mo}', data_mo)
+                    html_mo = render_to_string('core/mode_operatoire_print.html', ctx_mo, request=request)
+                    data_mo, ext_mo = html_to_pdf_bytes(html_mo, request)
+                    if ext_mo == '.pdf':
+                        zf.writestr(f'modes_operatoires/mode_operatoire_{mo.id}.pdf', data_mo)
         except Exception:
             pass
 
