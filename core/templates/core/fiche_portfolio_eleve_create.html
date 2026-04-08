@@ -96,6 +96,15 @@
     }
     .preview-item img { width: 100%; height: 120px; object-fit: cover; display: block; }
     .preview-item .preview-name { padding: 4px 6px; font-size: 0.68rem; color: #64748b; background: white; border-top: 1px solid #e2e8f0; }
+    .preview-remove {
+        position: absolute; top: 4px; right: 4px;
+        background: rgba(220,38,38,0.85); color: white;
+        border: none; border-radius: 50%; width: 22px; height: 22px;
+        font-size: 1rem; font-weight: 700; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0; line-height: 1;
+    }
+    .preview-remove:hover { background: #dc2626; }
 
     .photo-upload-zone {
         border: 2px dashed #d1d5db; border-radius: 8px;
@@ -146,7 +155,7 @@
     {% endif %}
 
     <div class="info-banner">
-        ℹ️ Vous créez une nouvelle fiche de suivi. Votre enseignant pourra y ajouter des compétences et la valider par la suite.
+        Vous créez une nouvelle fiche de suivi. Votre enseignant pourra y ajouter des compétences et la valider par la suite.
     </div>
 
     <form method="post" enctype="multipart/form-data">
@@ -170,21 +179,11 @@
                 Informations de la fiche
                 <span class="tag-eleve">Élève</span>
             </div>
-            <div class="row-2">
-                <div>
-                    <label class="form-label" for="id_titre">Titre de la fiche <span class="required">*</span></label>
-                    <input type="text" name="titre" id="id_titre" class="form-input"
-                           placeholder="Ex : Pose d'un revêtement mural — Stage chez Dupont…"
-                           value="{{ request.POST.titre|default:'' }}" required>
-                </div>
-                <div>
-                    <label class="form-label" for="id_type">Type d'évaluation</label>
-                    <select name="type_evaluation" id="id_type" class="form-select">
-                        <option value="formative" {% if request.POST.type_evaluation == 'formative' or not request.POST.type_evaluation %}selected{% endif %}>Formative</option>
-                        <option value="sommative" {% if request.POST.type_evaluation == 'sommative' %}selected{% endif %}>Sommative</option>
-                        <option value="certificative" {% if request.POST.type_evaluation == 'certificative' %}selected{% endif %}>Certificative</option>
-                    </select>
-                </div>
+            <div>
+                <label class="form-label" for="id_titre">Titre de la fiche <span class="required">*</span></label>
+                <input type="text" name="titre" id="id_titre" class="form-input"
+                       placeholder="Ex : Pose d'un revêtement mural — Stage chez Dupont…"
+                       value="{{ request.POST.titre|default:'' }}" required>
             </div>
         </div>
 
@@ -196,21 +195,21 @@
             </div>
 
             <div class="eleve-zone">
-                <div class="eleve-zone-title">✍️ Description de la situation de travail</div>
+                <div class="eleve-zone-title">Description de la situation de travail</div>
                 <textarea name="description_situation" class="form-textarea"
                           placeholder="Décrivez le contexte : lieu, personnes présentes, tâche réalisée…">{{ request.POST.description_situation|default:'' }}</textarea>
                 <div class="hint-text">Ex : J'ai effectué cette activité lors de mon stage chez… en présence de…</div>
             </div>
 
             <div class="eleve-zone">
-                <div class="eleve-zone-title">🔍 Observation de l'environnement professionnel</div>
+                <div class="eleve-zone-title">Observation de l'environnement professionnel</div>
                 <textarea name="observation_environnement" class="form-textarea"
                           placeholder="Matériels utilisés, conditions de travail, organisation du poste…">{{ request.POST.observation_environnement|default:'' }}</textarea>
                 <div class="hint-text">Ex : L'atelier est équipé de… La sécurité est assurée par…</div>
             </div>
 
             <div class="eleve-zone">
-                <div class="eleve-zone-title">💡 Problématique identifiée</div>
+                <div class="eleve-zone-title">Problématique identifiée</div>
                 <textarea name="problematique" class="form-textarea" style="min-height:80px;"
                           placeholder="Quelle question ou difficulté avez-vous rencontrée ?">{{ request.POST.problematique|default:'' }}</textarea>
                 <div class="hint-text">Ex : Comment optimiser… ? Pourquoi faut-il… ?</div>
@@ -225,13 +224,13 @@
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
                 <div class="eleve-zone" style="border-color:#bfdbfe;">
-                    <div class="eleve-zone-title" style="color:#1d4ed8;">&#128214; Pour cela, je dois connaître</div>
+                    <div class="eleve-zone-title" style="color:#1d4ed8;">Pour cela, je dois connaître</div>
                     <textarea name="savoirs_necessaires" class="form-textarea"
                               placeholder="Savoirs, notions, connaissances théoriques nécessaires…">{{ request.POST.savoirs_necessaires|default:'' }}</textarea>
                     <div class="hint-text">Ex : Je dois connaître les normes…</div>
                 </div>
                 <div class="eleve-zone" style="border-color:#d1d5db;">
-                    <div class="eleve-zone-title">&#128295; Je dispose (matériels, matériaux)</div>
+                    <div class="eleve-zone-title">Je dispose (matériels, matériaux)</div>
                     <textarea name="materiels_disponibles" class="form-textarea"
                               placeholder="Outils, matériaux et équipements à disposition…">{{ request.POST.materiels_disponibles|default:'' }}</textarea>
                     <div class="hint-text">Ex : J’ai à disposition…</div>
@@ -245,7 +244,7 @@
                               placeholder="Consigne ou mission donnée par le tuteur…">{{ request.POST.consigne_entreprise|default:'' }}</textarea>
                 </div>
                 <div class="eleve-zone" style="border-color:#fca5a5;">
-                    <div class="eleve-zone-title" style="color:#b91c1c;">&#9888;&#65039; Risques et EPI</div>
+                    <div class="eleve-zone-title" style="color:#b91c1c;">Risques et EPI</div>
                     <textarea name="risques_epi" class="form-textarea" style="min-height:70px;"
                               placeholder="Risques identifiés, équipements de protection…">{{ request.POST.risques_epi|default:'' }}</textarea>
                 </div>
@@ -255,11 +254,11 @@
         <!-- PHOTOS -->
         <div class="info-section" style="border-bottom:none;">
             <div class="section-heading">
-                Photos justificatives (8 max)
+                Photos justificatives (<span id="count-photos">0</span>/8)
                 <span class="tag-eleve">Élève</span>
             </div>
             <div id="preview-grid" class="photos-preview-grid"></div>
-            <label class="photo-upload-zone" for="id_photos">
+            <label class="photo-upload-zone" for="id_photos" id="upload-zone">
                 <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <rect x="3" y="3" width="18" height="18" rx="2"/>
                     <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -269,7 +268,7 @@
                 <div style="font-size:0.78rem;margin-top:2px;">JPEG ou PNG — 8 maximum, 5 Mo max par photo</div>
             </label>
             <input type="file" id="id_photos" name="photos" multiple accept="image/*"
-                   style="display:none;" onchange="previewFiles(this)">
+                   style="display:none;" onchange="addFiles(this)">
         </div>
 
     </div><!-- /.fiche-a4 -->
@@ -285,22 +284,50 @@
 </div>
 
 <script>
-function previewFiles(input) {
-    const max = 8;
-    if (input.files.length > max) {
-        alert('Vous ne pouvez pas dépasser ' + max + ' photos.');
+let pendingFiles = [];
+
+function addFiles(input) {
+    const newFiles = Array.from(input.files);
+    const remaining = 8 - pendingFiles.length;
+    if (newFiles.length > remaining) {
+        alert('Vous ne pouvez ajouter que ' + remaining + ' photo(s) supplémentaire(s) (max 8 au total).');
         input.value = '';
         return;
     }
+    newFiles.forEach(f => pendingFiles.push(f));
+    input.value = ''; // reset pour permettre de resélectionner le même fichier
+    syncInput();
+    renderPreviews();
+}
+
+function removeFile(i) {
+    pendingFiles.splice(i, 1);
+    syncInput();
+    renderPreviews();
+}
+
+function syncInput() {
+    const dt = new DataTransfer();
+    pendingFiles.forEach(f => dt.items.add(f));
+    document.getElementById('id_photos').files = dt.files;
+    const counter = document.getElementById('count-photos');
+    if (counter) counter.textContent = pendingFiles.length;
+    const zone = document.getElementById('upload-zone');
+    if (zone) zone.style.display = pendingFiles.length >= 8 ? 'none' : '';
+}
+
+function renderPreviews() {
     const grid = document.getElementById('preview-grid');
     grid.innerHTML = '';
-    Array.from(input.files).forEach(file => {
+    pendingFiles.forEach((file, i) => {
+        const div = document.createElement('div');
+        div.className = 'preview-item';
+        grid.appendChild(div);
         const reader = new FileReader();
         reader.onload = function(e) {
-            const div = document.createElement('div');
-            div.className = 'preview-item';
-            div.innerHTML = '<img src="' + e.target.result + '" alt=""><div class="preview-name">' + file.name.slice(-18) + '</div>';
-            grid.appendChild(div);
+            div.innerHTML = '<img src="' + e.target.result + '" alt="">' +
+                '<button type="button" class="preview-remove" onclick="removeFile(' + i + ')" title="Supprimer">&times;</button>' +
+                '<div class="preview-name">' + file.name.slice(-20) + '</div>';
         };
         reader.readAsDataURL(file);
     });

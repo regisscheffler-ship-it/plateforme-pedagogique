@@ -683,25 +683,25 @@
             {% endif %}
         </div>
 
-        
-        <!-- VIGNETTE COMMUNICATION (cliquable dans la grille) -->
-        <a href="{% url 'core:communication_eleve' %}" 
-           class="section-card" 
-           style="border-left:5px solid #4a7fc1;text-decoration:none;
-                  display:block;cursor:pointer;transition:all 0.2s;">
-            <div class="card-header">
-                <svg viewBox="0 0 24 24" stroke="#4a7fc1" stroke-width="2" 
-                     fill="none" style="width:24px;height:24px;flex-shrink:0;">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <h2 style="color:#4a7fc1;margin:0;">Communication</h2>
-            </div>
-            <p style="color:#6c757d;font-size:0.9rem;margin:0;">
-                Envoyer un message ou une photo annotée au professeur
-            </p>
-        </a>
 
     </div>
+
+    <!-- VIGNETTE COMMUNICATION (pleine largeur) -->
+    <a href="{% url 'core:communication_eleve' %}"
+       class="section-card"
+       style="border-left:5px solid #4a7fc1;text-decoration:none;
+              display:block;cursor:pointer;transition:all 0.2s;margin-top:0;">
+        <div class="card-header">
+            <svg viewBox="0 0 24 24" stroke="#4a7fc1" stroke-width="2"
+                 fill="none" style="width:24px;height:24px;flex-shrink:0;">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <h2 style="color:#4a7fc1;margin:0;">Communication</h2>
+        </div>
+        <p style="color:#6c757d;font-size:0.9rem;margin:0;">
+            Envoyer un message ou une photo annotée au professeur
+        </p>
+    </a>
 
     <!-- ═══ 5. MES ÉVALUATIONS ═══ -->
     {% if mes_evaluations %}
