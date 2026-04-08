@@ -631,7 +631,17 @@ def _render_fiche_complete_pdf(fiche_eval):
         return pdf_bytes
 
     except Exception as e:
-        logger.error("Erreur génération PDF fiche complète : %s", e)
+        logger.warning("WeasyPrint échoué (%s) — fallback xhtml2pdf", e)
+        # Fallback xhtml2pdf (pisa)
+        try:
+            from xhtml2pdf import pisa as _pisa
+            buf_pisa = io.BytesIO()
+            status = _pisa.CreatePDF(io.BytesIO(html_string.encode('utf-8')), dest=buf_pisa)
+            if not status.err:
+                return buf_pisa.getvalue()
+            logger.error("xhtml2pdf a aussi échoué pour fiche complète")
+        except Exception as e2:
+            logger.error("Fallback xhtml2pdf échoué : %s", e2)
         return None
 
 
@@ -937,6 +947,57 @@ def generer_zip_avance(annee, tri='par_classe', classes_ids=None, eleves_ids=Non
                 nb += 1
 
         # ════════════════════════════════════════
+        # C) QCM — résultats par élève (CSV)
+        # ════════════════════════════════════════
+        from core.models import QCM, SessionQCM
+        qcms_qs = (
+            QCM.objects
+            .filter(actif=True).filter(q_annee | q_dates)
+            .select_related('classe')
+            .distinct()
+        )
+        if classes_ids:
+            qcms_qs = qcms_qs.filter(classe_id__in=classes_ids)
+
+        for qcm in qcms_qs:
+            cl_nom = safe(qcm.classe.nom) if qcm.classe else 'Sans_classe'
+            qcm_nom = safe(qcm.titre)
+
+            sessions = (
+                SessionQCM.objects
+                .filter(qcm=qcm, termine=True)
+                .select_related('eleve__user')
+                .order_by('eleve__user__last_name')
+            )
+            if eleves_ids:
+                sessions = sessions.filter(eleve_id__in=eleves_ids)
+            if not sessions.exists():
+                continue
+
+            rows = []
+            for s in sessions:
+                nom = s.eleve.user.get_full_name() if s.eleve and s.eleve.user else '?'
+                rows.append([
+                    nom,
+                    str(s.note_sur_20) if s.note_sur_20 is not None else '',
+                    str(s.nb_bonnes_reponses) if hasattr(s, 'nb_bonnes_reponses') else '',
+                    s.date_debut.strftime('%d/%m/%Y %H:%M') if hasattr(s, 'date_debut') and s.date_debut else '',
+                ])
+
+            if tri == 'par_classe':
+                path = f"{cl_nom}/QCM/{qcm_nom}_resultats.csv"
+            elif tri == 'par_eleve':
+                path = f"_QCM/{cl_nom}/{qcm_nom}_resultats.csv"
+            else:  # par_categorie
+                path = f"QCM/{cl_nom}/{qcm_nom}_resultats.csv"
+
+            zf.writestr(
+                uniq(zf, path),
+                make_csv(rows, ['Élève', 'Note /20', 'Bonnes réponses', 'Date']),
+            )
+            nb += 1
+
+        # ════════════════════════════════════════
         # LISEZ-MOI
         # ════════════════════════════════════════
         tri_labels = {
@@ -951,6 +1012,7 @@ Fichiers exportés : {nb}
 Erreurs : {len(erreurs)}
 
 Les fiches d'évaluation complètes sont au format PDF (2 pages A4).
+Les résultats de QCM sont au format CSV (tableur).
 Les documents manuels (examens, administratif, ressources) sont
 inclus dans leur format d'origine.
 Quand un TP est lié à un atelier, un sous-dossier Atelier_<nom>/
