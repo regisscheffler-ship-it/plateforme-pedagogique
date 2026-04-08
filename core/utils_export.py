@@ -533,7 +533,7 @@ def _render_fiche_complete_pdf(fiche_eval):
     """
     Génère un PDF A4 (bytes) de la fiche complète d'un élève
     (fiche contrat page 1 + fiche évaluation page 2).
-    Essaie WeasyPrint en premier, puis xhtml2pdf en fallback.
+    Essaie xhtml2pdf en premier (stable), puis WeasyPrint en fallback.
     Retourne None en cas d'erreur.
     """
     _weasyprint_available = False
@@ -541,7 +541,7 @@ def _render_fiche_complete_pdf(fiche_eval):
         from weasyprint import HTML as _WeasyHTML
         _weasyprint_available = True
     except ImportError:
-        logger.warning("WeasyPrint non disponible — tentative xhtml2pdf")
+        pass
 
     from django.template.loader import render_to_string
     from itertools import groupby as _groupby
@@ -629,19 +629,24 @@ def _render_fiche_complete_pdf(fiche_eval):
             'poids_auto': poids_auto,
         })
 
+        # Essai 1 : xhtml2pdf (stable, pas de dépendance système)
+        try:
+            from xhtml2pdf import pisa as _pisa
+            buf_pisa = io.BytesIO()
+            status = _pisa.CreatePDF(io.BytesIO(html_string.encode('utf-8')), dest=buf_pisa)
+            if not status.err:
+                return buf_pisa.getvalue()
+        except Exception as e_pisa:
+            logger.warning("xhtml2pdf échoué (%s) — tentative WeasyPrint", e_pisa)
+
+        # Essai 2 : WeasyPrint (meilleure qualité mais dépend de Cairo)
         if _weasyprint_available:
             try:
                 return _WeasyHTML(string=html_string).write_pdf()
-            except Exception as e:
-                logger.warning("WeasyPrint échoué (%s) — fallback xhtml2pdf", e)
+            except Exception as e_wp:
+                logger.warning("WeasyPrint aussi échoué (%s)", e_wp)
 
-        # Fallback xhtml2pdf (pisa)
-        from xhtml2pdf import pisa as _pisa
-        buf_pisa = io.BytesIO()
-        status = _pisa.CreatePDF(io.BytesIO(html_string.encode('utf-8')), dest=buf_pisa)
-        if not status.err:
-            return buf_pisa.getvalue()
-        logger.error("xhtml2pdf a aussi échoué pour fiche complète")
+        logger.error("Tous les moteurs PDF ont échoué pour fiche complète")
         return None
 
     except Exception as e2:
@@ -712,7 +717,7 @@ def _generer_liens_txt(atelier):
 def _render_atelier_recap_pdf(atelier):
     """
     Génère un PDF A4 (bytes) récapitulatif d'un atelier.
-    Essaie WeasyPrint en premier, puis xhtml2pdf en fallback.
+    Essaie xhtml2pdf en premier (stable), puis WeasyPrint en fallback.
     Retourne None en cas d'erreur.
     """
     _weasyprint_available = False
@@ -720,7 +725,7 @@ def _render_atelier_recap_pdf(atelier):
         from weasyprint import HTML as _WeasyHTML
         _weasyprint_available = True
     except ImportError:
-        logger.warning("WeasyPrint non disponible pour récap atelier — tentative xhtml2pdf")
+        pass
 
     from django.template.loader import render_to_string
     from core.models import DossierAtelier, FichierAtelier, ModeOperatoire
@@ -756,19 +761,24 @@ def _render_atelier_recap_pdf(atelier):
             'modes_operatoires': modes,
         })
 
+        # Essai 1 : xhtml2pdf (stable)
+        try:
+            from xhtml2pdf import pisa as _pisa
+            buf_pisa = io.BytesIO()
+            status = _pisa.CreatePDF(io.BytesIO(html_string.encode('utf-8')), dest=buf_pisa)
+            if not status.err:
+                return buf_pisa.getvalue()
+        except Exception as e_pisa:
+            logger.warning("xhtml2pdf échoué récap atelier (%s) — tentative WeasyPrint", e_pisa)
+
+        # Essai 2 : WeasyPrint
         if _weasyprint_available:
             try:
                 return _WeasyHTML(string=html_string).write_pdf()
-            except Exception as e:
-                logger.warning("WeasyPrint échoué récap atelier (%s) — fallback xhtml2pdf", e)
+            except Exception as e_wp:
+                logger.warning("WeasyPrint aussi échoué récap atelier (%s)", e_wp)
 
-        # Fallback xhtml2pdf
-        from xhtml2pdf import pisa as _pisa
-        buf_pisa = io.BytesIO()
-        status = _pisa.CreatePDF(io.BytesIO(html_string.encode('utf-8')), dest=buf_pisa)
-        if not status.err:
-            return buf_pisa.getvalue()
-        logger.error("xhtml2pdf a aussi échoué pour récap atelier %s", atelier.pk)
+        logger.error("Tous les moteurs PDF ont échoué pour récap atelier %s", atelier.pk)
         return None
 
     except Exception as e:
