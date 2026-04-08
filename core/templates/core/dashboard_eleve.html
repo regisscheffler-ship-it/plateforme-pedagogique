@@ -89,7 +89,7 @@
     .grid-4-cols {
         display: grid; grid-template-columns: repeat(4, 1fr);
         gap: 1.5rem; margin-bottom: 1.5rem;
-        align-items: start;
+        align-items: stretch;
     }
     @media (max-width: 1200px) { .grid-4-cols { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 640px)  { .grid-4-cols { grid-template-columns: 1fr; } }
@@ -627,8 +627,23 @@
             {% endif %}
         </div>
 
+        <!-- COMMUNICATION -->
+        <a href="{% url 'core:communication_eleve' %}" class="section-card"
+           style="border-left:5px solid #4a7fc1;text-decoration:none;cursor:pointer;transition:all 0.2s;">
+            <div class="card-header">
+                <svg viewBox="0 0 24 24" stroke="#4a7fc1" stroke-width="2"
+                     fill="none" style="width:24px;height:24px;flex-shrink:0;stroke-linecap:round;stroke-linejoin:round;">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <h2 style="color:#4a7fc1;margin:0;">Communication</h2>
+            </div>
+            <p style="color:#6c757d;font-size:0.9rem;margin:0;">
+                Envoyer un message ou une photo annotée au professeur
+            </p>
+        </a>
+
         <!-- MES RENDUS -->
-        <div class="section-card rendus">
+        <div class="section-card rendus" style="grid-column: 1 / -1;">
             <div class="card-header">
                 <svg style="stroke:#d94f4f;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -686,68 +701,8 @@
 
     </div>
 
-    <!-- VIGNETTE COMMUNICATION (pleine largeur) -->
-    <a href="{% url 'core:communication_eleve' %}"
-       class="section-card"
-       style="border-left:5px solid #4a7fc1;text-decoration:none;
-              display:block;cursor:pointer;transition:all 0.2s;margin-top:0;">
-        <div class="card-header">
-            <svg viewBox="0 0 24 24" stroke="#4a7fc1" stroke-width="2"
-                 fill="none" style="width:24px;height:24px;flex-shrink:0;">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <h2 style="color:#4a7fc1;margin:0;">Communication</h2>
-        </div>
-        <p style="color:#6c757d;font-size:0.9rem;margin:0;">
-            Envoyer un message ou une photo annotée au professeur
-        </p>
-    </a>
 
-    <!-- ═══ 5. MES ÉVALUATIONS ═══ -->
-    {% if mes_evaluations %}
-    <div class="section-card evaluations">
-        <div class="card-header">
-            <svg style="stroke:#4a9fc1;" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-            <h2>Mes Évaluations Validées</h2>
-        </div>
 
-        <div class="eval-grid">
-            {% for eval in mes_evaluations %}
-            <div class="eval-card">
-                <div class="eval-card-title">{{ eval.fiche_contrat.titre_tp }}</div>
-                <div class="eval-card-date">
-                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    {{ eval.fiche_contrat.date_tp|date:"d/m/Y"|default:"—" }}
-                </div>
-                <div class="eval-card-footer">
-                    {% if eval.validee and eval.note_sur_20 %}
-                    <span class="note-badge">{{ eval.note_sur_20|floatformat:1 }}/20</span>
-                    {% else %}
-                    <span style="color:#6c757d;font-size:0.85rem;">Non validée</span>
-                    {% endif %}
-                    {% if eval.validee %}
-                    <a href="{% url 'core:eleve_fiche_complete' eval.id %}" class="btn-eval">
-                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        Voir
-                    </a>
-                    {% else %}
-                    <span style="color:#6c757d;font-size:0.85rem;">En attente</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
