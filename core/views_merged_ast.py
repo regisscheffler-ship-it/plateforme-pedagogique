@@ -5348,6 +5348,7 @@ def assistant_tts(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+@login_required
 def dashboard_professeur(request):
     nb_messages_non_lus = MessageEleve.objects.filter(
         professeur=request.user.profil, lu=False
