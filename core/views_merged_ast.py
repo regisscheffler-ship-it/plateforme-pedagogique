@@ -3751,6 +3751,37 @@ def evaluation_lier_atelier(request, pk):
 
 @login_required
 @user_passes_test(est_professeur)
+def fiche_contrat_modifier(request, pk):
+    """Modification des informations textuelles d'une FicheContrat existante."""
+    fiche_contrat = get_object_or_404(FicheContrat, id=pk, createur=request.user)
+    if request.method == 'POST':
+        fiche_contrat.titre_tp = request.POST.get('titre_tp', fiche_contrat.titre_tp).strip() or fiche_contrat.titre_tp
+        date_tp_str = request.POST.get('date_tp', '')
+        if date_tp_str:
+            from datetime import date as _date
+            try:
+                fiche_contrat.date_tp = _date.fromisoformat(date_tp_str)
+            except ValueError:
+                pass
+        else:
+            fiche_contrat.date_tp = None
+        type_eval = request.POST.get('type_evaluation', fiche_contrat.type_evaluation)
+        if type_eval in ('formative', 'sommative', 'certificative'):
+            fiche_contrat.type_evaluation = type_eval
+        fiche_contrat.problematique            = request.POST.get('problematique', fiche_contrat.problematique)
+        fiche_contrat.contexte                 = request.POST.get('contexte', fiche_contrat.contexte)
+        fiche_contrat.consigne                 = request.POST.get('consigne', fiche_contrat.consigne)
+        fiche_contrat.observation_environnement = request.POST.get('observation_environnement', fiche_contrat.observation_environnement)
+        fiche_contrat.materiels                = request.POST.get('materiels', fiche_contrat.materiels)
+        fiche_contrat.risques_epi              = request.POST.get('risques_epi', fiche_contrat.risques_epi)
+        fiche_contrat.save()
+        messages.success(request, '✅ Fiche contrat mise à jour.')
+        return redirect('core:evaluation_detail', pk=fiche_contrat.id)
+    return render(request, 'core/fiche_contrat_modifier.html', {'fiche_contrat': fiche_contrat})
+
+
+@login_required
+@user_passes_test(est_professeur)
 def export_fiche_contrat_archive(request, pk):
     """Génère un ZIP contenant : fichiers de l'atelier (si présent),
     la fiche contrat (PDF) et les fiches évaluations (PDF) pour téléchargement.

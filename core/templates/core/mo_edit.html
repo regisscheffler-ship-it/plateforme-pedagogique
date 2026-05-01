@@ -731,10 +731,21 @@ document.addEventListener('click', function(e) {
     const fd = new FormData();
     fd.append('csrfmiddlewaretoken', CSRF);
 
-    // Collecter tous les champs associés à ce form
-    tr.querySelectorAll('[form="' + formId + '"]').forEach(function(field) {
-        if (field.name) fd.set(field.name, field.value);
-    });
+    // Collecter les valeurs des champs de cette ligne directement par leur ID/name
+    const phaseEl  = tr.querySelector('textarea[name="phase"]');
+    const ordreEl  = tr.querySelector('input[name="ordre"]');
+    const opsEl    = document.getElementById('ops-'   + ligneId);
+    const matEl    = document.getElementById('mat-'   + ligneId);
+    const ctrlEl   = document.getElementById('ctrl-'  + ligneId);
+    const santeEl  = document.getElementById('sante-' + ligneId);
+    const envEl    = document.getElementById('env-'   + ligneId);
+    if (phaseEl) fd.set('phase', phaseEl.value);
+    if (ordreEl) fd.set('ordre', ordreEl.value);
+    if (opsEl)   fd.set('operations', opsEl.value);
+    if (matEl)   fd.set('materiels', matEl.value);
+    if (ctrlEl)  fd.set('controle', ctrlEl.value);
+    if (santeEl) fd.set('risques_sante', santeEl.value);
+    if (envEl)   fd.set('risques_environnement', envEl.value);
 
     // Ajouter l'image si sélectionnée
     const fileInput = document.getElementById('file-' + ligneId);

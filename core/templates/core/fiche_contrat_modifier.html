@@ -1,0 +1,145 @@
+{% extends 'core/base.html' %}
+{% block title %}Modifier – {{ fiche_contrat.titre_tp }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-container { max-width: 860px; margin: 0 auto; padding: 2rem; }
+
+    .btn-retour {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.6rem 1.2rem; background: white; color: #4a9fc1;
+        border: 2px solid #4a9fc1; border-radius: 8px; text-decoration: none;
+        font-weight: 600; font-size: 0.9rem; transition: all 0.2s;
+        margin-bottom: 1.5rem;
+    }
+    .btn-retour:hover { background: #4a9fc1; color: white; }
+
+    .card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 2rem;
+    }
+    .card h2 {
+        font-size: 1.25rem; color: #1a3a5c; font-weight: 700;
+        margin-bottom: 1.5rem; padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label {
+        display: block; font-weight: 600; color: #374151;
+        font-size: 0.88rem; margin-bottom: 0.4rem;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group select,
+    .form-group textarea {
+        width: 100%; padding: 0.65rem 0.9rem;
+        border: 1.5px solid #d1d5db; border-radius: 8px;
+        font-size: 0.95rem; color: #1f2937; background: #fafafa;
+        transition: border-color 0.2s; box-sizing: border-box;
+        font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        border-color: #4a9fc1; outline: none;
+        box-shadow: 0 0 0 3px rgba(74,159,193,0.12);
+    }
+    .form-group textarea { resize: vertical; min-height: 90px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+    .btn-save {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.75rem 2rem; background: #0d9e6e; color: white;
+        border: none; border-radius: 8px; font-size: 1rem; font-weight: 600;
+        cursor: pointer; transition: background 0.2s;
+    }
+    .btn-save:hover { background: #0a8a5e; }
+    .btn-annuler {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.75rem 1.5rem; background: white; color: #6b7280;
+        border: 1.5px solid #d1d5db; border-radius: 8px; text-decoration: none;
+        font-size: 1rem; font-weight: 600; transition: all 0.2s; margin-left: 0.8rem;
+    }
+    .btn-annuler:hover { border-color: #9ca3af; color: #374151; }
+    .actions { margin-top: 1.8rem; display: flex; align-items: center; }
+</style>
+
+<div class="page-container">
+    <a href="{% url 'core:evaluation_detail' fiche_contrat.id %}" class="btn-retour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        Retour à l'évaluation
+    </a>
+
+    <div class="card">
+        <h2>✏️ Modifier la fiche contrat</h2>
+
+        <form method="post" action="{% url 'core:fiche_contrat_modifier' fiche_contrat.id %}">
+            {% csrf_token %}
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="titre_tp">Titre du TP *</label>
+                    <input type="text" id="titre_tp" name="titre_tp"
+                           value="{{ fiche_contrat.titre_tp }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="date_tp">Date du TP</label>
+                    <input type="date" id="date_tp" name="date_tp"
+                           value="{{ fiche_contrat.date_tp|date:'Y-m-d'|default:'' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="type_evaluation">Type d'évaluation</label>
+                <select id="type_evaluation" name="type_evaluation">
+                    <option value="formative"     {% if fiche_contrat.type_evaluation == 'formative'     %}selected{% endif %}>Formative</option>
+                    <option value="sommative"     {% if fiche_contrat.type_evaluation == 'sommative'     %}selected{% endif %}>Sommative</option>
+                    <option value="certificative" {% if fiche_contrat.type_evaluation == 'certificative' %}selected{% endif %}>Certificative</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="problematique">Problématique</label>
+                <textarea id="problematique" name="problematique" rows="3">{{ fiche_contrat.problematique }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="contexte">Description de la situation professionnelle</label>
+                <textarea id="contexte" name="contexte" rows="4">{{ fiche_contrat.contexte }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="consigne">Consigne pour les élèves</label>
+                <textarea id="consigne" name="consigne" rows="3">{{ fiche_contrat.consigne }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="observation_environnement">Observation de l'environnement de travail</label>
+                <textarea id="observation_environnement" name="observation_environnement" rows="3">{{ fiche_contrat.observation_environnement }}</textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="materiels">Matériels à disposition</label>
+                    <textarea id="materiels" name="materiels" rows="3">{{ fiche_contrat.materiels }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="risques_epi">Risques et EPI</label>
+                    <textarea id="risques_epi" name="risques_epi" rows="3">{{ fiche_contrat.risques_epi }}</textarea>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn-save">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    Enregistrer
+                </button>
+                <a href="{% url 'core:evaluation_detail' fiche_contrat.id %}" class="btn-annuler">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
