@@ -317,26 +317,25 @@ def generer_mode_operatoire(texte, titre):
             f"Tu es un expert en construction et bâtiment.\n"
             f"Génère un mode opératoire détaillé pour : {titre}\n\n"
             f"RÈGLES IMPÉRATIVES :\n"
-            f"- Chaque champ peut contenir jusqu'à 10 lignes, style liste à puces (\u2022 ou -), JAMAIS vide.\n"
-            f"- 'operations' : liste détaillée de toutes les actions concrètes, verbes d'action, toutes les étapes importantes.\n"
-            f"- 'materiels' : liste COMPLÈTE des matériels, outils et EPI nécessaires, un par ligne.\n"
-            f"- 'controle' : liste complète des points de contrôle qualité et de conformité.\n"
-            f"- 'risques_sante' : OBLIGATOIRE — identifie TOUS les risques santé/sécurité propres à cette phase + mesures EPI.\n"
-            f"- 'risques_environnement' : OBLIGATOIRE — identifie TOUS les risques environnementaux propres à cette phase + mesures de prévention.\n"
-            f"- Génère entre 5 et 10 phases maximum, bien ordonnées.\n"
-            f"IMPORTANT : Les champs 'risques_sante' et 'risques_environnement' ne doivent JAMAIS être vides.\n"
-            f"Chaque phase de chantier présente des risques spécifiques, identifie-les systématiquement.\n\n"
-            f"Réponds UNIQUEMENT avec du JSON valide, "
-            f"sans markdown, sans bloc code.\n"
+            f"- Génère entre 5 et 10 phases maximum, bien ordonnées logiquement.\n"
+            f"- Chaque champ doit être DÉTAILLÉ avec jusqu'à 5 éléments séparés par ' | '.\n"
+            f"- 'operations' : toutes les actions concrètes, verbes d'action, étapes importantes séparées par ' | '.\n"
+            f"- 'materiels' : liste COMPLÈTE des matériels, outils et EPI nécessaires séparés par ' | '.\n"
+            f"- 'controle' : points de contrôle qualité et de conformité séparés par ' | '.\n"
+            f"- 'risques_sante' : OBLIGATOIRE — risques santé/sécurité + EPI au format 'Risque — EPI' séparés par ' | '.\n"
+            f"- 'risques_environnement' : OBLIGATOIRE — risques environnementaux + prévention au format 'Risque — mesure' séparés par ' | '.\n"
+            f"IMPORTANT : 'risques_sante' et 'risques_environnement' ne doivent JAMAIS être vides.\n"
+            f"Chaque phase présente des risques spécifiques, identifie-les systématiquement.\n\n"
+            f"Réponds UNIQUEMENT avec du JSON valide sur une seule ligne, sans markdown, sans bloc code, sans retours à la ligne dans les valeurs.\n"
             f"Format strict :\n"
             f'{{"lignes": [{{'
             f'"ordre": 1, '
-            f'"phase": "Nom court de la phase", '
-            f'"operations": "Actions concises...", '
-            f'"materiels": "outil1, outil2, matériau1", '
-            f'"controle": "Point clé à vérifier", '
-            f'"risques_sante": "Risque — EPI requis", '
-            f'"risques_environnement": "Risque — mesure"'
+            f'"phase": "Nom court", '
+            f'"operations": "Action 1 | Action 2 | Action 3", '
+            f'"materiels": "outil1 | outil2 | EPI", '
+            f'"controle": "Point 1 | Point 2", '
+            f'"risques_sante": "Risque chute — EPI harnais | Risque électrique — coupure courant", '
+            f'"risques_environnement": "Déchets — tri sélectif | Poussières — arrosage"'
             f'}}]}}\n\n'
             f"Texte source : {texte_tronque}"
         )
@@ -391,19 +390,19 @@ def regenerer_ligne(titre_mo, phase, colonne):
         client = genai.Client(api_key=api_key)
 
         descriptions_colonnes = {
-            'operations':            "liste détaillée de toutes les actions concrètes, verbes d'action, toutes les étapes importantes (jusqu'à 10 lignes, liste à puces \u2022)",
-            'materiels':             'liste COMPLÈTE des matériels, outils et EPI nécessaires, un par ligne (jusqu\'\u00e0 10 lignes, liste à puces \u2022)',
-            'controle':              'liste complète des points de contrôle qualité et de conformité pour cette phase (jusqu\'\u00e0 10 lignes, liste à puces \u2022)',
-            'risques_sante':         'liste COMPLÈTE et OBLIGATOIRE de tous les risques santé/sécurité propres à cette phase + mesures EPI (jusqu\'\u00e0 10 lignes, format : "\u2022 Risque — mesure EPI")',
-            'risques_environnement': 'liste COMPLÈTE et OBLIGATOIRE de tous les risques environnementaux propres à cette phase + mesures de prévention (jusqu\'\u00e0 10 lignes, format : "\u2022 Risque — mesure")',
+            'operations':            "toutes les actions concrètes et étapes importantes séparées par ' | ' (max 5 éléments)",
+            'materiels':             "liste COMPLÈTE des matériels, outils et EPI nécessaires séparés par ' | ' (max 5 éléments)",
+            'controle':              "points de contrôle qualité et de conformité séparés par ' | ' (max 5 éléments)",
+            'risques_sante':         "risques santé/sécurité OBLIGATOIRES + EPI au format 'Risque — EPI' séparés par ' | ' (max 5 éléments)",
+            'risques_environnement': "risques environnementaux OBLIGATOIRES + prévention au format 'Risque — mesure' séparés par ' | ' (max 5 éléments)",
         }
-        description = descriptions_colonnes.get(colonne, 'contenu détaillé, jusqu\'\u00e0 10 lignes, liste à puces')
+        description = descriptions_colonnes.get(colonne, "contenu détaillé séparé par ' | ' (max 5 éléments)")
 
         prompt = (
             f"Pour le mode opératoire '{titre_mo}', phase '{phase}', "
             f"génère UNIQUEMENT le contenu de la colonne '{colonne}' : {description}. "
-            f"Sois DÉTAILLÉ et COMPLET, maximum 10 lignes, utilise des puces (\u2022 ou -). "
-            f"Réponds avec du texte brut uniquement, pas de JSON, pas de markdown."
+            f"Sois DÉTAILLÉ et COMPLET. "
+            f"Réponds sur UNE SEULE LIGNE, texte brut, séparateurs ' | ' entre les éléments, pas de markdown, pas de JSON."
         )
 
         response = _appeler_gemini('gemini-2.5-flash-lite', prompt)
