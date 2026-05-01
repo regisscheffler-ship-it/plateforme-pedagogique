@@ -5158,11 +5158,13 @@ def mo_toggle_visible_eleves(request, pk):
 
 
 def ligne_update(request, pk):
-    """Mise à jour d'une ligne (POST uniquement)."""
+    """Mise à jour d'une ligne (POST uniquement). Supporte AJAX (X-Requested-With)."""
     if request.method != 'POST':
         return redirect('core:dashboard_professeur')
     ligne = get_object_or_404(LigneModeOperatoire, id=pk)
     if ligne.mode_operatoire.createur != request.user and not request.user.is_staff:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'succes': False, 'erreur': 'Accès refusé'}, status=403)
         messages.error(request, '❌ Accès refusé.')
         return redirect('core:dashboard_professeur')
 
@@ -5172,12 +5174,19 @@ def ligne_update(request, pk):
     ligne.controle = request.POST.get('controle', ligne.controle)
     ligne.risques_sante = request.POST.get('risques_sante', ligne.risques_sante)
     ligne.risques_environnement = request.POST.get('risques_environnement', ligne.risques_environnement)
-    ligne.ordre = request.POST.get('ordre', ligne.ordre)
+    try:
+        ligne.ordre = int(request.POST.get('ordre', ligne.ordre))
+    except (ValueError, TypeError):
+        pass
 
     if 'schema_image' in request.FILES:
         ligne.schema_image = request.FILES['schema_image']
 
     ligne.save()
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'succes': True})
+
     messages.success(request, '✅ Phase sauvegardée.')
     return redirect('core:mo_edit', pk=ligne.mode_operatoire.id)
 

@@ -475,17 +475,13 @@
                 <td>
                     <div class="schema-cell">
                         {% if ligne.schema_image %}
-                        <img src="{{ ligne.schema_image.url }}" class="schema-preview" alt="Schéma">
+                        <img src="{{ ligne.schema_image.url }}" class="schema-preview" alt="Schéma" id="img-{{ ligne.id }}">
+                        {% else %}
+                        <img src="" class="schema-preview" id="img-{{ ligne.id }}" style="display:none;">
                         {% endif %}
-                        <form method="post"
-                              action="{% url 'core:ligne_update' ligne.id %}"
-                              enctype="multipart/form-data"
-                              style="margin:0;padding:0;">
-                            {% csrf_token %}
-                            <input type="file" name="schema_image" accept="image/*"
-                                   class="file-schema"
-                                   onchange="this.form.submit()">
-                        </form>
+                        <input type="file" name="schema_image" accept="image/*"
+                               class="file-schema" id="file-{{ ligne.id }}"
+                               onchange="previewSchema(this, {{ ligne.id }})">
                     </div>
                 </td>
 
@@ -716,6 +712,79 @@ document.addEventListener('click', function(e) {
              btn.disabled = false;
              btn.classList.remove('loading');
          });
+});
+
+// ── Sauvegarde manuelle via AJAX (fiable, remplace form= attribute) ──
+function previewSchema(input, ligneId) {
+    const img = document.getElementById('img-' + ligneId);
+    if (input.files && input.files[0] && img) {
+        const url = URL.createObjectURL(input.files[0]);
+        img.src = url;
+        img.style.display = '';
+    }
+}
+
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-save-ligne');
+    if (!btn) return;
+    e.preventDefault();
+
+    const formId = btn.getAttribute('form');
+    const form = document.getElementById(formId);
+    const tr = btn.closest('tr[id^="ligne-"]');
+    if (!form || !tr) return;
+
+    // Extraire l'id de la ligne depuis l'id du form (form-upd-X)
+    const ligneId = formId.replace('form-upd-', '');
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+
+    // Collecter tous les champs associés à ce form
+    tr.querySelectorAll('[form="' + formId + '"]').forEach(function(field) {
+        if (field.name) fd.set(field.name, field.value);
+    });
+
+    // Ajouter l'image si sélectionnée
+    const fileInput = document.getElementById('file-' + ligneId);
+    if (fileInput && fileInput.files.length > 0) {
+        fd.set('schema_image', fileInput.files[0]);
+    }
+
+    const origHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.succes) {
+            btn.innerHTML = '✅';
+            btn.style.background = '#d1fae5';
+            btn.style.borderColor = '#0d9e6e';
+            // Réinitialiser l'input file
+            if (fileInput) fileInput.value = '';
+            setTimeout(() => {
+                btn.innerHTML = origHTML;
+                btn.disabled = false;
+                btn.style.background = '';
+                btn.style.borderColor = '';
+            }, 1800);
+        } else {
+            alert('Erreur sauvegarde : ' + (data.erreur || 'inconnue'));
+            btn.innerHTML = origHTML;
+            btn.disabled = false;
+        }
+    })
+    .catch(() => {
+        alert('Erreur réseau lors de la sauvegarde.');
+        btn.innerHTML = origHTML;
+        btn.disabled = false;
+    });
 });
 </script>
 {% endblock %}
