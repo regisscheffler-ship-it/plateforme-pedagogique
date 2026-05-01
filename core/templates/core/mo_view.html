@@ -32,34 +32,35 @@
     .btn-print svg  { width: 15px; height: 15px; }
 
     /* Wrapper + tableau */
-    .table-wrapper { overflow-x: auto; background: white; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.07); }
+    .table-wrapper { overflow-x: auto; background: #f0f2f5; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.07); padding: 6px; }
 
     table.mo-table {
-        width: 100%; border-collapse: collapse; min-width: 1100px;
+        width: 100%; border-collapse: separate; border-spacing: 3px; min-width: 1100px;
         table-layout: fixed;
     }
     .mo-table thead th {
         padding: 0.7rem 0.75rem; font-size: 0.78rem; font-weight: 700;
         text-align: center; text-transform: uppercase; letter-spacing: 0.4px;
-        border: 1px solid #b0b8c1;
+        border-radius: 8px; background: white;
     }
-    /* Couleurs en-têtes */
-    .mo-table th.col-phase    { background: #aad4f5; color: #1a3a5c; width: 11%; }
-    .mo-table th.col-schema   { background: #aad4f5; color: #1a3a5c; width: 13%; }
-    .mo-table th.col-ops      { background: #f7e26b; color: #4a3600; width: 18%; }
-    .mo-table th.col-mat      { background: #f9c95c; color: #4a2500; width: 13%; }
-    .mo-table th.col-ctrl     { background: #f7a8a8; color: #6a0000; width: 11%; }
-    .mo-table th.col-sante    { background: #ffffff; color: #e00000; border: 2px solid #e00000; width: 17%; }
-    .mo-table th.col-env      { background: #90d990; color: #1a4a1a; width: 17%; }
+    /* Couleurs en-têtes — texte coloré + bordure colorée + fond très léger */
+    .mo-table th.col-phase  { color: #1a3a5c; border: 2px solid #aad4f5; background: #f0f7ff; width: 11%; }
+    .mo-table th.col-schema { color: #1a3a5c; border: 2px solid #aad4f5; background: #f0f7ff; width: 13%; }
+    .mo-table th.col-ops    { color: #5a3600; border: 2px solid #f0c000; background: #fffde7; width: 18%; }
+    .mo-table th.col-mat    { color: #5a3000; border: 2px solid #f9c95c; background: #fff8e1; width: 13%; }
+    .mo-table th.col-ctrl   { color: #7a0000; border: 2px solid #f7a8a8; background: #fff5f5; width: 11%; }
+    .mo-table th.col-sante  { color: #cc0000; border: 2px solid #e00000; background: #fff5f5; width: 17%; }
+    .mo-table th.col-env    { color: #1a4a1a; border: 2px solid #5cb85c; background: #f0fff0; width: 17%; }
 
-    .mo-table tbody tr { border-bottom: 1px solid #d0d5dc; }
-    .mo-table tbody tr:hover { background: #fafbfc; }
+    .mo-table tbody tr:hover td { background: #f8f9fa; }
     .mo-table tbody td {
-        padding: 0.6rem 0.7rem; vertical-align: top; border: 1px solid #d0d5dc;
+        padding: 0.6rem 0.7rem; vertical-align: top;
+        border: 1px solid #d0d5dc; border-radius: 6px;
         font-size: 0.84rem; color: #2c3e50; line-height: 1.5;
+        background: white;
     }
     /* Colonne santé : rouge */
-    .mo-table td.td-sante { color: #e00000; }
+    .mo-table td.td-sante { color: #cc0000; }
 
     .phase-badge {
         display: inline-flex; align-items: center; justify-content: center;
@@ -94,7 +95,8 @@
 
         table.mo-table {
             width: 100% !important; min-width: unset !important;
-            border-collapse: collapse !important; font-size: 7.5pt; font-family: Arial, sans-serif;
+            border-collapse: collapse !important; border-spacing: 0 !important;
+            font-size: 7.5pt; font-family: Arial, sans-serif;
         }
         .mo-table th.col-phase  { width: 11% !important; }
         .mo-table th.col-schema { width: 13% !important; }
@@ -108,13 +110,13 @@
 
         .mo-table thead th { padding: 4px 5px !important; font-size: 7.5pt !important; border: 1px solid #555 !important; }
         .mo-table th.col-phase,
-        .mo-table th.col-schema { background: #aad4f5 !important; color: #1a4a72 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-ops    { background: #f9e15d !important; color: #5a4000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-mat    { background: #f9c95c !important; color: #5a3000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-ctrl   { background: #f9b0b0 !important; color: #7a0000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-sante  { background: #ffffff !important; color: #e00000 !important; border: 2px solid #e00000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table td.td-sante   { color: #e00000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-env    { background: #82d982 !important; color: #1a5a1a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .mo-table th.col-schema { background: #f0f7ff !important; color: #1a3a5c !important; border: 1px solid #aad4f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .mo-table th.col-ops    { background: #fffde7 !important; color: #5a3600 !important; border: 1px solid #f0c000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .mo-table th.col-mat    { background: #fff8e1 !important; color: #5a3000 !important; border: 1px solid #f9c95c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .mo-table th.col-ctrl   { background: #fff5f5 !important; color: #7a0000 !important; border: 1px solid #f7a8a8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .mo-table th.col-sante  { background: #fff5f5 !important; color: #cc0000 !important; border: 1px solid #e00000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .mo-table td.td-sante   { color: #cc0000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .mo-table th.col-env    { background: #f0fff0 !important; color: #1a4a1a !important; border: 1px solid #5cb85c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
         .mo-table tbody td {
             padding: 4px 5px !important; border: 1px solid #888 !important;

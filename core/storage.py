@@ -3,7 +3,7 @@ from cloudinary_storage import app_settings
 
 # Chemins qui doivent TOUJOURS être stockés comme image Cloudinary (type IMAGE)
 # Cela garantit des URLs image/upload même si l'extension manque ou est inconnue.
-_FORCE_IMAGE_PATHS = frozenset(['portfolio/photos/'])
+_FORCE_IMAGE_PATHS = frozenset(['portfolio/photos/', 'modes_operatoires/schemas/'])
 
 # Extensions image supplémentaires non couvertes par cloudinary_storage par défaut
 _EXTRA_IMAGE_EXTS = frozenset(['heic', 'heif', 'avif', 'jfif', 'webp'])
