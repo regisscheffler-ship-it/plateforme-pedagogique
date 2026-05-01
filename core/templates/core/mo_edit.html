@@ -229,61 +229,52 @@
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
 
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+
         .mo-table thead th {
             padding: 5px 6px !important;
             font-size: 7.5pt !important;
             font-weight: 700;
             text-align: center;
-            border: 1px solid #555 !important;
+            border-radius: 0 !important;
             white-space: normal !important;
-            color: black !important;
         }
         .mo-table th.col-phase,
         .mo-table th.col-schema {
-            background: #aad4f5 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            color: #1a4a72 !important;
+            background: #f0f7ff !important; color: #1a3a5c !important;
+            border: 1px solid #aad4f5 !important;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
         .mo-table th.col-operations {
-            background: #f9e15d !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            color: #5a4000 !important;
+            background: #fffde7 !important; color: #5a3600 !important;
+            border: 1px solid #f0c000 !important;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
         .mo-table th.col-materiels {
-            background: #f9c95c !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            color: #5a3000 !important;
+            background: #fff8e1 !important; color: #5a3000 !important;
+            border: 1px solid #f9c95c !important;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
         .mo-table th.col-controle {
-            background: #f9b0b0 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            color: #7a0000 !important;
+            background: #fff5f5 !important; color: #7a0000 !important;
+            border: 1px solid #f7a8a8 !important;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
         .mo-table th.col-sante {
-            background: #ffffff !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            color: #e00000 !important;
+            background: #fff5f5 !important; color: #cc0000 !important;
+            border: 1px solid #e00000 !important;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
-        /* Cellules corps colonne santé : fond blanc, texte rouge vif */
         .mo-table td:nth-child(6) {
-            background: #ffffff !important;
-            color: #e00000 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            color: #cc0000 !important;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
-        .mo-table td:nth-child(6) .cell-textarea {
-            color: #e00000 !important;
-        }
+        .mo-table td:nth-child(6) .cell-textarea { color: #cc0000 !important; }
         .mo-table th.col-env {
-            background: #82d982 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            color: #1a5a1a !important;
+            background: #f0fff0 !important; color: #1a4a1a !important;
+            border: 1px solid #5cb85c !important;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
         }
 
         /* Cellules corps */
@@ -572,7 +563,7 @@
                         IA ligne
                     </button>
 
-                    <button type="submit" form="form-upd-{{ ligne.id }}" class="btn-save-ligne" style="margin-bottom:0.35rem;">
+                    <button type="button" form="form-upd-{{ ligne.id }}" class="btn-save-ligne" style="margin-bottom:0.35rem;">
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                         Sauver
                     </button>
