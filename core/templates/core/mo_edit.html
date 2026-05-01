@@ -477,8 +477,15 @@
                         {% if ligne.schema_image %}
                         <img src="{{ ligne.schema_image.url }}" class="schema-preview" alt="Schéma">
                         {% endif %}
-                        <input type="file" name="schema_image" accept="image/*" class="file-schema"
-                               form="form-upd-{{ ligne.id }}">
+                        <form method="post"
+                              action="{% url 'core:ligne_update' ligne.id %}"
+                              enctype="multipart/form-data"
+                              style="margin:0;padding:0;">
+                            {% csrf_token %}
+                            <input type="file" name="schema_image" accept="image/*"
+                                   class="file-schema"
+                                   onchange="this.form.submit()">
+                        </form>
                     </div>
                 </td>
 
