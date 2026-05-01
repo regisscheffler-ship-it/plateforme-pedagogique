@@ -288,23 +288,21 @@
         }
         .mo-table tbody tr:hover { background: transparent !important; }
 
-        /* Textareas : texte brut, sans débordement ni scrollbar */
-        .cell-textarea {
-            border: none !important;
-            background: transparent !important;
-            resize: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            min-height: unset !important;
-            height: auto !important;
+        /* Textareas : masquées à l'impression — remplacées par .print-proxy (JS beforeprint) */
+        .cell-textarea { display: none !important; }
+
+        /* Proxy div : affiche le texte complet, sans clipping */
+        .print-proxy {
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: break-word;
             font-size: 7pt !important;
-            overflow: hidden !important;        /* élimine les flèches scrollbar */
             line-height: 1.35 !important;
-            width: 100% !important;
-            scrollbar-width: none !important;  /* Firefox */
+            font-family: Arial, sans-serif;
+            padding: 0; margin: 0; color: inherit;
         }
-        .cell-textarea::-webkit-scrollbar { display: none !important; }
-        .cell-textarea.phase-input { font-weight: 700; }
+        .mo-table td:nth-child(6) .print-proxy { color: #cc0000 !important; }
+        .print-proxy.phase-proxy { font-weight: 700; }
 
         /* Schéma : image lisible */
         .schema-cell { display: block !important; }
@@ -793,34 +791,43 @@ document.addEventListener('click', function(e) {
 
 // ── Impression : zoom adaptatif sur document.body pour forcer 1 seule page A4 paysage ──
 (function () {
-    // A4 paysage en CSS pixels (96 dpi) : 297mm × 210mm
-    var PAGE_W = 297 / 25.4 * 96;  // ≈ 1122 px
-    var PAGE_H = 210 / 25.4 * 96;  // ≈ 794 px
-    // Padding body (0.8cm × 2 côtés H, 0.6cm × 2 côtés V)
-    var PAD_H  = 2 * 8 / 25.4 * 96; // ≈ 60 px
-    var PAD_V  = 2 * 6 / 25.4 * 96; // ≈ 45 px
-    var AVAIL_W = PAGE_W - PAD_H;    // ≈ 1062 px
-    var AVAIL_H = PAGE_H - PAD_V;    // ≈ 749 px
+    // Zone utile A4 paysage à 96 dpi moins le padding body (0.8cm H, 0.6cm V)
+    var AVAIL_W = (297 - 16) / 25.4 * 96;  // ≈ 1062 px
+    var AVAIL_H = (210 - 12) / 25.4 * 96;  // ≈ 749 px
+
+    var _proxies = [];
 
     function fitToPage() {
-        // Réinitialiser d'abord pour mesurer sans zoom
+        // 1. Remplacer chaque textarea par un <div> qui affiche tout le texte
+        _proxies = [];
+        document.querySelectorAll('.cell-textarea').forEach(function (ta) {
+            var div = document.createElement('div');
+            div.className = 'print-proxy' + (ta.classList.contains('phase-input') ? ' phase-proxy' : '');
+            div.textContent = ta.value;
+            ta.insertAdjacentElement('afterend', div);
+            ta.style.setProperty('display', 'none', 'important');
+            _proxies.push({ div: div, ta: ta });
+        });
+
+        // 2. Réinitialiser le zoom et forcer un reflow complet
         document.body.style.zoom = '';
-        // Forcer le reflow
         void document.body.offsetHeight;
 
-        var contentW = document.body.scrollWidth;
-        var contentH = document.body.scrollHeight;
-
-        var scale = Math.min(AVAIL_W / contentW, AVAIL_H / contentH);
-
+        // 3. Calculer le facteur d'échelle sur le contenu réel
+        var scale = Math.min(AVAIL_W / document.body.scrollWidth,
+                             AVAIL_H / document.body.scrollHeight);
         if (scale < 0.99) {
-            scale = Math.max(scale, 0.15); // sécurité : jamais moins de 15 %
-            document.body.style.zoom = scale;
+            document.body.style.zoom = Math.max(scale, 0.15).toString();
         }
     }
 
     function resetFit() {
         document.body.style.zoom = '';
+        _proxies.forEach(function (p) {
+            p.ta.style.removeProperty('display');
+            if (p.div.parentNode) p.div.parentNode.removeChild(p.div);
+        });
+        _proxies = [];
     }
 
     window.addEventListener('beforeprint', fitToPage);
