@@ -159,7 +159,7 @@
         @page { size: A4 landscape; margin: 0; }
 
         /* Compensation : padding interne pour que le contenu ne touche pas les bords */
-        body { padding: 0.6cm 0.8cm !important; }
+        body { padding: 0.6cm 0.8cm !important; margin: 0 !important; }
 
         /* Cacher tout ce qui n'est pas le contenu MO */
         nav, header, footer,
@@ -212,6 +212,8 @@
             table-layout: fixed !important;
             font-size: 7pt;
             font-family: Arial, sans-serif;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
         }
         .mo-table tbody td {
             border-radius: 0 !important;
@@ -788,5 +790,41 @@ document.addEventListener('click', function(e) {
         btn.disabled = false;
     });
 });
+
+// ── Impression : zoom adaptatif sur document.body pour forcer 1 seule page A4 paysage ──
+(function () {
+    // A4 paysage en CSS pixels (96 dpi) : 297mm × 210mm
+    var PAGE_W = 297 / 25.4 * 96;  // ≈ 1122 px
+    var PAGE_H = 210 / 25.4 * 96;  // ≈ 794 px
+    // Padding body (0.8cm × 2 côtés H, 0.6cm × 2 côtés V)
+    var PAD_H  = 2 * 8 / 25.4 * 96; // ≈ 60 px
+    var PAD_V  = 2 * 6 / 25.4 * 96; // ≈ 45 px
+    var AVAIL_W = PAGE_W - PAD_H;    // ≈ 1062 px
+    var AVAIL_H = PAGE_H - PAD_V;    // ≈ 749 px
+
+    function fitToPage() {
+        // Réinitialiser d'abord pour mesurer sans zoom
+        document.body.style.zoom = '';
+        // Forcer le reflow
+        void document.body.offsetHeight;
+
+        var contentW = document.body.scrollWidth;
+        var contentH = document.body.scrollHeight;
+
+        var scale = Math.min(AVAIL_W / contentW, AVAIL_H / contentH);
+
+        if (scale < 0.99) {
+            scale = Math.max(scale, 0.15); // sécurité : jamais moins de 15 %
+            document.body.style.zoom = scale;
+        }
+    }
+
+    function resetFit() {
+        document.body.style.zoom = '';
+    }
+
+    window.addEventListener('beforeprint', fitToPage);
+    window.addEventListener('afterprint',  resetFit);
+})();
 </script>
 {% endblock %}
