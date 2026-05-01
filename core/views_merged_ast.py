@@ -5073,17 +5073,15 @@ def mo_create(request, theme_id=None, atelier_id=None):
             if lignes:
                 lignes = lignes[:10]  # Plafonner à 10 phases max
                 for l in lignes:
-                    # Convertir les séparateurs ' | ' en retours à la ligne
-                    def _fmt(v): return str(v).replace(' | ', '\n') if v else ''
                     LigneModeOperatoire.objects.create(
                         mode_operatoire=mo,
                         ordre=l.get('ordre', 0),
                         phase=l.get('phase', ''),
-                        operations=_fmt(l.get('operations', '')),
-                        materiels=_fmt(l.get('materiels', '')),
-                        controle=_fmt(l.get('controle', '')),
-                        risques_sante=_fmt(l.get('risques_sante', '')),
-                        risques_environnement=_fmt(l.get('risques_environnement', '')),
+                        operations=l.get('operations', ''),
+                        materiels=l.get('materiels', ''),
+                        controle=l.get('controle', ''),
+                        risques_sante=l.get('risques_sante', ''),
+                        risques_environnement=l.get('risques_environnement', ''),
                     )
                 messages.success(request, f'✅ Mode opératoire "{mo.titre}" créé avec {len(lignes)} phases générées par l\'IA !')
             else:
@@ -5199,8 +5197,6 @@ def ligne_regenerer(request, pk, colonne):
     from .services import regenerer_ligne
     contenu = regenerer_ligne(ligne.mode_operatoire.titre, ligne.phase, colonne)
     if contenu:
-        # Convertir les séparateurs ' | ' en retours à la ligne pour l'affichage
-        contenu = contenu.replace(' | ', '\n')
         setattr(ligne, colonne, contenu)
         ligne.save()
         return JsonResponse({'succes': True, 'contenu': contenu})

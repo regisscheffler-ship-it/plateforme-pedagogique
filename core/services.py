@@ -299,6 +299,52 @@ def generer_une_question(sujet, contexte=''):
 # GÉNÉRATION MODE OPÉRATOIRE COMPLET
 # =====================================================
 
+def _reparer_json(raw):
+    """
+    Répare les problèmes courants dans la réponse JSON de Gemini :
+    - Supprime les blocs markdown (```json ... ```)
+    - Remplace les retours à la ligne RÉELS à l'intérieur des strings JSON
+      par des séquences d'échappement \\n valides
+    - Corrige les séquences d'échappement invalides
+    """
+    # Supprimer les blocs markdown
+    raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+    raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE)
+    raw = raw.strip()
+
+    # Remplacer les vrais sauts de ligne à l'intérieur des valeurs JSON
+    # en parcourant le texte caractère par caractère
+    result = []
+    in_string = False
+    i = 0
+    while i < len(raw):
+        c = raw[i]
+        if c == '\\' and in_string:
+            # Séquence échappée — copier les deux caractères tels quels
+            result.append(c)
+            i += 1
+            if i < len(raw):
+                result.append(raw[i])
+                i += 1
+            continue
+        if c == '"':
+            in_string = not in_string
+        if in_string and c == '\n':
+            result.append('\\n')
+        elif in_string and c == '\r':
+            pass  # ignorer CR
+        elif in_string and c == '\t':
+            result.append('\\t')
+        else:
+            result.append(c)
+        i += 1
+    raw = ''.join(result)
+
+    # Corriger les séquences d'échappement invalides restantes
+    raw = re.sub(r'\\([^"\\/bfnrtu0-9])', r'\1', raw)
+    return raw
+
+
 def generer_mode_operatoire(texte, titre):
     try:
         from google import genai
@@ -315,28 +361,18 @@ def generer_mode_operatoire(texte, titre):
 
         prompt = (
             f"Tu es un expert en construction et bâtiment.\n"
-            f"Génère un mode opératoire détaillé pour : {titre}\n\n"
+            f"Génère un mode opératoire pour : {titre}\n\n"
             f"RÈGLES IMPÉRATIVES :\n"
-            f"- Génère entre 5 et 10 phases maximum, bien ordonnées logiquement.\n"
-            f"- Chaque champ doit être DÉTAILLÉ avec jusqu'à 5 éléments séparés par ' | '.\n"
-            f"- 'operations' : toutes les actions concrètes, verbes d'action, étapes importantes séparées par ' | '.\n"
-            f"- 'materiels' : liste COMPLÈTE des matériels, outils et EPI nécessaires séparés par ' | '.\n"
-            f"- 'controle' : points de contrôle qualité et de conformité séparés par ' | '.\n"
-            f"- 'risques_sante' : OBLIGATOIRE — risques santé/sécurité + EPI au format 'Risque — EPI' séparés par ' | '.\n"
-            f"- 'risques_environnement' : OBLIGATOIRE — risques environnementaux + prévention au format 'Risque — mesure' séparés par ' | '.\n"
-            f"IMPORTANT : 'risques_sante' et 'risques_environnement' ne doivent JAMAIS être vides.\n"
-            f"Chaque phase présente des risques spécifiques, identifie-les systématiquement.\n\n"
-            f"Réponds UNIQUEMENT avec du JSON valide sur une seule ligne, sans markdown, sans bloc code, sans retours à la ligne dans les valeurs.\n"
-            f"Format strict :\n"
-            f'{{"lignes": [{{'
-            f'"ordre": 1, '
-            f'"phase": "Nom court", '
-            f'"operations": "Action 1 | Action 2 | Action 3", '
-            f'"materiels": "outil1 | outil2 | EPI", '
-            f'"controle": "Point 1 | Point 2", '
-            f'"risques_sante": "Risque chute — EPI harnais | Risque électrique — coupure courant", '
-            f'"risques_environnement": "Déchets — tri sélectif | Poussières — arrosage"'
-            f'}}]}}\n\n'
+            f"- Génère entre 5 et 10 phases, bien ordonnées.\n"
+            f"- Chaque champ : texte court, plusieurs éléments séparés par des virgules.\n"
+            f"- 'operations' : actions concrètes, verbes d'action, plusieurs étapes.\n"
+            f"- 'materiels' : matériels, outils et EPI nécessaires séparés par des virgules.\n"
+            f"- 'controle' : points de contrôle qualité essentiels.\n"
+            f"- 'risques_sante' : OBLIGATOIRE — 2-3 risques santé/sécurité + EPI. JAMAIS vide.\n"
+            f"- 'risques_environnement' : OBLIGATOIRE — 2-3 risques environnementaux + mesures. JAMAIS vide.\n\n"
+            f"Réponds UNIQUEMENT en JSON valide sans markdown ni bloc de code.\n"
+            f"Format :\n"
+            f'{{"lignes": [{{"ordre": 1, "phase": "Nom", "operations": "op1, op2, op3", "materiels": "outil1, outil2", "controle": "point1, point2", "risques_sante": "Chute de plain-pied — chaussures de sécurité, Poussières — masque FFP2", "risques_environnement": "Déchets BTP — benne dédiée, Eau de gâchage — bac récupération"}}]}}\n\n'
             f"Texte source : {texte_tronque}"
         )
 
@@ -344,10 +380,7 @@ def generer_mode_operatoire(texte, titre):
         raw = response.text.strip()
         print(f"[Gemini-MO] Réponse brute ({len(raw)} chars) : {raw[:200]}...")
 
-        raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
-        raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE)
-        raw = raw.strip()
-        raw = re.sub(r'\\([^"\\/bfnrtu])', r'\1', raw)
+        raw = _reparer_json(raw)
 
         data = json.loads(raw)
         lignes_brutes = data.get('lignes', [])
@@ -361,9 +394,9 @@ def generer_mode_operatoire(texte, titre):
                 continue
             # Fallback si les risques sont vides malgré les instructions
             if not l.get('risques_sante', '').strip():
-                l['risques_sante'] = '\u2022 Risques liés à cette phase — à évaluer avec le responsable sécurité'
+                l['risques_sante'] = 'Risques propres à cette phase — consulter le responsable sécurité'
             if not l.get('risques_environnement', '').strip():
-                l['risques_environnement'] = '\u2022 Impacts environnementaux à identifier pour cette phase'
+                l['risques_environnement'] = 'Impacts environnementaux à identifier pour cette phase'
             lignes_valides.append(l)
 
         print(f"[Gemini-MO] {len(lignes_valides)}/{len(lignes_brutes)} lignes valides.")
@@ -390,19 +423,18 @@ def regenerer_ligne(titre_mo, phase, colonne):
         client = genai.Client(api_key=api_key)
 
         descriptions_colonnes = {
-            'operations':            "toutes les actions concrètes et étapes importantes séparées par ' | ' (max 5 éléments)",
-            'materiels':             "liste COMPLÈTE des matériels, outils et EPI nécessaires séparés par ' | ' (max 5 éléments)",
-            'controle':              "points de contrôle qualité et de conformité séparés par ' | ' (max 5 éléments)",
-            'risques_sante':         "risques santé/sécurité OBLIGATOIRES + EPI au format 'Risque — EPI' séparés par ' | ' (max 5 éléments)",
-            'risques_environnement': "risques environnementaux OBLIGATOIRES + prévention au format 'Risque — mesure' séparés par ' | ' (max 5 éléments)",
+            'operations':            "actions concrètes à réaliser (verbes d'action, plusieurs étapes séparées par des virgules)",
+            'materiels':             'liste des matériels, outils et EPI nécessaires séparés par des virgules',
+            'controle':              'points de contrôle qualité et conformité séparés par des virgules',
+            'risques_sante':         'OBLIGATOIRE — 2-3 risques santé/sécurité + EPI, format : "Risque — prévention, Risque 2 — EPI"',
+            'risques_environnement': 'OBLIGATOIRE — 2-3 risques environnementaux + mesures, format : "Risque — mesure, Risque 2 — mesure"',
         }
-        description = descriptions_colonnes.get(colonne, "contenu détaillé séparé par ' | ' (max 5 éléments)")
+        description = descriptions_colonnes.get(colonne, 'contenu synthétique séparé par des virgules')
 
         prompt = (
             f"Pour le mode opératoire '{titre_mo}', phase '{phase}', "
             f"génère UNIQUEMENT le contenu de la colonne '{colonne}' : {description}. "
-            f"Sois DÉTAILLÉ et COMPLET. "
-            f"Réponds sur UNE SEULE LIGNE, texte brut, séparateurs ' | ' entre les éléments, pas de markdown, pas de JSON."
+            f"Réponds avec du texte brut uniquement, pas de JSON, pas de markdown."
         )
 
         response = _appeler_gemini('gemini-2.5-flash-lite', prompt)
