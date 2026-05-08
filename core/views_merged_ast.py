@@ -1440,7 +1440,10 @@ def gestion_approbations(request):
     eleves_en_attente = ProfilUtilisateur.objects.filter(
         type_utilisateur='eleve', compte_approuve=False, user__is_active=False
     ).select_related('user', 'classe').order_by('-date_inscription')
-    return render(request, 'core/gestion_approbations.html', {'eleves_en_attente': eleves_en_attente})
+    return render(request, 'core/gestion_approbations.html', {
+        'eleves_en_attente': eleves_en_attente,
+        'classes': Classe.objects.all().order_by('nom'),
+    })
 
 
 def approuver_eleve(request, pk):
@@ -1471,7 +1474,7 @@ def refuser_eleve(request, pk):
     profil = get_object_or_404(ProfilUtilisateur, id=pk)
     if request.method == 'POST':
         profil.user.delete()
-        messages.success(request, '❌ Demande refusée.')
+        messages.success(request, 'Demande refusée et compte supprimé.')
     return redirect('core:gestion_approbations')
 
 
