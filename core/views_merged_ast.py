@@ -611,6 +611,18 @@ def inscription_eleve(request):
                 date_naissance=date_naissance if date_naissance else None,
                 compte_approuve=False, annee_entree=str(datetime.now().year)
             )
+            # Notifier tous les professeurs qu'un élève attend l'approbation
+            profs = ProfilUtilisateur.objects.filter(
+                type_utilisateur='professeur'
+            ).select_related('user')
+            for prof in profs:
+                Notification.objects.create(
+                    destinataire=prof.user,
+                    type_notification='approbation_eleve',
+                    titre='🎓 Nouvelle demande d\'inscription',
+                    message=f'L\'élève {prenom} {nom} ({username}) demande l\'accès à la plateforme dans la classe {classe.nom}.',
+                    lien='/gestion/eleves/approbations/',
+                )
             messages.success(request, "✅ Demande d'inscription envoyée !")
             return redirect('core:home')
         except Exception as e:
