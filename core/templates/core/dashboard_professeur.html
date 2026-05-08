@@ -174,6 +174,38 @@
     .card-stats        { border-left-color: #4a7fc1;  color: #4a7fc1;  }
     .card-assistant    { border-left-color: #8b5cf6;  color: #8b5cf6;  }
 
+    .card-approbation { border-left-color: #d94f4f;  color: #d94f4f; }
+    .card-approbation .card-icon-wrapper   { background: #fee2e2; }
+
+    .banner-approbation {
+        background: #fff3f3;
+        border: 2px solid #d94f4f;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .banner-approbation .banner-text {
+        flex: 1;
+        font-weight: 600;
+        color: #991b1b;
+        font-size: 1rem;
+    }
+    .banner-approbation a.btn-approuver {
+        background: #d94f4f;
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+    .banner-approbation a.btn-approuver:hover { background: #b91c1c; }
+
     .card-classes .card-icon-wrapper       { background: #eff6ff; }
     .card-eleves .card-icon-wrapper        { background: #d1fae5; }
     .card-themes .card-icon-wrapper        { background: #f5f3ff; }
@@ -225,6 +257,21 @@
         {% endif %}
     </div>
 
+    <!-- Bannière comptes en attente d'approbation -->
+    {% if nb_eleves_en_attente and nb_eleves_en_attente > 0 %}
+    <div class="banner-approbation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#d94f4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span class="banner-text">
+            {{ nb_eleves_en_attente }} compte{{ nb_eleves_en_attente|pluralize }} élève{{ nb_eleves_en_attente|pluralize }} en attente d'approbation
+        </span>
+        <a href="{% url 'core:gestion_approbations' %}" class="btn-approuver">Approuver maintenant →</a>
+    </div>
+    {% endif %}
+
     <!-- Grid -->
     <div class="dashboard-grid">
 
@@ -244,6 +291,25 @@
                 <h3>Gestion Classes</h3>
                 <p class="card-count">{{ nb_classes }}</p>
                 <p class="card-description">Classe{{ nb_classes|pluralize }} active{{ nb_classes|pluralize }}</p>
+            </div>
+        </a>
+
+        <!-- Approbations élèves -->
+        <a href="{% url 'core:gestion_approbations' %}" class="dashboard-card card-approbation">
+            {% if nb_eleves_en_attente and nb_eleves_en_attente > 0 %}
+            <div class="card-badge">{{ nb_eleves_en_attente }} en attente</div>
+            {% endif %}
+            <div class="card-icon-wrapper">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>
+            </div>
+            <div class="card-content">
+                <h3>Approbations</h3>
+                <p class="card-count">{{ nb_eleves_en_attente }}</p>
+                <p class="card-description">Compte{{ nb_eleves_en_attente|pluralize }} en attente</p>
             </div>
         </a>
 

@@ -5408,6 +5408,7 @@ def dashboard_professeur(request):
     context = {
         'nb_classes':            Classe.objects.count(),
         'nb_eleves':             ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False).count(),
+        'nb_eleves_en_attente':  ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=False, user__is_active=False).count(),
         'nb_garcons':            ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False, sexe='M').count(),
         'nb_filles':             ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False, sexe='F').count(),
         'nb_themes':             Theme.objects.count(),
