@@ -384,6 +384,73 @@
         </h1>
     </div>
 
+    <!-- Section comptes en attente d'approbation -->
+    {% if eleves_en_attente %}
+    <div class="form-card" style="border-left-color:#f59e0b;">
+        <h2 style="color:#92400e;">
+            <svg viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <polyline points="17 11 19 13 23 9"></polyline>
+            </svg>
+            Demandes d'inscription en attente
+            <span style="margin-left:0.5rem;background:#f59e0b;color:white;font-size:0.75rem;padding:0.2rem 0.7rem;border-radius:20px;font-weight:700;">{{ eleves_en_attente.count }}</span>
+        </h2>
+        <div style="display:grid;gap:1rem;">
+            {% for profil in eleves_en_attente %}
+
+            <!-- Modal de confirmation refus -->
+            <div id="modal-refus-{{ profil.id }}" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+                <div style="background:white;border-radius:16px;padding:2rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+                    <h3 style="color:#1e293b;margin:0 0 0.5rem;display:flex;align-items:center;gap:0.6rem;font-size:1.1rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        Refuser la demande
+                    </h3>
+                    <p style="color:#64748b;margin:0 0 1.5rem;font-size:0.9rem;">Voulez-vous refuser l'inscription de <strong>{{ profil.user.first_name }} {{ profil.user.last_name }}</strong> ? Son compte sera supprimé.</p>
+                    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                        <button onclick="document.getElementById('modal-refus-{{ profil.id }}').style.display='none';"
+                                style="padding:0.6rem 1.2rem;background:#f1f5f9;color:#475569;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;">Annuler</button>
+                        <form method="post" action="{% url 'core:refuser_eleve' profil.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" style="padding:0.6rem 1.4rem;background:#e74c3c;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;">Confirmer le refus</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background:#fffbeb;border-radius:12px;padding:1.2rem 1.5rem;border-left:4px solid #f59e0b;display:flex;flex-wrap:wrap;align-items:center;gap:1rem;">
+                <div style="flex:1;min-width:200px;">
+                    <p style="margin:0 0 0.3rem;font-weight:700;color:#1e293b;font-size:1.05rem;">{{ profil.user.first_name }} {{ profil.user.last_name }}</p>
+                    <p style="margin:0;color:#64748b;font-size:0.85rem;">
+                        Identifiant : <strong>{{ profil.user.username }}</strong> &nbsp;&bull;&nbsp;
+                        Classe demandée : <strong>{{ profil.classe.nom|default:"—" }}</strong> &nbsp;&bull;&nbsp;
+                        Inscrit le {{ profil.user.date_joined|date:"d/m/Y à H:i" }}
+                    </p>
+                </div>
+                <form method="post" action="{% url 'core:approuver_eleve' profil.id %}" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                    {% csrf_token %}
+                    <select name="classe" style="padding:0.45rem 0.7rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.85rem;font-family:inherit;background:#fff;cursor:pointer;">
+                        {% for classe in classes %}
+                        <option value="{{ classe.id }}" {% if profil.classe and classe.id == profil.classe.id %}selected{% endif %}>{{ classe.nom }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1.1rem;background:#10b981;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.85rem;white-space:nowrap;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Approuver
+                    </button>
+                    <button type="button"
+                            onclick="var m=document.getElementById('modal-refus-{{ profil.id }}');m.style.display='flex';"
+                            style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1.1rem;background:white;color:#e74c3c;border:2px solid #e74c3c;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.85rem;white-space:nowrap;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        Refuser
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Formulaire ajout -->
     <div class="form-card">
         <h2>

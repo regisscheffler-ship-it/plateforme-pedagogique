@@ -758,6 +758,9 @@ def gestion_eleves(request):
     return render(request, 'core/gestion_eleves.html', {
         'eleves': eleves,
         'classes': Classe.objects.all().order_by('nom'),
+        'eleves_en_attente': ProfilUtilisateur.objects.filter(
+            type_utilisateur='eleve', compte_approuve=False, user__is_active=False
+        ).select_related('user', 'classe').order_by('-user__date_joined'),
         'nb_eleves_sortis': nb_eleves_sortis,
         'nb_garcons': nb_garcons,
         'nb_filles': nb_filles,
@@ -1462,7 +1465,7 @@ def approuver_eleve(request, pk):
             titre='✅ Compte approuvé !', message='Votre compte a été approuvé.', lien='/login/eleve/'
         )
         messages.success(request, '✅ Élève approuvé !')
-        return redirect('core:gestion_approbations')
+        return redirect('core:gestion_eleves')
     return render(request, 'core/approuver_eleve.html', {
         'profil': profil,
         'etablissements': EtablissementOrigine.objects.all().order_by('nom'),
@@ -1475,7 +1478,7 @@ def refuser_eleve(request, pk):
     if request.method == 'POST':
         profil.user.delete()
         messages.success(request, 'Demande refusée et compte supprimé.')
-    return redirect('core:gestion_approbations')
+    return redirect('core:gestion_eleves')
 
 
 def _annee_scolaire_courante():
