@@ -52,6 +52,15 @@ def _run_startup_maintenance():
 
 
 # Run optional startup tasks before creating the WSGI application
-_run_startup_maintenance()
+try:
+    _run_startup_maintenance()
+except Exception:
+    print('wsgi startup maintenance failed (non-fatal):', file=sys.stderr)
+    traceback.print_exc()
 
-application = get_wsgi_application()
+try:
+    application = get_wsgi_application()
+except Exception:
+    print('FATAL: get_wsgi_application() failed:', file=sys.stderr)
+    traceback.print_exc()
+    raise
