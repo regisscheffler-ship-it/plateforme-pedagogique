@@ -1,4 +1,4 @@
-{% extends 'core/base.html' %}
+﻿{% extends 'core/base.html' %}
 {% block title %}{{ pfmp.titre }}{% endblock %}
 
 {% block content %}
@@ -9,27 +9,27 @@
     .btn-back-custom {
         display: inline-flex; align-items: center; gap: 0.5rem;
         padding: 0.6rem 1.2rem;
-        border: 2px solid #6b7fd4; border-radius: 8px;
-        color: #6b7fd4; background: white;
+        border: 2px solid #20c997; border-radius: 8px;
+        color: #20c997; background: white;
         font-weight: 600; text-decoration: none;
         margin-bottom: 1.5rem; transition: all 0.2s ease;
         font-size: 0.9rem;
     }
-    .btn-back-custom:hover { background: #6b7fd4; color: white; transform: translateY(-2px); }
+    .btn-back-custom:hover { background: #20c997; color: white; transform: translateY(-2px); }
     .btn-back-custom svg  { width: 18px; height: 18px; stroke-width: 2.5; }
 
     /* ══ HEADER CARD ══ */
     .theme-header {
         background: white; border-radius: 16px; padding: 2rem;
         margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-        border-left: 6px solid #6b7fd4;
+        border-left: 6px solid #20c997;
         display: flex; justify-content: space-between;
         align-items: flex-start; gap: 2rem;
     }
     .theme-info  { flex: 1; }
     .theme-title { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
     .theme-icon  {
-        width: 52px; height: 52px; background: #eef2ff; color: #6b7fd4;
+        width: 52px; height: 52px; background: #e8f8f3; color: #20c997;
         border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .theme-icon svg    { width: 26px; height: 26px; stroke-width: 2; }
@@ -43,7 +43,7 @@
         display: inline-flex; align-items: center; gap: 0.4rem;
     }
     .badge svg      { width: 13px; height: 13px; }
-    .badge-info     { background: #eef2ff; color: #4338ca; }
+    .badge-info     { background: #e8f8f3; color: #0d6e52; }
     .badge-dates    { background: #d1fae5; color: #065f46; }
     .badge-proche   { background: #fef3c7; color: #92400e; }
     .badge-urgente  { background: #fee2e2; color: #dc2626; }
@@ -55,14 +55,14 @@
     /* ══ RESSOURCE PRINCIPALE ══ */
     .main-resource {
         margin-top: 1.2rem; margin-left: 4.2rem;
-        background: #eef2ff;
-        border: 1px solid #c7d2fe;
+        background: #e8f8f3;
+        border: 1px solid #a7f3d0;
         border-radius: 12px;
         padding: 1.2rem 1.5rem;
         display: flex; align-items: center;
         justify-content: space-between; gap: 1rem; flex-wrap: wrap;
     }
-    .resource-info h3 { margin: 0 0 0.3rem; color: #3730a3; font-size: 1rem; font-weight: 700; }
+    .resource-info h3 { margin: 0 0 0.3rem; color: #0d6e52; font-size: 1rem; font-weight: 700; }
     .resource-info p  { margin: 0; color: #6b7280; font-size: 0.85rem; }
 
     .btn-resource {
@@ -70,9 +70,9 @@
         padding: 0.6rem 1.2rem; border-radius: 8px;
         font-size: 0.88rem; font-weight: 600; text-decoration: none;
         transition: all 0.2s; white-space: nowrap;
-        background: white; color: #6b7fd4; border: 2px solid #6b7fd4;
+        background: white; color: #20c997; border: 2px solid #20c997;
     }
-    .btn-resource:hover { background: #6b7fd4; color: white; transform: translateY(-1px); }
+    .btn-resource:hover { background: #20c997; color: white; transform: translateY(-1px); }
     .btn-resource svg   { width: 15px; height: 15px; }
 
     .video-responsive {
@@ -92,8 +92,8 @@
         transition: all 0.2s; border: none; cursor: pointer;
     }
     .btn-action svg     { width: 16px; height: 16px; }
-    .btn-primary        { background: white; color: #6b7fd4; border: 2px solid #6b7fd4; }
-    .btn-primary:hover  { background: #6b7fd4; color: white; box-shadow: 0 4px 12px rgba(107,127,212,0.25); transform: translateY(-2px); }
+    .btn-primary        { background: white; color: #20c997; border: 2px solid #20c997; }
+    .btn-primary:hover  { background: #20c997; color: white; box-shadow: 0 4px 12px rgba(32,201,151,0.25); transform: translateY(-2px); }
     .btn-secondary      { background: white; color: #e8922a; border: 2px solid #e8922a; }
     .btn-secondary:hover{ background: #e8922a; color: white; box-shadow: 0 4px 12px rgba(232,146,42,0.25); transform: translateY(-2px); }
 
@@ -102,7 +102,7 @@
         font-size: 1.3rem; color: #34495e; margin-bottom: 1.5rem;
         font-weight: 700; display: flex; align-items: center; gap: 0.8rem;
     }
-    .section-title svg { width: 22px; height: 22px; stroke: #6b7fd4; }
+    .section-title svg { width: 22px; height: 22px; stroke: #20c997; }
 
     /* ══ DOSSIER CARD ══ */
     .dossier-card {
@@ -120,7 +120,7 @@
     .dossier-icon          { color: #6c757d; }
     .dossier-actions       { display: flex; gap: 0.4rem; }
     .btn-icon              { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: #6c757d; transition: all 0.2s; text-decoration: none; border: none; background: transparent; cursor: pointer; }
-    .btn-icon:hover        { background: #e9ecef; color: #6b7fd4; }
+    .btn-icon:hover        { background: #e9ecef; color: #20c997; }
     .btn-icon.delete:hover { background: #fee2e2; color: #dc3545; }
     .btn-icon svg          { width: 16px; height: 16px; }
 
@@ -141,11 +141,11 @@
     .btn-download {
         display: inline-flex; align-items: center; gap: 5px;
         padding: 0.45rem 0.9rem; font-size: 0.82rem; font-weight: 600;
-        color: #6b7fd4; background: white;
-        border: 2px solid #6b7fd4; border-radius: 8px;
+        color: #20c997; background: white;
+        border: 2px solid #20c997; border-radius: 8px;
         text-decoration: none; transition: all 0.2s ease; white-space: nowrap;
     }
-    .btn-download:hover    { background: #6b7fd4; color: white; transform: translateY(-1px); }
+    .btn-download:hover    { background: #20c997; color: white; transform: translateY(-1px); }
     .btn-download svg      { width: 13px; height: 13px; }
 
     /* ══ ÉTATS VIDES ══ */

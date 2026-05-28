@@ -1013,6 +1013,12 @@ class PFMP(models.Model):
         blank=True, null=True, verbose_name="Code d'intégration iframe"
     )
 
+    nb_jours_prevus = models.PositiveIntegerField(
+        null=True, blank=True,
+        verbose_name='Nombre de jours prévus',
+        help_text='Durée totale de la PFMP en jours ouvrés'
+    )
+
     createur = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='pfmp_creees'
     )

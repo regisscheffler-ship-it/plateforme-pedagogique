@@ -3210,11 +3210,14 @@ def pfmp_create(request):
             str_date_fin = request.POST.get('date_fin')
             d_debut = datetime.strptime(str_date_debut, '%Y-%m-%d').date() if str_date_debut else None
             d_fin = datetime.strptime(str_date_fin, '%Y-%m-%d').date() if str_date_fin else None
+            nb_jours_prevus_str = request.POST.get('nb_jours_prevus', '').strip()
+            nb_jours_prevus = int(nb_jours_prevus_str) if nb_jours_prevus_str.isdigit() else None
             pfmp = PFMP.objects.create(
                 titre=titre,
                 description=request.POST.get('description', ''),
                 date_debut=d_debut, date_fin=d_fin,
                 type_contenu=request.POST.get('type_contenu', 'fichier'),
+                nb_jours_prevus=nb_jours_prevus,
                 createur=request.user
             )
             pfmp.classes.set(classes_ids)
@@ -3248,6 +3251,8 @@ def pfmp_update(request, pk):
         pfmp.date_debut = request.POST.get('date_debut') or None
         pfmp.date_fin = request.POST.get('date_fin') or None
         pfmp.type_contenu = request.POST.get('type_contenu', '')
+        nb_jours_prevus_str = request.POST.get('nb_jours_prevus', '').strip()
+        pfmp.nb_jours_prevus = int(nb_jours_prevus_str) if nb_jours_prevus_str.isdigit() else None
         classes_ids = request.POST.getlist('classes')
         if classes_ids:
             pfmp.classes.set(classes_ids)
