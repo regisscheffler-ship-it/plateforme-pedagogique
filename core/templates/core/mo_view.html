@@ -78,55 +78,91 @@
 
     /* ── IMPRESSION ── */
     @media print {
-        @page { size: A4 landscape; margin: 0; }
-        body  { padding: 0.6cm 0.8cm !important; margin: 0 !important; }
+        @page { size: A4 landscape; margin: 8mm 10mm; }
 
-        nav, header, footer, .btn-back, .btn-print, .mo-header-actions,
+        /* Annuler le layout flex de base.html, forcer fond blanc */
+        html, body {
+            margin: 0 !important; padding: 0 !important;
+            min-height: 0 !important; height: auto !important;
+            background: white !important;
+            display: block !important;
+            font-family: Arial, sans-serif !important;
+        }
+
+        /* Masquer tout ce qui ne fait pas partie du MO */
+        header, nav, footer,
+        .btn-back, .btn-print, .mo-header-actions,
         [class*="navbar"], [class*="nav-"] { display: none !important; }
 
+        /* Annuler padding/marges du conteneur de base.html */
+        .container {
+            max-width: 100% !important; width: 100% !important;
+            margin: 0 !important; padding: 0 !important;
+        }
+
+        /* Titre impression */
         .print-title {
             display: block !important;
-            text-align: center; font-size: 15pt; font-weight: 700;
-            margin-bottom: 0.5cm; font-family: Arial, sans-serif;
+            font-size: 13pt; font-weight: 700; color: #2c3e50;
+            font-family: Arial, sans-serif;
+            border-bottom: 2px solid #e8922a;
+            padding-bottom: 3mm; margin-bottom: 4mm;
         }
-        .mo-header { border: none !important; box-shadow: none !important; padding: 0 0 0.4cm !important; }
-        .page-container { padding: 0 !important; max-width: 100% !important; }
-        .table-wrapper  { box-shadow: none !important; border-radius: 0 !important; overflow: visible !important; }
+        .print-title .print-meta {
+            font-size: 8pt; font-weight: 400; color: #6c757d; margin-top: 1.5mm;
+        }
+
+        /* Masquer le header web, ne garder que .print-title */
+        .mo-header { display: none !important; }
+
+        .page-container {
+            padding: 0 !important; max-width: 100% !important;
+            width: 100% !important; margin: 0 !important;
+        }
+        .table-wrapper {
+            overflow: visible !important; padding: 0 !important;
+            box-shadow: none !important; border-radius: 0 !important;
+            background: transparent !important;
+        }
 
         table.mo-table {
             width: 100% !important; min-width: unset !important;
             border-collapse: collapse !important; border-spacing: 0 !important;
-            font-size: 7.5pt; font-family: Arial, sans-serif;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
+            font-size: 7pt !important; font-family: Arial, sans-serif !important;
+            table-layout: fixed !important;
         }
         .mo-table th.col-phase  { width: 11% !important; }
-        .mo-table th.col-schema { width: 13% !important; }
+        .mo-table th.col-schema { width: 12% !important; }
         .mo-table th.col-ops    { width: 18% !important; }
         .mo-table th.col-mat    { width: 13% !important; }
-        .mo-table th.col-ctrl   { width: 11% !important; }
-        .mo-table th.col-sante  { width: 17% !important; }
-        .mo-table th.col-env    { width: 17% !important; }
+        .mo-table th.col-ctrl   { width: 10% !important; }
+        .mo-table th.col-sante  { width: 18% !important; }
+        .mo-table th.col-env    { width: 18% !important; }
 
-        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-        .mo-table thead th { padding: 4px 5px !important; font-size: 7.5pt !important; border: 1px solid #555 !important; }
+        .mo-table thead th {
+            padding: 4px 5px !important; font-size: 7pt !important;
+            border: 1px solid #888 !important; border-radius: 0 !important;
+        }
         .mo-table th.col-phase,
-        .mo-table th.col-schema { background: #f0f7ff !important; color: #1a3a5c !important; border: 1px solid #aad4f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-ops    { background: #fffde7 !important; color: #5a3600 !important; border: 1px solid #f0c000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-mat    { background: #fff8e1 !important; color: #5a3000 !important; border: 1px solid #f9c95c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-ctrl   { background: #fff5f5 !important; color: #7a0000 !important; border: 1px solid #f7a8a8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-sante  { background: #fff5f5 !important; color: #cc0000 !important; border: 1px solid #e00000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table td.td-sante   { color: #cc0000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mo-table th.col-env    { background: #f0fff0 !important; color: #1a4a1a !important; border: 1px solid #5cb85c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .mo-table th.col-schema { background: #f0f7ff !important; color: #1a3a5c !important; border: 1px solid #aad4f5 !important; }
+        .mo-table th.col-ops    { background: #fffde7 !important; color: #5a3600 !important; border: 1px solid #f0c000 !important; }
+        .mo-table th.col-mat    { background: #fff8e1 !important; color: #5a3000 !important; border: 1px solid #f9c95c !important; }
+        .mo-table th.col-ctrl   { background: #fff5f5 !important; color: #7a0000 !important; border: 1px solid #f7a8a8 !important; }
+        .mo-table th.col-sante  { background: #fff5f5 !important; color: #cc0000 !important; border: 1px solid #e00000 !important; }
+        .mo-table td.td-sante   { color: #cc0000 !important; }
+        .mo-table th.col-env    { background: #f0fff0 !important; color: #1a4a1a !important; border: 1px solid #5cb85c !important; }
 
         .mo-table tbody td {
-            padding: 4px 5px !important; border: 1px solid #888 !important;
-            font-size: 7.5pt !important; vertical-align: top !important;
+            padding: 4px 5px !important; border: 1px solid #aaa !important;
+            background: white !important;
+            font-size: 7pt !important; vertical-align: top !important;
             word-break: break-word !important; overflow-wrap: break-word !important;
-            overflow: visible !important;
         }
-        .schema-img { max-height: 100px !important; }
+        .phase-badge { width: 18px !important; height: 18px !important; font-size: 6pt !important; }
+        .schema-img  { max-height: 80px !important; max-width: 100% !important; }
+        .cell-empty  { display: none !important; }
     }
 </style>
 
@@ -138,7 +174,15 @@
     </a>
 
     <!-- Titre impression uniquement -->
-    <div class="print-title" style="display:none;">Mode Opératoire – {{ mo.titre }}</div>
+    <div class="print-title" style="display:none;">
+        Mode Opératoire – {{ mo.titre }}
+        <div class="print-meta">
+            {% if mo.description %}{{ mo.description }} · {% endif %}
+            {{ lignes.count }} phase{% if lignes.count > 1 %}s{% endif %}
+            · {{ mo.date_creation|date:"d/m/Y" }}
+            {% if mo.atelier %} · Atelier : {{ mo.atelier.titre }}{% endif %}
+        </div>
+    </div>
 
     <!-- Header -->
     <div class="mo-header">
@@ -228,33 +272,31 @@
 
 <script>
 (function () {
-
-    // A4 paysage en CSS pixels (96 dpi) : 297mm × 210mm
-    var PAGE_W = 297 / 25.4 * 96;  // ≈ 1122 px
-    var PAGE_H = 210 / 25.4 * 96;  // ≈ 794 px
-    var PAD_H  = 2 * 8 / 25.4 * 96; // padding 0.8cm × 2 côtés ≈ 60 px
-    var PAD_V  = 2 * 6 / 25.4 * 96; // padding 0.6cm × 2 côtés ≈ 45 px
-    var AVAIL_W = PAGE_W - PAD_H;
-    var AVAIL_H = PAGE_H - PAD_V;
+    // Calcul du zoom uniquement si le tableau déborde la largeur A4 paysage
+    // A4 paysage disponible : 297mm - 2×10mm marges = 277mm ≈ 1046px @ 96dpi
+    var AVAIL_W = (277 / 25.4) * 96;
+    var AVAIL_H = (194 / 25.4) * 96;  // 210mm - 2×8mm
 
     function fitToPage() {
         document.body.style.zoom = '';
         void document.body.offsetHeight; // force reflow
 
-        var contentW = document.body.scrollWidth;
-        var contentH = document.body.scrollHeight;
+        // Mesurer uniquement la zone utile (pas tout le body qui inclut header/nav)
+        var container = document.querySelector('.page-container');
+        if (!container) return;
+
+        var contentW = container.scrollWidth;
+        var contentH = container.scrollHeight;
 
         var scale = Math.min(AVAIL_W / contentW, AVAIL_H / contentH);
 
         if (scale < 0.99) {
-            scale = Math.max(scale, 0.15);
+            scale = Math.max(scale, 0.3);
             document.body.style.zoom = scale;
         }
     }
 
-    function resetFit() {
-        document.body.style.zoom = '';
-    }
+    function resetFit() { document.body.style.zoom = ''; }
 
     window.addEventListener('beforeprint', fitToPage);
     window.addEventListener('afterprint',  resetFit);
