@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
 {% block content %}
 <style>
-:root { --pfmp: #6b7fd4; --pfmp-light: #eef0fb; }
+:root { --pfmp: #6b7fd4; --pfmp-light: #eef0fb; --pfmp-dark: #4c5fd5; }
 .page-container { max-width:1100px; width:100%; margin:0 auto; padding:2rem; }
 .btn-retour {
     display:inline-flex; align-items:center; gap:6px;
@@ -24,29 +24,56 @@
     display:flex; gap:2rem; flex-wrap:wrap; font-size:0.9rem;
 }
 .pfmp-info strong { color:var(--pfmp); }
+.pfmp-info .badge-jours {
+    background:var(--pfmp); color:white;
+    padding:2px 10px; border-radius:12px; font-weight:700; font-size:0.85rem;
+}
 
 .suivi-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
 .suivi-table th {
-    background:#1f2d3d; color:#fff; padding:10px 12px;
-    text-align:left; font-size:0.8rem; font-weight:600;
+    background:var(--pfmp); color:#fff; padding:10px 12px;
+    text-align:center; font-size:0.8rem; font-weight:600;
 }
+.suivi-table th.th-left { text-align:left; }
 .suivi-table th:first-child { border-radius:6px 0 0 0; }
 .suivi-table th:last-child  { border-radius:0 6px 0 0; }
 .suivi-table td { padding:8px 10px; border-bottom:1px solid #e2e8f0; vertical-align:middle; }
 .suivi-table tr:hover td { background:#f8fafc; }
-.suivi-table input[type=number] {
-    width:64px; padding:5px 8px; border:1px solid #cbd5e1;
-    border-radius:6px; font-size:0.88rem; text-align:center;
+
+/* Boutons +/- autour de l'input */
+.num-group {
+    display:inline-flex; align-items:center;
+    border:1px solid #c7d2fe; border-radius:8px; overflow:hidden;
+    background:white;
 }
-.suivi-table input[type=number]:focus { outline:none; border-color:var(--pfmp); }
+.num-btn {
+    width:28px; height:34px; border:none; background:var(--pfmp-light);
+    color:var(--pfmp); font-size:1.15rem; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    transition:background 0.15s, color 0.15s; line-height:1;
+}
+.num-btn:hover { background:var(--pfmp); color:white; }
+.num-field {
+    width:42px; height:34px; border:none;
+    border-left:1px solid #e0e7ff; border-right:1px solid #e0e7ff;
+    font-size:0.88rem; text-align:center; background:white; color:#1f2d3d;
+    -moz-appearance:textfield;
+}
+.num-field::-webkit-outer-spin-button,
+.num-field::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+.num-field:focus { outline:none; background:var(--pfmp-light); }
+.num-field.computed { background:#f0f4ff; color:var(--pfmp-dark); font-weight:700; }
+
+.col-nom { text-align:left; }
+.col-num { width:120px; text-align:center; }
+.col-prevus { width:80px; text-align:center; }
+.prevus-val { font-weight:700; color:var(--pfmp); font-size:0.95rem; }
+
 .suivi-table textarea {
-    width:160px; padding:5px 8px; border:1px solid #cbd5e1;
+    width:160px; padding:5px 8px; border:1px solid #c7d2fe;
     border-radius:6px; font-size:0.82rem; resize:vertical; min-height:36px;
 }
-.col-num { width:80px; text-align:center; }
-.badge-absent { display:inline-block; padding:2px 8px; border-radius:8px; font-size:0.75rem; font-weight:600; }
-.badge-just   { background:#fef9c3; color:#92400e; }
-.badge-injust { background:#fee2e2; color:#b91c1c; }
+.suivi-table textarea:focus { outline:none; border-color:var(--pfmp); }
 
 .btn-save {
     display:inline-flex; align-items:center; gap:7px;
@@ -80,19 +107,23 @@
         {% if pfmp.date_debut %}<div><strong>Du :</strong> {{ pfmp.date_debut|date:"d/m/Y" }}</div>{% endif %}
         {% if pfmp.date_fin   %}<div><strong>Au :</strong> {{ pfmp.date_fin|date:"d/m/Y" }}</div>{% endif %}
         <div><strong>Élèves :</strong> {{ eleves_avec_suivi|length }}</div>
+        {% if pfmp.nb_jours_prevus %}
+        <div><strong>Durée :</strong> <span class="badge-jours">{{ pfmp.nb_jours_prevus }} jour{{ pfmp.nb_jours_prevus|pluralize }}</span></div>
+        {% endif %}
     </div>
 
     {% if eleves_avec_suivi %}
     <form method="post">
         {% csrf_token %}
-        <table class="suivi-table">
+        <table class="suivi-table" id="suivi-table" data-total="{{ pfmp.nb_jours_prevus|default:'' }}">
             <thead>
                 <tr>
-                    <th>Nom</th>
-                    <th>Prénom</th>
-                    <th class="col-num">Jours effectués</th>
-                    <th class="col-num">Absences justifiées</th>
-                    <th class="col-num">Absences injustifiées</th>
+                    <th class="th-left">Nom</th>
+                    <th class="th-left">Prénom</th>
+                    {% if pfmp.nb_jours_prevus %}<th class="col-prevus">Jours<br>prévus</th>{% endif %}
+                    <th class="col-num">Jours<br>effectués</th>
+                    <th class="col-num">Absences<br>justifiées</th>
+                    <th class="col-num">Absences<br>injustifiées</th>
                     <th>Commentaire</th>
                 </tr>
             </thead>
@@ -100,19 +131,37 @@
                 {% for item in eleves_avec_suivi %}
                 {% with e=item.profil s=item.suivi %}
                 <tr>
-                    <td><strong>{{ e.user.last_name|upper }}</strong></td>
+                    <td class="col-nom"><strong>{{ e.user.last_name|upper }}</strong></td>
                     <td>{{ e.user.first_name }}</td>
+                    {% if pfmp.nb_jours_prevus %}<td class="col-prevus"><span class="prevus-val">{{ pfmp.nb_jours_prevus }}</span></td>{% endif %}
                     <td class="col-num">
-                        <input type="number" name="effectues_{{ e.id }}" min="0"
-                            value="{{ s.nb_jours_effectues|default:0 }}" required>
+                        <div class="num-group">
+                            <button type="button" class="num-btn" data-delta="-" data-target="effectues_{{ e.id }}">−</button>
+                            <input class="num-field{% if pfmp.nb_jours_prevus %} computed{% endif %}" type="number"
+                                id="effectues_{{ e.id }}" name="effectues_{{ e.id }}" min="0"
+                                value="{{ s.nb_jours_effectues|default:0 }}">
+                            <button type="button" class="num-btn" data-delta="+" data-target="effectues_{{ e.id }}">+</button>
+                        </div>
                     </td>
                     <td class="col-num">
-                        <input type="number" name="justifies_{{ e.id }}" min="0"
-                            value="{{ s.nb_jours_manques_justifies|default:0 }}">
+                        <div class="num-group">
+                            <button type="button" class="num-btn" data-delta="-" data-target="justifies_{{ e.id }}">−</button>
+                            <input class="num-field inp-just" type="number"
+                                id="justifies_{{ e.id }}" name="justifies_{{ e.id }}" min="0"
+                                value="{{ s.nb_jours_manques_justifies|default:0 }}"
+                                data-effectues="effectues_{{ e.id }}">
+                            <button type="button" class="num-btn" data-delta="+" data-target="justifies_{{ e.id }}">+</button>
+                        </div>
                     </td>
                     <td class="col-num">
-                        <input type="number" name="injustifies_{{ e.id }}" min="0"
-                            value="{{ s.nb_jours_manques_injustifies|default:0 }}">
+                        <div class="num-group">
+                            <button type="button" class="num-btn" data-delta="-" data-target="injustifies_{{ e.id }}">−</button>
+                            <input class="num-field inp-injust" type="number"
+                                id="injustifies_{{ e.id }}" name="injustifies_{{ e.id }}" min="0"
+                                value="{{ s.nb_jours_manques_injustifies|default:0 }}"
+                                data-effectues="effectues_{{ e.id }}">
+                            <button type="button" class="num-btn" data-delta="+" data-target="injustifies_{{ e.id }}">+</button>
+                        </div>
                     </td>
                     <td>
                         <textarea name="commentaire_{{ e.id }}" placeholder="Commentaire…">{{ s.commentaire|default:"" }}</textarea>
@@ -131,4 +180,39 @@
         <div style="text-align:center;padding:3rem;color:#94a3b8;">Aucun élève actif dans les classes sélectionnées.</div>
     {% endif %}
 </div>
+
+<script>
+(function () {
+    var table   = document.getElementById('suivi-table');
+    var total   = table ? (parseInt(table.dataset.total) || null) : null;
+
+    // Boutons +/-
+    document.querySelectorAll('.num-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var input = document.getElementById(this.dataset.target);
+            if (!input) return;
+            var val = parseInt(input.value) || 0;
+            input.value = Math.max(0, val + (this.dataset.delta === '+' ? 1 : -1));
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+    });
+
+    // Calcul auto des jours effectués = prévu − justifiés − injustifiés
+    function recalc(inp) {
+        if (total === null) return;
+        var row   = inp.closest('tr');
+        var just  = parseInt(row.querySelector('.inp-just').value)   || 0;
+        var injust= parseInt(row.querySelector('.inp-injust').value)  || 0;
+        var effId = inp.dataset.effectues;
+        var eff   = document.getElementById(effId);
+        if (eff) eff.value = Math.max(0, total - just - injust);
+    }
+
+    document.querySelectorAll('.inp-just, .inp-injust').forEach(function (inp) {
+        inp.addEventListener('input', function () { recalc(this); });
+        // Initialiser au chargement
+        recalc(inp);
+    });
+})();
+</script>
 {% endblock %}
