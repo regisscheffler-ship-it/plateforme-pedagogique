@@ -1,0 +1,882 @@
+[
+{
+  "model": "core.referentiel",
+  "pk": 1,
+  "fields": {
+    "nom": "Compétences communes PFMP - 2BTP",
+    "description": "Grille d'évaluation des compétences communes PFMP - Secondes Bac Pro BTP",
+    "actif": true,
+    "date_creation": "2026-05-29T09:12:47.472Z"
+  }
+},
+{
+  "model": "core.bloccompetence",
+  "pk": 1,
+  "fields": {
+    "referentiel": 1,
+    "nom": "S'INFORMER",
+    "code": "C1",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.bloccompetence",
+  "pk": 2,
+  "fields": {
+    "referentiel": 1,
+    "nom": "TRAITER, DÉCIDER, COMMUNIQUER",
+    "code": "C2",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.bloccompetence",
+  "pk": 3,
+  "fields": {
+    "referentiel": 1,
+    "nom": "METTRE EN ŒUVRE - RÉALISER",
+    "code": "C3",
+    "ordre": 3
+  }
+},
+{
+  "model": "core.bloccompetence",
+  "pk": 4,
+  "fields": {
+    "referentiel": 1,
+    "nom": "CONTRÔLER, RÉCEPTIONNER",
+    "code": "C4",
+    "ordre": 4
+  }
+},
+{
+  "model": "core.competence",
+  "pk": 1,
+  "fields": {
+    "bloc": 1,
+    "code": "C1",
+    "nom": "S'INFORMER",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.competence",
+  "pk": 2,
+  "fields": {
+    "bloc": 2,
+    "code": "C2",
+    "nom": "TRAITER, DÉCIDER, COMMUNIQUER",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.competence",
+  "pk": 3,
+  "fields": {
+    "bloc": 3,
+    "code": "C3",
+    "nom": "METTRE EN ŒUVRE - RÉALISER",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.competence",
+  "pk": 4,
+  "fields": {
+    "bloc": 4,
+    "code": "C4",
+    "nom": "CONTRÔLER, RÉCEPTIONNER",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 1,
+  "fields": {
+    "competence": 1,
+    "code": "C1.1",
+    "nom": "Collecter et classer des informations",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 2,
+  "fields": {
+    "competence": 1,
+    "code": "C1.2",
+    "nom": "Décoder des documents",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 3,
+  "fields": {
+    "competence": 2,
+    "code": "C2.1",
+    "nom": "Organiser le chantier",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 4,
+  "fields": {
+    "competence": 2,
+    "code": "C2.2",
+    "nom": "Quantifier les besoins",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 5,
+  "fields": {
+    "competence": 2,
+    "code": "C2.3",
+    "nom": "Proposer des méthodes d'exécution et produire les documents associés",
+    "ordre": 3
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 6,
+  "fields": {
+    "competence": 2,
+    "code": "C2.4",
+    "nom": "Communiquer, rendre compte",
+    "ordre": 4
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 7,
+  "fields": {
+    "competence": 2,
+    "code": "C2.5",
+    "nom": "Animer une petite équipe",
+    "ordre": 5
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 8,
+  "fields": {
+    "competence": 3,
+    "code": "C3.1",
+    "nom": "Organiser le poste de travail",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 9,
+  "fields": {
+    "competence": 3,
+    "code": "C3.2",
+    "nom": "Mettre en œuvre les moyens de protection",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 10,
+  "fields": {
+    "competence": 3,
+    "code": "C3.3",
+    "nom": "Monter et démonter un échafaudage, un étaiement",
+    "ordre": 3
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 11,
+  "fields": {
+    "competence": 3,
+    "code": "C3.4",
+    "nom": "Traiter les déchets et protéger l'environnement",
+    "ordre": 4
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 12,
+  "fields": {
+    "competence": 3,
+    "code": "C3.5",
+    "nom": "Repérer, implanter et tracer des ouvrages",
+    "ordre": 5
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 13,
+  "fields": {
+    "competence": 3,
+    "code": "C3.6",
+    "nom": "Réaliser, poser, modifier une partie d'ouvrage",
+    "ordre": 6
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 14,
+  "fields": {
+    "competence": 4,
+    "code": "C4.1",
+    "nom": "Réceptionner les matériels et matériaux",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.competenceprofessionnelle",
+  "pk": 15,
+  "fields": {
+    "competence": 4,
+    "code": "C4.2",
+    "nom": "Contrôler les ouvrages",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 1,
+  "fields": {
+    "competence_pro": 1,
+    "code": "C1.1",
+    "nom": "Collecter et classer des informations",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 2,
+  "fields": {
+    "competence_pro": 2,
+    "code": "C1.2",
+    "nom": "Décoder des documents",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 3,
+  "fields": {
+    "competence_pro": 3,
+    "code": "C2.1",
+    "nom": "Organiser le chantier",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 4,
+  "fields": {
+    "competence_pro": 4,
+    "code": "C2.2",
+    "nom": "Quantifier les besoins",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 5,
+  "fields": {
+    "competence_pro": 5,
+    "code": "C2.3",
+    "nom": "Proposer des méthodes d'exécution et produire les documents associés",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 6,
+  "fields": {
+    "competence_pro": 6,
+    "code": "C2.4",
+    "nom": "Communiquer, rendre compte",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 7,
+  "fields": {
+    "competence_pro": 7,
+    "code": "C2.5",
+    "nom": "Animer une petite équipe",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 8,
+  "fields": {
+    "competence_pro": 8,
+    "code": "C3.1",
+    "nom": "Organiser le poste de travail",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 9,
+  "fields": {
+    "competence_pro": 9,
+    "code": "C3.2",
+    "nom": "Mettre en œuvre les moyens de protection",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 10,
+  "fields": {
+    "competence_pro": 10,
+    "code": "C3.3",
+    "nom": "Monter et démonter un échafaudage, un étaiement",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 11,
+  "fields": {
+    "competence_pro": 11,
+    "code": "C3.4",
+    "nom": "Traiter les déchets et protéger l'environnement",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 12,
+  "fields": {
+    "competence_pro": 12,
+    "code": "C3.5",
+    "nom": "Repérer, implanter et tracer des ouvrages",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 13,
+  "fields": {
+    "competence_pro": 13,
+    "code": "C3.6",
+    "nom": "Réaliser, poser, modifier une partie d'ouvrage",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 14,
+  "fields": {
+    "competence_pro": 14,
+    "code": "C4.1",
+    "nom": "Réceptionner les matériels et matériaux",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.souscompetence",
+  "pk": 15,
+  "fields": {
+    "competence_pro": 15,
+    "code": "C4.2",
+    "nom": "Contrôler les ouvrages",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 1,
+  "fields": {
+    "sous_competence": 1,
+    "code": "C1.1",
+    "nom": "Collecter et classer des informations",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 2,
+  "fields": {
+    "sous_competence": 2,
+    "code": "C1.2",
+    "nom": "Décoder des documents",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 3,
+  "fields": {
+    "sous_competence": 3,
+    "code": "C2.1",
+    "nom": "Organiser le chantier",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 4,
+  "fields": {
+    "sous_competence": 4,
+    "code": "C2.2",
+    "nom": "Quantifier les besoins",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 5,
+  "fields": {
+    "sous_competence": 5,
+    "code": "C2.3",
+    "nom": "Proposer des méthodes d'exécution et produire les documents associés",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 6,
+  "fields": {
+    "sous_competence": 6,
+    "code": "C2.4",
+    "nom": "Communiquer, rendre compte",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 7,
+  "fields": {
+    "sous_competence": 7,
+    "code": "C2.5",
+    "nom": "Animer une petite équipe",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 8,
+  "fields": {
+    "sous_competence": 8,
+    "code": "C3.1",
+    "nom": "Organiser le poste de travail",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 9,
+  "fields": {
+    "sous_competence": 9,
+    "code": "C3.2",
+    "nom": "Mettre en œuvre les moyens de protection",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 10,
+  "fields": {
+    "sous_competence": 10,
+    "code": "C3.3",
+    "nom": "Monter et démonter un échafaudage, un étaiement",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 11,
+  "fields": {
+    "sous_competence": 11,
+    "code": "C3.4",
+    "nom": "Traiter les déchets et protéger l'environnement",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 12,
+  "fields": {
+    "sous_competence": 12,
+    "code": "C3.5",
+    "nom": "Repérer, implanter et tracer des ouvrages",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 13,
+  "fields": {
+    "sous_competence": 13,
+    "code": "C3.6",
+    "nom": "Réaliser, poser, modifier une partie d'ouvrage",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 14,
+  "fields": {
+    "sous_competence": 14,
+    "code": "C4.1",
+    "nom": "Réceptionner les matériels et matériaux",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.critereevaluation",
+  "pk": 15,
+  "fields": {
+    "sous_competence": 15,
+    "code": "C4.2",
+    "nom": "Contrôler les ouvrages",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 1,
+  "fields": {
+    "critere": 1,
+    "nom": "Rechercher les informations nécessaires à la résolution d'un problème posé",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 2,
+  "fields": {
+    "critere": 1,
+    "nom": "Classer les informations retenues",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 3,
+  "fields": {
+    "critere": 2,
+    "nom": "Localiser le lieu de l'intervention et identifier le contexte de l'intervention",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 4,
+  "fields": {
+    "critere": 2,
+    "nom": "Identifier un ouvrage ou un élément d'ouvrage sur les pièces graphiques et écrites",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 5,
+  "fields": {
+    "critere": 2,
+    "nom": "Identifier les principales caractéristiques d'un ouvrage",
+    "poids": "2.94",
+    "ordre": 3
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 6,
+  "fields": {
+    "critere": 3,
+    "nom": "Inventorier les tâches ou les opérations",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 7,
+  "fields": {
+    "critere": 3,
+    "nom": "Affecter les tâches aux différents membres de l'équipe",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 8,
+  "fields": {
+    "critere": 3,
+    "nom": "Simuler différents scénarios",
+    "poids": "2.94",
+    "ordre": 3
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 9,
+  "fields": {
+    "critere": 4,
+    "nom": "Identifier et comparer les caractéristiques des matériels, des matériaux et des outillages",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 10,
+  "fields": {
+    "critere": 4,
+    "nom": "Quantifier les matériaux et matériels",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 11,
+  "fields": {
+    "critere": 5,
+    "nom": "Analyser et choisir un mode opératoire",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 12,
+  "fields": {
+    "critere": 5,
+    "nom": "Établir des croquis, des schémas et des tracés",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 13,
+  "fields": {
+    "critere": 5,
+    "nom": "Prendre en compte les interfaces pluri-métiers",
+    "poids": "2.94",
+    "ordre": 3
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 14,
+  "fields": {
+    "critere": 5,
+    "nom": "Produire des documents graphiques",
+    "poids": "2.94",
+    "ordre": 4
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 15,
+  "fields": {
+    "critere": 6,
+    "nom": "Établir un compte rendu oral, écrit ou graphique seul ou en collaboration",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 16,
+  "fields": {
+    "critere": 6,
+    "nom": "Travailler en équipe et adopter les postures d'écoute, de discussion, de prise en compte d'avis, de participation",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 17,
+  "fields": {
+    "critere": 7,
+    "nom": "Indiquer les tâches et consignes aux membres de l'équipe",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 18,
+  "fields": {
+    "critere": 7,
+    "nom": "Exposer une situation",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 19,
+  "fields": {
+    "critere": 7,
+    "nom": "Suivre et contrôler l'avancée des activités",
+    "poids": "2.94",
+    "ordre": 3
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 20,
+  "fields": {
+    "critere": 8,
+    "nom": "Organiser l'environnement des postes de travail",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 21,
+  "fields": {
+    "critere": 8,
+    "nom": "Vérifier la disponibilité des matériels et outillages et leur fonctionnement",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 22,
+  "fields": {
+    "critere": 9,
+    "nom": "Repérer les risques liés à l'activité",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 23,
+  "fields": {
+    "critere": 9,
+    "nom": "S'assurer de l'utilisation réglementaire des moyens de protection individuels et collectifs",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 24,
+  "fields": {
+    "critere": 10,
+    "nom": "Mettre en place et stabiliser un échafaudage",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 25,
+  "fields": {
+    "critere": 10,
+    "nom": "Utiliser rationnellement les planchers de travail",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 26,
+  "fields": {
+    "critere": 11,
+    "nom": "Trier les déchets selon leur catégorie",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 27,
+  "fields": {
+    "critere": 12,
+    "nom": "Réaliser une implantation planimétrique et altimétrique",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 28,
+  "fields": {
+    "critere": 12,
+    "nom": "Tracer des lignes et niveaux de référence",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 29,
+  "fields": {
+    "critere": 13,
+    "nom": "Mettre en œuvre un mode opératoire, un processus d'exécution",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 30,
+  "fields": {
+    "critere": 13,
+    "nom": "Intervenir en co activité",
+    "poids": "2.94",
+    "ordre": 2
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 31,
+  "fields": {
+    "critere": 13,
+    "nom": "Prendre en compte et respecter les interventions des autres corps d'état en aval et amont",
+    "poids": "2.94",
+    "ordre": 3
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 32,
+  "fields": {
+    "critere": 14,
+    "nom": "Contrôler les quantités et la conformité des commandes réceptionnées",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 33,
+  "fields": {
+    "critere": 15,
+    "nom": "Contrôler la conformité de l'ouvrage",
+    "poids": "2.94",
+    "ordre": 1
+  }
+},
+{
+  "model": "core.indicateurperformance",
+  "pk": 34,
+  "fields": {
+    "critere": 15,
+    "nom": "Respecter une procédure de contrôle établie",
+    "poids": "2.94",
+    "ordre": 2
+  }
+}
+]
