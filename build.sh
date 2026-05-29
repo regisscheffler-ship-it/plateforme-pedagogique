@@ -14,7 +14,7 @@ echo "=== Migrations ==="
 python manage.py migrate --no-input
 
 echo "=== Import référentiel 2BTP ==="
-python manage.py loaddata core/fixtures/referentiel_2btp.json || true
+python create_referentiel_2btp.py || true
 
 echo "=== Création du superuser ==="
 python manage.py shell -c "

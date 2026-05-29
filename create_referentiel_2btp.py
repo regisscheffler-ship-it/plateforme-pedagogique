@@ -3,7 +3,7 @@ Création du référentiel "Compétences communes PFMP - 2BTP"
 Source : grille d'évaluation des compétences communes PFMP (photo transmise)
 
 Lancer depuis la racine du projet :
-    .venv\Scripts\python.exe create_referentiel_2btp.py
+    .venv\\Scripts\\python.exe create_referentiel_2btp.py
 """
 
 import os
