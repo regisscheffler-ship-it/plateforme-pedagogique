@@ -13,9 +13,6 @@ python manage.py collectstatic --no-input
 echo "=== Migrations ==="
 python manage.py migrate --no-input
 
-echo "=== Import référentiel 2BTP ==="
-python create_referentiel_2btp.py || true
-
 echo "=== Création du superuser ==="
 python manage.py shell -c "
 from django.contrib.auth import get_user_model
