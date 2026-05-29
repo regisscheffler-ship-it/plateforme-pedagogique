@@ -274,6 +274,68 @@
 </div>
 
 <script>
-// Pas de zoom JS — le CSS @page + width:100% gère l'adaptation à la page
+(function () {
+    // A4 paysage avec marges 8mm haut/bas et 10mm gauche/droite
+    // Zone utile : (297-20)mm × (210-16)mm = 277mm × 194mm
+    var AVAIL_W_MM = 277;
+    var AVAIL_H_MM = 194;
+
+    var _hidden = [];
+
+    function beforePrint() {
+        // 1. Masquer les éléments de navigation AVANT de mesurer
+        var selectors = ['header', 'nav', 'footer', '.btn-back', '.btn-print',
+                         '.mo-header-actions', '.mo-header'];
+        selectors.forEach(function (sel) {
+            document.querySelectorAll(sel).forEach(function (el) {
+                _hidden.push({ el: el, prev: el.style.display });
+                el.style.display = 'none';
+            });
+        });
+
+        // 2. Afficher le titre d'impression
+        var title = document.querySelector('.print-title');
+        if (title) title.style.display = 'block';
+
+        // 3. Retirer les contraintes de largeur du container base.html
+        var cont = document.querySelector('.container');
+        if (cont) { cont.style.maxWidth = 'none'; cont.style.padding = '0'; }
+
+        // 4. Forcer reflow pour obtenir les vraies dimensions
+        void document.body.offsetHeight;
+
+        // 5. Mesurer la zone de contenu à imprimer
+        var pc = document.querySelector('.page-container');
+        var contentW = pc ? pc.scrollWidth : document.body.scrollWidth;
+        var contentH = pc ? pc.scrollHeight : document.body.scrollHeight;
+
+        // 6. Convertir la zone A4 en pixels CSS (96 dpi)
+        var availW = AVAIL_W_MM / 25.4 * 96;
+        var availH = AVAIL_H_MM / 25.4 * 96;
+
+        var scale = Math.min(availW / contentW, availH / contentH);
+
+        if (scale < 0.98) {
+            document.body.style.zoom = Math.max(scale, 0.25);
+        }
+    }
+
+    function afterPrint() {
+        // Restaurer les éléments cachés
+        _hidden.forEach(function (o) { o.el.style.display = o.prev; });
+        _hidden = [];
+
+        var title = document.querySelector('.print-title');
+        if (title) title.style.display = 'none';
+
+        var cont = document.querySelector('.container');
+        if (cont) { cont.style.maxWidth = ''; cont.style.padding = ''; }
+
+        document.body.style.zoom = '';
+    }
+
+    window.addEventListener('beforeprint', beforePrint);
+    window.addEventListener('afterprint',  afterPrint);
+})();
 </script>
 {% endblock %}
