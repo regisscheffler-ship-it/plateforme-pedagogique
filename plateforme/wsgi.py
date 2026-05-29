@@ -21,12 +21,13 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'plateforme.settings')
 
 
 def _run_startup_maintenance():
-	"""Optional: run migrations and collectstatic at startup when enabled.
+	"""Optional: run migrations at startup when enabled.
 
 	Activate by setting the environment variable `RUN_MIGRATIONS_ON_STARTUP=1`.
-	This is guarded and will only run when explicitly enabled (useful when
-	you cannot run shell commands on the host). Failures are caught so the
-	process still starts and logs the traceback to stderr.
+	This is guarded and will only run when explicitly enabled.
+	NOTE: collectstatic is intentionally NOT run here — it is handled by build.sh
+	during the build phase. Running it at startup would process hundreds of files
+	and cause gunicorn worker boot timeout (>30s), leading to an infinite restart loop.
 	"""
 	if os.environ.get('RUN_MIGRATIONS_ON_STARTUP') != '1':
 		return
@@ -45,9 +46,8 @@ def _run_startup_maintenance():
 				return
 		django.setup()
 		call_command('migrate', '--noinput')
-		call_command('collectstatic', '--noinput')
 	except Exception:
-		print('Error running startup maintenance (migrate/collectstatic):', file=sys.stderr)
+		print('Error running startup maintenance (migrate):', file=sys.stderr)
 		traceback.print_exc()
 
 
