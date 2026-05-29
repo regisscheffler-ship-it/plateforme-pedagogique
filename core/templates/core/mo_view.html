@@ -87,6 +87,8 @@
             background: white !important;
             display: block !important;
             font-family: Arial, sans-serif !important;
+            width: 100% !important;
+            zoom: 1 !important;
         }
 
         /* Masquer tout ce qui ne fait pas partie du MO */
@@ -96,8 +98,9 @@
 
         /* Annuler padding/marges du conteneur de base.html */
         .container {
-            max-width: 100% !important; width: 100% !important;
+            max-width: none !important; width: 100% !important;
             margin: 0 !important; padding: 0 !important;
+            flex: none !important;
         }
 
         /* Titre impression */
@@ -271,35 +274,6 @@
 </div>
 
 <script>
-(function () {
-    // Calcul du zoom uniquement si le tableau déborde la largeur A4 paysage
-    // A4 paysage disponible : 297mm - 2×10mm marges = 277mm ≈ 1046px @ 96dpi
-    var AVAIL_W = (277 / 25.4) * 96;
-    var AVAIL_H = (194 / 25.4) * 96;  // 210mm - 2×8mm
-
-    function fitToPage() {
-        document.body.style.zoom = '';
-        void document.body.offsetHeight; // force reflow
-
-        // Mesurer uniquement la zone utile (pas tout le body qui inclut header/nav)
-        var container = document.querySelector('.page-container');
-        if (!container) return;
-
-        var contentW = container.scrollWidth;
-        var contentH = container.scrollHeight;
-
-        var scale = Math.min(AVAIL_W / contentW, AVAIL_H / contentH);
-
-        if (scale < 0.99) {
-            scale = Math.max(scale, 0.3);
-            document.body.style.zoom = scale;
-        }
-    }
-
-    function resetFit() { document.body.style.zoom = ''; }
-
-    window.addEventListener('beforeprint', fitToPage);
-    window.addEventListener('afterprint',  resetFit);
-})();
+// Pas de zoom JS — le CSS @page + width:100% gère l'adaptation à la page
 </script>
 {% endblock %}
