@@ -4524,7 +4524,7 @@ def fiche_revision_delete(request, pk):
 
 def qcm_gestion(request):
     """Page principale QCM : liste de tous les QCM + formulaire de création."""
-    qcms = QCM.objects.filter(createur=request.user).select_related('theme', 'classe').annotate(
+    qcms = QCM.objects.filter(createur=request.user).select_related('theme').prefetch_related('classes').annotate(
         nb_questions=Count('questions')
     ).order_by('-id')
     classes = Classe.objects.all().order_by('nom')
@@ -4552,28 +4552,28 @@ def qcm_create(request, theme_id):
     ).order_by('titre')
 
     if request.method == 'POST':
-        titre       = request.POST.get('titre', '').strip()
-        classe_id   = request.POST.get('classe')
-        date_limite = request.POST.get('date_limite')
-        nb_q        = int(request.POST.get('nb_questions', 10))
-        melange     = request.POST.get('melange_questions') == 'on'
-        source_type = request.POST.get('source_type', 'texte')
-        texte_src   = request.POST.get('texte_source', '').strip()
-        pdf_src     = request.FILES.get('pdf_source')
-        fiche_id    = request.POST.get('fiche_id')
+        titre        = request.POST.get('titre', '').strip()
+        classes_ids  = request.POST.getlist('classes')
+        date_limite  = request.POST.get('date_limite')
+        nb_q         = int(request.POST.get('nb_questions', 10))
+        melange      = request.POST.get('melange_questions') == 'on'
+        source_type  = request.POST.get('source_type', 'texte')
+        texte_src    = request.POST.get('texte_source', '').strip()
+        pdf_src      = request.FILES.get('pdf_source')
+        fiche_id     = request.POST.get('fiche_id')
 
-        if not titre or not classe_id or not date_limite:
-            messages.error(request, '❌ Titre, classe et date limite sont obligatoires.')
+        if not titre or not classes_ids or not date_limite:
+            messages.error(request, '❌ Titre, classe(s) et date limite sont obligatoires.')
             return render(request, 'core/qcm_create.html', {
                 'theme': theme, 'classes': classes, 'fiches_revision': fiches_revision
             })
 
-        classe = get_object_or_404(Classe, id=classe_id)
         qcm = QCM.objects.create(
-            theme=theme, titre=titre, classe=classe,
+            theme=theme, titre=titre,
             createur=request.user, date_limite=date_limite,
             melange_questions=melange, actif=False,
         )
+        qcm.classes.set(classes_ids)
 
         ia_erreur = False
         questions  = None
@@ -4659,12 +4659,12 @@ def qcm_edit(request, pk):
 
         elif action == 'update_meta':
             titre = request.POST.get('titre', '').strip()
-            classe_id = request.POST.get('classe_id', '').strip()
+            classes_ids = request.POST.getlist('classes_ids')
             date_limite_str = request.POST.get('date_limite', '').strip()
             if titre:
                 qcm.titre = titre
-            if classe_id:
-                qcm.classe_id = int(classe_id)
+            if classes_ids:
+                qcm.classes.set(classes_ids)
             if date_limite_str:
                 from django.utils.dateparse import parse_datetime
                 dt = parse_datetime(date_limite_str)
@@ -4758,7 +4758,7 @@ def qcm_passer(request, pk):
         return redirect('core:dashboard_eleve')
 
     # Vérifier que l'élève est dans la bonne classe
-    if profil.classe != qcm.classe:
+    if not qcm.classes.filter(id=profil.classe_id).exists():
         messages.error(request, 'Ce QCM n\'est pas disponible pour votre classe.')
         return redirect('core:dashboard_eleve')
 
@@ -4941,7 +4941,7 @@ def qcm_archiver(request, pk):
     annee = _annee_scolaire_courante()
     desc_parts = [
         f"qcm_id:{qcm.id}",
-        f"Classe : {qcm.classe.nom}",
+        f"Classes : {', '.join(c.nom for c in qcm.classes.all())}",
         f"Questions : {qcm.questions.count()}",
         f"Élèves ayant passé : {nb_passes}",
     ]
@@ -5001,7 +5001,7 @@ def qcm_creer_depuis_dashboard(request):
 
     titre       = request.POST.get('titre', '').strip()
     theme_id    = request.POST.get('theme_id')
-    classe_id   = request.POST.get('classe')
+    classes_ids = request.POST.getlist('classes')
     date_limite = request.POST.get('date_limite')
     nb_q        = int(request.POST.get('nb_questions', 10))
     melange     = request.POST.get('melange_questions') == 'on'
@@ -5014,18 +5014,18 @@ def qcm_creer_depuis_dashboard(request):
     print(f"[QCM-DEBUG] source_type={source_type!r} | pdf_src={pdf_src} | texte_len={len(texte_src)} | fiche_id={fiche_id!r}")
     print(f"[QCM-DEBUG] FILES keys: {list(request.FILES.keys())}")
 
-    if not titre or not theme_id or not classe_id or not date_limite:
-        messages.error(request, '❌ Titre, thème, classe et date limite sont obligatoires.')
+    if not titre or not theme_id or not classes_ids or not date_limite:
+        messages.error(request, '❌ Titre, thème, classe(s) et date limite sont obligatoires.')
         return redirect('core:dashboard_professeur')
 
-    theme  = get_object_or_404(Theme, id=theme_id)
-    classe = get_object_or_404(Classe, id=classe_id)
+    theme = get_object_or_404(Theme, id=theme_id)
 
     qcm = QCM.objects.create(
-        theme=theme, titre=titre, classe=classe,
+        theme=theme, titre=titre,
         createur=request.user, date_limite=date_limite,
         melange_questions=melange, actif=False,
     )
+    qcm.classes.set(classes_ids)
 
     ia_erreur = False
     questions  = None

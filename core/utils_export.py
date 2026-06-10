@@ -438,7 +438,7 @@ def generer_zip_complet(annee):
             .distinct()
         )
         for qcm in qcms:
-            cl = safe(qcm.classe.nom) if qcm.classe else 'Sans_classe'
+            cl = safe('_'.join(c.nom for c in qcm.classes.all())) or 'Sans_classe'
             base = f"04_QCM/{cl}/{safe(qcm.titre)}"
             sessions = (
                 SessionQCM.objects
@@ -982,14 +982,14 @@ def generer_zip_avance(annee, tri='par_classe', classes_ids=None, eleves_ids=Non
         qcms_qs = (
             QCM.objects
             .filter(q_annee | q_dates)  # actif=True retiré : cohérence avec FicheContrat
-            .select_related('classe')
+            .prefetch_related('classes')
             .distinct()
         )
         if classes_ids:
-            qcms_qs = qcms_qs.filter(classe_id__in=classes_ids)
+            qcms_qs = qcms_qs.filter(classes__id__in=classes_ids)
 
         for qcm in qcms_qs:
-            cl_nom = safe(qcm.classe.nom) if qcm.classe else 'Sans_classe'
+            cl_nom = safe('_'.join(c.nom for c in qcm.classes.all())) or 'Sans_classe'
             qcm_nom = safe(qcm.titre)
 
             sessions = (

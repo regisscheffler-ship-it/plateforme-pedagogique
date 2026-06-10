@@ -197,7 +197,7 @@
         <div>
             <h1>{{ qcm.titre }}</h1>
             <div class="meta">
-                {{ qcm.classe.nom }} &nbsp;·&nbsp;
+                {{ qcm.classes.all|join:', ' }} &nbsp;·&nbsp;
                 Limite : {{ qcm.date_limite|date:"d/m/Y H:i" }} &nbsp;·&nbsp;
                 {{ questions.count }} question{{ questions.count|pluralize }}
                 &nbsp;·&nbsp;
@@ -313,13 +313,17 @@
                         <input type="text" name="titre" value="{{ qcm.titre }}" required>
                     </div>
                     <div class="form-group">
-                        <label>Classe assignée</label>
-                        <select name="classe_id">
-                            <option value="">— Choisir une classe —</option>
+                        <label>Classes assignées <span style="font-weight:400;color:#888;font-size:0.85rem;">(plusieurs possibles)</span></label>
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:0.75rem;border:1.5px solid #e9ecef;border-radius:8px;background:#fafafa;">
                             {% for c in classes %}
-                            <option value="{{ c.id }}" {% if c.id == qcm.classe_id %}selected{% endif %}>{{ c.nom }}</option>
+                            <label style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1.5px solid #e9ecef;border-radius:8px;cursor:pointer;font-size:0.9rem;background:white;">
+                                <input type="checkbox" name="classes_ids" value="{{ c.id }}"
+                                       {% if c in qcm.classes.all %}checked{% endif %}
+                                       style="width:15px;height:15px;accent-color:#6b7fd4;cursor:pointer;">
+                                {{ c.nom }}
+                            </label>
                             {% endfor %}
-                        </select>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Date limite</label>

@@ -143,11 +143,12 @@ class CarteRevisionAdmin(admin.ModelAdmin):
 
 @admin.register(QCM)
 class QCMAdmin(admin.ModelAdmin):
-    list_display = ['titre', 'classe', 'theme', 'createur', 'date_limite', 'actif', 'date_creation']
-    list_filter = ['actif', 'classe', 'theme']
+    list_display = ['titre', 'theme', 'createur', 'date_limite', 'actif', 'date_creation']
+    list_filter = ['actif', 'classes', 'theme']
     search_fields = ['titre']
     list_editable = ['actif']
     readonly_fields = ['date_creation']
+    filter_horizontal = ['classes']
 
 
 # ================================

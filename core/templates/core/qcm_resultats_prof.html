@@ -174,7 +174,7 @@
         <div>
             <h1>{{ qcm.titre }}</h1>
             <div class="meta">
-                {{ qcm.classe.nom }}&nbsp;·&nbsp;
+                {{ qcm.classes.all|join:', ' }}&nbsp;·&nbsp;
                 {{ total_q }} question{{ total_q|pluralize }}&nbsp;·&nbsp;
                 Note sur 20&nbsp;·&nbsp;
                 Limite : {{ qcm.date_limite|date:"d/m/Y" }}

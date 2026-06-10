@@ -1362,10 +1362,10 @@ class QCM(models.Model):
         related_name='qcms'
     )
     titre = models.CharField(max_length=200)
-    classe = models.ForeignKey(
+    classes = models.ManyToManyField(
         'Classe',
-        on_delete=models.CASCADE,
-        related_name='qcms'
+        related_name='qcms',
+        blank=True,
     )
     createur = models.ForeignKey(
         User,
