@@ -607,22 +607,23 @@
                             </select>
                         </div>
 
-                        <!-- Classe + Date limite -->
-                        <div class="form-grid-2 form-field">
-                            <div>
-                                <label class="form-label" for="f-classe">Classe *</label>
-                                <select id="f-classe" name="classe" required class="form-control">
-                                    <option value="">— Classe —</option>
-                                    {% for cl in classes %}
-                                    <option value="{{ cl.id }}">{{ cl.nom }}</option>
-                                    {% endfor %}
-                                </select>
+                        <!-- Classes + Date limite -->
+                        <div class="form-field">
+                            <label class="form-label">Classes * <span style="font-weight:400;color:#9ca3af;font-size:0.8rem;">(plusieurs possibles)</span></label>
+                            <div style="display:flex;flex-wrap:wrap;gap:6px;padding:0.7rem;border:1.5px solid #d1d5db;border-radius:8px;background:#fafafa;">
+                                {% for cl in classes %}
+                                <label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1.5px solid #e9ecef;border-radius:7px;cursor:pointer;font-size:0.85rem;background:white;transition:border-color 0.15s;">
+                                    <input type="checkbox" name="classes" value="{{ cl.id }}"
+                                           style="width:14px;height:14px;accent-color:#4a9fc1;cursor:pointer;">
+                                    {{ cl.nom }}
+                                </label>
+                                {% endfor %}
                             </div>
-                            <div>
-                                <label class="form-label" for="f-date">Date limite *</label>
-                                <input type="datetime-local" id="f-date" name="date_limite"
-                                       required class="form-control">
-                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label" for="f-date">Date limite *</label>
+                            <input type="datetime-local" id="f-date" name="date_limite"
+                                   required class="form-control">
                         </div>
 
                         <!-- Nb questions + Mélange -->
