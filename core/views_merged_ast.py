@@ -5492,10 +5492,10 @@ def dashboard_eleve(request):
             'today': date.today(),
         }
         # QCM actifs annotés avec la session de l'élève
-        sessions_map = {s.qcm_id: s for s in SessionQCM.objects.filter(qcm__classe=classe, eleve=profil, termine=True)}
+        sessions_map = {s.qcm_id: s for s in SessionQCM.objects.filter(qcm__classes=classe, eleve=profil, termine=True)}
         qcms_actifs = [
             {'qcm': q, 'session': sessions_map.get(q.id)}
-            for q in QCM.objects.filter(classe=classe, actif=True).annotate(nb_q=Count('questions')).order_by('date_limite')
+            for q in QCM.objects.filter(classes=classe, actif=True).annotate(nb_q=Count('questions')).order_by('date_limite')
         ]
         context['qcms_actifs'] = qcms_actifs
         context['total_a_faire'] = context['travaux_a_faire'].count() + len(qcms_actifs)
