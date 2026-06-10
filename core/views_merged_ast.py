@@ -3514,7 +3514,7 @@ def evaluations_home(request):
         validees = FicheEvaluation.objects.filter(fiche_contrat=fc, validee=True).count()
         if validees >= total_ev:
             nb_validees += 1
-    qcms = QCM.objects.annotate(nb_questions=Count('questions')).select_related('theme', 'classe').order_by('-date_creation')
+    qcms = QCM.objects.annotate(nb_questions=Count('questions')).select_related('theme').prefetch_related('classes').order_by('-date_creation')
     return render(request, 'core/evaluations_home.html', {
         'nb_fiches_contrat': nb_fiches_contrat,
         'nb_archives': fiches_archivees.count(),
