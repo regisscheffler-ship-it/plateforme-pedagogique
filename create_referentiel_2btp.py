@@ -19,7 +19,7 @@ from core.models import (
     CritereEvaluation, IndicateurPerformance,
 )
 
-REFERENTIEL_NOM = "Compétences communes PFMP - 2BTP"
+REFERENTIEL_NOM = "Compétences communes - 2BTP"
 
 # ─────────────────────────────────────────────────────────────
 # Données extraites de la grille (photo)
