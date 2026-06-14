@@ -708,7 +708,100 @@
                 </svg>
                 <h2>Mes évaluations</h2>
             </div>
-            <p style="color:#94a3b8;font-style:italic;margin:0.5rem 0 0;">Bientôt disponible.</p>
+
+            {% if mes_evaluations or qcms_actifs %}
+            <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.8rem;">
+
+                {% for ev in mes_evaluations %}
+                <a href="{% url 'core:eleve_voir_fiche_evaluation' ev.id %}"
+                   style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;
+                          padding:0.85rem 1rem;background:#f8fafc;border-radius:10px;
+                          border-left:4px solid #6b7fd4;text-decoration:none;
+                          transition:box-shadow 0.2s,transform 0.2s;"
+                   onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';this.style.transform='translateY(-1px)'"
+                   onmouseout="this.style.boxShadow='none';this.style.transform='none'">
+                    <div style="display:flex;align-items:center;gap:0.7rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#6b7fd4" viewBox="0 0 16 16">
+                            <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707L9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1z"/>
+                        </svg>
+                        <div>
+                            <div style="font-weight:700;color:#1e293b;font-size:0.92rem;">{{ ev.fiche_contrat.titre_tp }}</div>
+                            <div style="font-size:0.78rem;color:#94a3b8;">
+                                {{ ev.fiche_contrat.classe.nom }}
+                                {% if ev.date_validation %} · {{ ev.date_validation|date:"d/m/Y" }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.6rem;flex-shrink:0;">
+                        {% if ev.note_sur_20 is not None %}
+                            {% if ev.note_sur_20 >= 15 %}
+                                <span style="background:#dcfce7;color:#166534;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ ev.note_sur_20|floatformat:1 }} / 20</span>
+                            {% elif ev.note_sur_20 >= 12 %}
+                                <span style="background:#fef9c3;color:#854d0e;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ ev.note_sur_20|floatformat:1 }} / 20</span>
+                            {% elif ev.note_sur_20 >= 10 %}
+                                <span style="background:#ffedd5;color:#9a3412;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ ev.note_sur_20|floatformat:1 }} / 20</span>
+                            {% else %}
+                                <span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ ev.note_sur_20|floatformat:1 }} / 20</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:20px;font-weight:600;font-size:0.85rem;">— / 20</span>
+                        {% endif %}
+                        <span style="background:#e0e7ff;color:#4338ca;padding:3px 8px;border-radius:8px;font-size:0.75rem;font-weight:600;">TP</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#94a3b8" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </div>
+                </a>
+                {% endfor %}
+
+                {% for item in qcms_actifs %}
+                {% if item.session and item.session.termine %}
+                <a href="{% url 'core:qcm_resultats' pk=item.session.id %}"
+                   style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;
+                          padding:0.85rem 1rem;background:#f8fafc;border-radius:10px;
+                          border-left:4px solid #0ea5e9;text-decoration:none;
+                          transition:box-shadow 0.2s,transform 0.2s;"
+                   onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';this.style.transform='translateY(-1px)'"
+                   onmouseout="this.style.boxShadow='none';this.style.transform='none'">
+                    <div style="display:flex;align-items:center;gap:0.7rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#0ea5e9" viewBox="0 0 16 16">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                        <div>
+                            <div style="font-weight:700;color:#1e293b;font-size:0.92rem;">{{ item.qcm.titre }}</div>
+                            <div style="font-size:0.78rem;color:#94a3b8;">
+                                {{ item.qcm.nb_q }} question{{ item.qcm.nb_q|pluralize }}
+                                {% if item.session.date_soumission %} · {{ item.session.date_soumission|date:"d/m/Y" }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.6rem;flex-shrink:0;">
+                        {% if item.session.note_sur_20 is not None %}
+                            {% if item.session.note_sur_20 >= 15 %}
+                                <span style="background:#dcfce7;color:#166534;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ item.session.note_sur_20|floatformat:1 }} / 20</span>
+                            {% elif item.session.note_sur_20 >= 12 %}
+                                <span style="background:#fef9c3;color:#854d0e;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ item.session.note_sur_20|floatformat:1 }} / 20</span>
+                            {% elif item.session.note_sur_20 >= 10 %}
+                                <span style="background:#ffedd5;color:#9a3412;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ item.session.note_sur_20|floatformat:1 }} / 20</span>
+                            {% else %}
+                                <span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ item.session.note_sur_20|floatformat:1 }} / 20</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:20px;font-weight:600;font-size:0.85rem;">— / 20</span>
+                        {% endif %}
+                        <span style="background:#e0f2fe;color:#0369a1;padding:3px 8px;border-radius:8px;font-size:0.75rem;font-weight:600;">QCM</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#94a3b8" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </div>
+                </a>
+                {% endif %}
+                {% endfor %}
+
+            </div>
+            {% else %}
+            <p style="color:#94a3b8;font-style:italic;margin:0.8rem 0 0;">Aucune évaluation disponible pour l'instant.</p>
+            {% endif %}
         </div>
 
     </div>

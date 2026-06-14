@@ -4086,11 +4086,18 @@ generer_fiches_contrat = generer_fiches_eleves
 
 
 def generer_fiches_evaluation(request, fiche_contrat_id):
-    """✅ Fiche évaluation imprimable — une par élève avec CP/SC/critères"""
+    """✅ Fiche évaluation imprimable — une par élève avec CP/SC/critères.
+    Accepte ?eleve_id=XX pour filtrer sur un seul élève (depuis l'archive par ex.)."""
     fiche_contrat = get_object_or_404(FicheContrat, id=fiche_contrat_id, createur=request.user)
     fiches_eleves = FicheEvaluation.objects.filter(
-        fiche_contrat=fiche_contrat, eleve__est_sorti=False
+        fiche_contrat=fiche_contrat
     ).select_related('eleve__user').order_by('eleve__user__last_name')
+    eleve_id = request.GET.get('eleve_id')
+    if eleve_id:
+        try:
+            fiches_eleves = fiches_eleves.filter(eleve__id=int(eleve_id))
+        except (ValueError, TypeError):
+            pass
     nb_lignes_total = fiche_contrat.lignes.count()
     poids_auto = round(100 / nb_lignes_total, 2) if nb_lignes_total > 0 else 10.0
 

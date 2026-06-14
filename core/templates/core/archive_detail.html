@@ -283,6 +283,7 @@
                     <th>Note / 20</th>
                     <th>Statut</th>
                     <th>Compte rendu</th>
+                    <th>Fiche individuelle</th>
                 </tr>
             </thead>
             <tbody>
@@ -320,6 +321,16 @@
                     </td>
                     <td style="color:#64748b;font-size:0.83rem;">
                         {{ ev.compte_rendu|default:"—"|truncatechars:60 }}
+                    </td>
+                    <td>
+                        <a href="{% url 'core:generer_fiches_evaluation' fiche_contrat.id %}?eleve_id={{ ev.eleve.id }}"
+                           target="_blank"
+                           style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:7px;font-size:0.78rem;font-weight:600;text-decoration:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5z"/>
+                            </svg>
+                            Imprimer
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}
