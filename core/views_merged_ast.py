@@ -5495,7 +5495,7 @@ def dashboard_eleve(request):
             'ateliers': Atelier.objects.filter(classe=classe, actif=True, visible_eleves=True).order_by('ordre', 'titre'),
             'mes_pfmp': PFMP.objects.filter(classes=classe, actif=True).order_by('date_debut'),
             # n'afficher que les 6 dernières évaluations validées
-            'mes_evaluations': FicheEvaluation.objects.filter(eleve=profil, validee=True).select_related('fiche_contrat').order_by('-date_validation')[:6],
+            'mes_evaluations': FicheEvaluation.objects.filter(eleve=profil, validee=True).select_related('fiche_contrat__classe').order_by('-date_validation')[:6],
             'today': date.today(),
         }
         # QCM actifs annotés avec la session de l'élève
