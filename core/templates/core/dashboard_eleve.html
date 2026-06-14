@@ -709,7 +709,7 @@
                 <h2>Mes évaluations</h2>
             </div>
 
-            {% if mes_evaluations or qcms_actifs %}
+            {% if mes_evaluations or mes_sessions_qcm %}
             <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.8rem;">
 
                 {% for ev in mes_evaluations %}
@@ -754,9 +754,8 @@
                 </a>
                 {% endfor %}
 
-                {% for item in qcms_actifs %}
-                {% if item.session and item.session.termine %}
-                <a href="{% url 'core:qcm_resultats' pk=item.session.id %}"
+                {% for session in mes_sessions_qcm %}
+                <a href="{% url 'core:qcm_resultats' pk=session.id %}"
                    style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;
                           padding:0.85rem 1rem;background:#f8fafc;border-radius:10px;
                           border-left:4px solid #0ea5e9;text-decoration:none;
@@ -768,23 +767,23 @@
                             <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
                         </svg>
                         <div>
-                            <div style="font-weight:700;color:#1e293b;font-size:0.92rem;">{{ item.qcm.titre }}</div>
+                            <div style="font-weight:700;color:#1e293b;font-size:0.92rem;">{{ session.qcm.titre }}</div>
                             <div style="font-size:0.78rem;color:#94a3b8;">
-                                {{ item.qcm.nb_q }} question{{ item.qcm.nb_q|pluralize }}
-                                {% if item.session.date_soumission %} · {{ item.session.date_soumission|date:"d/m/Y" }}{% endif %}
+                                QCM
+                                {% if session.date_soumission %} · {{ session.date_soumission|date:"d/m/Y" }}{% endif %}
                             </div>
                         </div>
                     </div>
                     <div style="display:flex;align-items:center;gap:0.6rem;flex-shrink:0;">
-                        {% if item.session.note_sur_20 is not None %}
-                            {% if item.session.note_sur_20 >= 15 %}
-                                <span style="background:#dcfce7;color:#166534;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ item.session.note_sur_20|floatformat:1 }} / 20</span>
-                            {% elif item.session.note_sur_20 >= 12 %}
-                                <span style="background:#fef9c3;color:#854d0e;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ item.session.note_sur_20|floatformat:1 }} / 20</span>
-                            {% elif item.session.note_sur_20 >= 10 %}
-                                <span style="background:#ffedd5;color:#9a3412;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ item.session.note_sur_20|floatformat:1 }} / 20</span>
+                        {% if session.note_sur_20 is not None %}
+                            {% if session.note_sur_20 >= 15 %}
+                                <span style="background:#dcfce7;color:#166534;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ session.note_sur_20|floatformat:1 }} / 20</span>
+                            {% elif session.note_sur_20 >= 12 %}
+                                <span style="background:#fef9c3;color:#854d0e;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ session.note_sur_20|floatformat:1 }} / 20</span>
+                            {% elif session.note_sur_20 >= 10 %}
+                                <span style="background:#ffedd5;color:#9a3412;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ session.note_sur_20|floatformat:1 }} / 20</span>
                             {% else %}
-                                <span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ item.session.note_sur_20|floatformat:1 }} / 20</span>
+                                <span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;font-weight:700;font-size:0.9rem;">{{ session.note_sur_20|floatformat:1 }} / 20</span>
                             {% endif %}
                         {% else %}
                             <span style="background:#f1f5f9;color:#64748b;padding:4px 12px;border-radius:20px;font-weight:600;font-size:0.85rem;">— / 20</span>
@@ -795,7 +794,6 @@
                         </svg>
                     </div>
                 </a>
-                {% endif %}
                 {% endfor %}
 
             </div>

@@ -41,10 +41,10 @@
                             <div style="margin-top:0.6rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
                                 {% if c.image_annotee %}
                                     <button type="button" class="btn-outline consult-btn" data-img-url="{{ c.image_annotee.url }}" data-texte="{{ c.texte|escapejs }}">Consulter</button>
-                                    <a href="{{ c.image_annotee.url }}" download class="btn-outline">Télécharger</a>
+                                    <a href="{% url 'core:communication_telecharger' c.id %}" class="btn-outline">Télécharger</a>
                                 {% elif c.image %}
                                     <button type="button" class="btn-outline consult-btn" data-img-url="{{ c.image.url }}" data-texte="{{ c.texte|escapejs }}">Consulter</button>
-                                    <a href="{{ c.image.url }}" download class="btn-outline">Télécharger</a>
+                                    <a href="{% url 'core:communication_telecharger' c.id %}" class="btn-outline">Télécharger</a>
                                 {% endif %}
                                 <form method="post" action="{% url 'core:communication_supprimer' c.id %}" style="display:inline;">
                                     {% csrf_token %}
@@ -60,8 +60,6 @@
         {% endif %}
     </div>
 </div>
-
-{% endblock %}
 
     <!-- Modal for viewing communication image -->
     <div id="comm-modal" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);">
@@ -98,3 +96,5 @@
         document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
     });
     </script>
+
+{% endblock %}

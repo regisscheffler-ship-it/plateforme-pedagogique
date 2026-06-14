@@ -5470,6 +5470,32 @@ def communications_list(request):
     return render(request, 'core/communications_list.html', context)
 
 
+def communication_telecharger(request, message_id):
+    """Proxy de téléchargement d'une image de communication élève (contourne CORS Cloudinary)."""
+    msg = get_object_or_404(MessageEleve, id=message_id)
+    try:
+        profil = request.user.profil
+    except ProfilUtilisateur.DoesNotExist:
+        return redirect('core:communications_list')
+    if msg.professeur != profil:
+        messages.error(request, 'Accès non autorisé.')
+        return redirect('core:communications_list')
+    image_file = msg.image_annotee if (msg.image_annotee and msg.image_annotee.name) else msg.image
+    if not image_file or not image_file.name:
+        return HttpResponse('Aucune image disponible.', status=404)
+    try:
+        import requests as _req
+        resp = _req.get(image_file.url, timeout=30)
+        resp.raise_for_status()
+        content_type = resp.headers.get('Content-Type', 'application/octet-stream')
+        filename = image_file.url.split('?')[0].rsplit('/', 1)[-1]
+        response = HttpResponse(resp.content, content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    except Exception:
+        return HttpResponse('Erreur lors du téléchargement.', status=500)
+
+
 def dashboard_eleve(request):
     try:
         profil = request.user.profil
@@ -5506,6 +5532,13 @@ def dashboard_eleve(request):
         ]
         context['qcms_actifs'] = qcms_actifs
         context['total_a_faire'] = context['travaux_a_faire'].count() + len(qcms_actifs)
+        # Toutes les sessions QCM terminées de l'élève (même si le QCM est désactivé)
+        context['mes_sessions_qcm'] = (
+            SessionQCM.objects
+            .filter(eleve=profil, termine=True)
+            .select_related('qcm')
+            .order_by('-date_soumission')
+        )
         # Modes opératoires visibles aux élèves (via atelier de la classe)
         context['modes_operatoires_eleve'] = ModeOperatoire.objects.filter(
             actif=True, visible_eleves=True,

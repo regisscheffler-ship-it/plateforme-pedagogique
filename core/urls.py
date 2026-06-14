@@ -177,6 +177,7 @@ urlpatterns = [
     path('communication/supprimer/<int:message_id>/',    views.communication_supprimer, name='communication_supprimer'),
     path('communications/',                               views.communications_list,  name='communications_list'),
     path('communications/export-pdf/',                   views.communications_export_pdf, name='communications_export_pdf'),
+    path('communication/<int:message_id>/telecharger/',  views.communication_telecharger, name='communication_telecharger'),
 
     # ═══════════════════════════════════════
     # NOTIFICATIONS
