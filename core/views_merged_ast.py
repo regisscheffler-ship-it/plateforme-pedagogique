@@ -2073,7 +2073,7 @@ def _annee_scolaire_pour_date(date_value):
     return f'{debut}-{debut + 1}'
 
 
-def _stats_moyennes_evaluations(annee_selectionnee='', classe_selectionnee=''):
+def _stats_moyennes_evaluations(annee_selectionnee='', classe_selectionnee='', classes_supplementaires=None):
     evaluations = list(
         FicheEvaluation.objects.filter(validee=True, note_sur_20__isnull=False)
         .select_related('eleve__user', 'eleve__classe', 'fiche_contrat__classe')
@@ -2097,6 +2097,7 @@ def _stats_moyennes_evaluations(annee_selectionnee='', classe_selectionnee=''):
         evaluation.fiche_contrat.classe_id: evaluation.fiche_contrat.classe.nom
         for evaluation in evaluations
     }
+    classes_disponibles.update(classes_supplementaires or {})
     classes_moyennes = [
         {'id': classe_id, 'nom': nom}
         for classe_id, nom in sorted(classes_disponibles.items(), key=lambda item: item[1])
@@ -2146,6 +2147,62 @@ def _stats_moyennes_evaluations(annee_selectionnee='', classe_selectionnee=''):
         })
     moyennes_eleve.sort(key=lambda row: (row['classe'], row['anonyme'], row['nom'], row['prenom']))
     return annees, annee_selectionnee, classes_moyennes, classe_selectionnee_id, moyennes_classe, moyennes_eleve
+
+
+def _stats_moyennes_qcm(annee_selectionnee='', classe_selectionnee_id=None):
+    sessions = list(
+        SessionQCM.objects.filter(termine=True, note_sur_20__isnull=False)
+        .select_related('eleve__user', 'eleve__classe', 'qcm')
+        .prefetch_related('qcm__classes')
+        .order_by('qcm__titre', 'eleve__user__last_name', 'eleve__user__first_name')
+    )
+    classes, eleves = {}, {}
+    for session in sessions:
+        date_session = session.date_soumission or session.qcm.date_creation
+        annee = _annee_scolaire_pour_date(date_session.date())
+        if annee_selectionnee and annee != annee_selectionnee:
+            continue
+
+        classes_qcm = list(session.qcm.classes.all())
+        if not classes_qcm and session.eleve.classe_id:
+            classes_qcm = [session.eleve.classe]
+        if classe_selectionnee_id:
+            classes_qcm = [classe for classe in classes_qcm if classe.pk == classe_selectionnee_id]
+        if not classes_qcm:
+            continue
+
+        note = float(session.note_sur_20)
+        for classe in classes_qcm:
+            classes.setdefault(classe.nom, []).append(note)
+            key = (classe.pk, session.eleve_id)
+            row = eleves.setdefault(key, {
+                'classe': classe.nom,
+                'nom': '' if session.eleve.est_sorti else session.eleve.user.last_name.upper(),
+                'prenom': '' if session.eleve.est_sorti else session.eleve.user.first_name,
+                'anonyme': session.eleve.est_sorti,
+                'total': 0.0,
+                'nb_qcms': 0,
+            })
+            row['total'] += note
+            row['nb_qcms'] += 1
+
+    moyennes_classe = [
+        {'classe': classe, 'moyenne': round(sum(notes) / len(notes), 2), 'nb_qcms': len(notes)}
+        for classe, notes in sorted(classes.items())
+    ]
+    moyennes_eleve = [
+        {
+            'classe': row['classe'],
+            'nom': row['nom'],
+            'prenom': row['prenom'],
+            'anonyme': row['anonyme'],
+            'moyenne': round(row['total'] / row['nb_qcms'], 2),
+            'nb_qcms': row['nb_qcms'],
+        }
+        for row in eleves.values()
+    ]
+    moyennes_eleve.sort(key=lambda row: (row['classe'], row['anonyme'], row['nom'], row['prenom']))
+    return moyennes_classe, moyennes_eleve
 
 
 def _stats_eleves_a_risque():
@@ -2606,8 +2663,18 @@ def statistiques(request):
     annee_sorties_selectionnee = request.GET.get('annee_sortie', '')
     if annee_sorties_selectionnee not in annees_sortis:
         annee_sorties_selectionnee = ''
+    classes_qcm_moyennes = {
+        classe_id: classe_nom
+        for classe_id, classe_nom in Classe.objects.filter(qcms__sessions__termine=True)
+        .values_list('id', 'nom').distinct()
+    }
     annees_evaluations, annee_moyennes_selectionnee, classes_moyennes, classe_moyennes_selectionnee, moyennes_classe, moyennes_eleve = _stats_moyennes_evaluations(
-        request.GET.get('annee_moyennes', ''), request.GET.get('classe_moyennes', '')
+        request.GET.get('annee_moyennes', ''),
+        request.GET.get('classe_moyennes', ''),
+        classes_qcm_moyennes,
+    )
+    moyennes_qcm_classe, moyennes_qcm_eleve = _stats_moyennes_qcm(
+        annee_moyennes_selectionnee, classe_moyennes_selectionnee
     )
     orig_college, orig_classe, orig_diplome, orig_ville = _stats_profil_origine()
     # gender stats
@@ -2664,6 +2731,8 @@ def statistiques(request):
         'diplomes_obtenus_par_type': diplomes_obtenus_par_type,
         'moyennes_classe': moyennes_classe,
         'moyennes_eleve': moyennes_eleve,
+        'moyennes_qcm_classe': moyennes_qcm_classe,
+        'moyennes_qcm_eleve': moyennes_qcm_eleve,
         'annees_evaluations': annees_evaluations,
         'annee_moyennes_selectionnee': annee_moyennes_selectionnee,
         'classes_moyennes': classes_moyennes,

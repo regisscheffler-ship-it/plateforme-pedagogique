@@ -309,6 +309,42 @@
                 {% else %}<p style="color:var(--text-muted);">Aucune évaluation validée pour cette période.</p>{% endif %}
             </div>
         </div>
+        <div class="section-title" style="font-size:1.05rem;margin-top:1.5rem;--section-color:#0ea5e9;">Moyennes des QCM terminés</div>
+        <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="chart-card" style="min-height:unset;">
+                <h2 style="color:#0ea5e9;">Moyenne QCM par classe</h2>
+                {% if moyennes_qcm_classe %}
+                <div style="overflow-x:auto;">
+                    <table class="conn-table">
+                        <thead><tr><th>Classe</th><th style="text-align:center;">Moyenne /20</th><th style="text-align:center;">QCM terminés</th></tr></thead>
+                        <tbody>
+                            {% for row in moyennes_qcm_classe %}
+                            <tr><td><strong>{{ row.classe }}</strong></td><td style="text-align:center;font-weight:700;">{{ row.moyenne }}</td><td style="text-align:center;">{{ row.nb_qcms }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}<p style="color:var(--text-muted);">Aucun QCM terminé et noté pour ces filtres.</p>{% endif %}
+            </div>
+            <div class="chart-card" style="min-height:unset;">
+                <h2 style="color:#0ea5e9;">Moyenne QCM par élève</h2>
+                {% if moyennes_qcm_eleve %}
+                <div style="overflow-x:auto;max-height:420px;">
+                    <table class="conn-table">
+                        <thead><tr><th>Élève</th><th>Classe</th><th style="text-align:center;">Moyenne /20</th><th style="text-align:center;">QCM</th></tr></thead>
+                        <tbody>
+                            {% for row in moyennes_qcm_eleve %}
+                            <tr>
+                                <td>{% if row.anonyme %}Ancien élève{% else %}{{ row.nom }} {{ row.prenom }}{% endif %}</td>
+                                <td>{{ row.classe }}</td><td style="text-align:center;font-weight:700;">{{ row.moyenne }}</td><td style="text-align:center;">{{ row.nb_qcms }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}<p style="color:var(--text-muted);">Aucun QCM terminé et noté pour ces filtres.</p>{% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Graphiques généraux -->
@@ -1084,7 +1120,10 @@
         new Chart(document.getElementById('chartConnexions30j'), {
             type: 'line',
             data: {
-                labels: d30j.map(x => x.date.slice(5)),
+                labels: d30j.map(x => {
+                    const [annee, mois, jour] = x.date.split('-');
+                    return `${jour}/${mois}`;
+                }),
                 datasets: [{ label: 'Connexions', data: d30j.map(x => x.nb), borderColor: ev, backgroundColor: 'rgba(42,176,144,0.1)', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: ev }]
             },
             options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }}}, plugins: { legend: { display: false }}}

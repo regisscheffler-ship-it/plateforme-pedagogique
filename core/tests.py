@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from datetime import date, datetime, timedelta
 from django.utils import timezone
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
@@ -511,6 +511,7 @@ class TestStatisticsImprovements(TestCase):
         self.assertNotContains(response, 'PrénomSecret')
         self.assertContains(response, 'Remise à zéro')
         self.assertContains(response, 'Moyenne par classe')
+        self.assertContains(response, '`${jour}/${mois}`')
         contenu = response.content.decode()
         self.assertLess(contenu.index('id="section-moyennes"'), contenu.index('id="section-overview"'))
         self.assertEqual(contenu.count('id="classe-moyennes"'), 1)
@@ -578,6 +579,55 @@ class TestStatisticsImprovements(TestCase):
         ])
         self.assertEqual(len(response.context['moyennes_eleve']), 1)
         self.assertEqual(response.context['moyennes_eleve'][0]['prenom'], 'Sam')
+
+    def test_moyennes_qcm_utilisent_les_meme_filtres_annee_et_classe(self):
+        autre_classe = Classe.objects.create(nom='1M', niveau=self.classe.niveau)
+        referentiel = Referentiel.objects.create(nom='Référentiel QCM moyennes', description='Test')
+        qcm_2m = QCM.objects.create(
+            titre='QCM 2M', createur=self.prof_user,
+            date_limite=timezone.make_aware(datetime(2025, 12, 1)),
+        )
+        qcm_2m.classes.add(self.classe)
+        qcm_1m = QCM.objects.create(
+            titre='QCM 1M', createur=self.prof_user,
+            date_limite=timezone.make_aware(datetime(2025, 12, 1)),
+        )
+        qcm_1m.classes.add(autre_classe)
+        QCM.objects.filter(pk__in=[qcm_2m.pk, qcm_1m.pk]).update(
+            date_creation=timezone.make_aware(datetime(2025, 11, 1))
+        )
+        SessionQCM.objects.create(
+            qcm=qcm_2m, eleve=self.eleve, termine=True, note_sur_20=18,
+            date_soumission=timezone.make_aware(datetime(2025, 11, 10)),
+        )
+        SessionQCM.objects.create(
+            qcm=qcm_1m, eleve=self.eleve, termine=True, note_sur_20=10,
+            date_soumission=timezone.make_aware(datetime(2025, 11, 10)),
+        )
+        qcm_non_termine = QCM.objects.create(
+            titre='QCM non terminé', createur=self.prof_user,
+            date_limite=timezone.make_aware(datetime(2025, 12, 1)),
+        )
+        qcm_non_termine.classes.add(self.classe)
+        QCM.objects.filter(pk=qcm_non_termine.pk).update(
+            date_creation=timezone.make_aware(datetime(2025, 11, 5))
+        )
+        SessionQCM.objects.create(
+            qcm=qcm_non_termine, eleve=self.eleve, termine=False, note_sur_20=1,
+        )
+
+        response = self.client.get(reverse('core:statistiques'), {
+            'annee_moyennes': '2025-2026',
+            'classe_moyennes': str(self.classe.pk),
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['moyennes_qcm_classe'], [
+            {'classe': '2M', 'moyenne': 18.0, 'nb_qcms': 1}
+        ])
+        self.assertEqual(len(response.context['moyennes_qcm_eleve']), 1)
+        self.assertEqual(response.context['moyennes_qcm_eleve'][0]['moyenne'], 18.0)
+        self.assertContains(response, 'Moyenne QCM par classe')
 
     def test_connexions_et_jours_actifs_ne_comptent_que_les_30_derniers_jours(self):
         from core.views_merged_ast import _stats_connexions, _stats_connexions_30j
