@@ -120,6 +120,7 @@
                 <tr>
                     <th class="th-left">Nom</th>
                     <th class="th-left">Prénom</th>
+                    <th class="th-left">Classe au PFMP</th>
                     {% if pfmp.nb_jours_prevus %}<th class="col-prevus">Jours<br>prévus</th>{% endif %}
                     <th class="col-num">Jours<br>effectués</th>
                     <th class="col-num">Absences<br>justifiées</th>
@@ -133,38 +134,39 @@
                 <tr>
                     <td class="col-nom"><strong>{{ e.user.last_name|upper }}</strong></td>
                     <td>{{ e.user.first_name }}</td>
+                    <td>{{ item.classe_suivi }}{% if not item.peut_modifier %}<br><small>Élève sorti · historique conservé</small>{% elif e.classe and e.classe.nom != item.classe_suivi %}<br><small>Classe actuelle : {{ e.classe.nom }}</small>{% endif %}</td>
                     {% if pfmp.nb_jours_prevus %}<td class="col-prevus"><span class="prevus-val">{{ pfmp.nb_jours_prevus }}</span></td>{% endif %}
                     <td class="col-num">
                         <div class="num-group">
-                            <button type="button" class="num-btn" data-delta="-" data-target="effectues_{{ e.id }}">−</button>
+                            {% if item.peut_modifier %}<button type="button" class="num-btn" data-delta="-" data-target="effectues_{{ e.id }}">−</button>{% endif %}
                             <input class="num-field{% if pfmp.nb_jours_prevus %} computed{% endif %}" type="number"
                                 id="effectues_{{ e.id }}" name="effectues_{{ e.id }}" min="0"
-                                value="{{ s.nb_jours_effectues|default:0 }}">
-                            <button type="button" class="num-btn" data-delta="+" data-target="effectues_{{ e.id }}">+</button>
+                                value="{{ s.nb_jours_effectues|default:0 }}" {% if not item.peut_modifier %}disabled{% endif %}>
+                            {% if item.peut_modifier %}<button type="button" class="num-btn" data-delta="+" data-target="effectues_{{ e.id }}">+</button>{% endif %}
                         </div>
                     </td>
                     <td class="col-num">
                         <div class="num-group">
-                            <button type="button" class="num-btn" data-delta="-" data-target="justifies_{{ e.id }}">−</button>
+                            {% if item.peut_modifier %}<button type="button" class="num-btn" data-delta="-" data-target="justifies_{{ e.id }}">−</button>{% endif %}
                             <input class="num-field inp-just" type="number"
                                 id="justifies_{{ e.id }}" name="justifies_{{ e.id }}" min="0"
                                 value="{{ s.nb_jours_manques_justifies|default:0 }}"
-                                data-effectues="effectues_{{ e.id }}">
-                            <button type="button" class="num-btn" data-delta="+" data-target="justifies_{{ e.id }}">+</button>
+                                data-effectues="effectues_{{ e.id }}" {% if not item.peut_modifier %}disabled{% endif %}>
+                            {% if item.peut_modifier %}<button type="button" class="num-btn" data-delta="+" data-target="justifies_{{ e.id }}">+</button>{% endif %}
                         </div>
                     </td>
                     <td class="col-num">
                         <div class="num-group">
-                            <button type="button" class="num-btn" data-delta="-" data-target="injustifies_{{ e.id }}">−</button>
+                            {% if item.peut_modifier %}<button type="button" class="num-btn" data-delta="-" data-target="injustifies_{{ e.id }}">−</button>{% endif %}
                             <input class="num-field inp-injust" type="number"
                                 id="injustifies_{{ e.id }}" name="injustifies_{{ e.id }}" min="0"
                                 value="{{ s.nb_jours_manques_injustifies|default:0 }}"
-                                data-effectues="effectues_{{ e.id }}">
-                            <button type="button" class="num-btn" data-delta="+" data-target="injustifies_{{ e.id }}">+</button>
+                                data-effectues="effectues_{{ e.id }}" {% if not item.peut_modifier %}disabled{% endif %}>
+                            {% if item.peut_modifier %}<button type="button" class="num-btn" data-delta="+" data-target="injustifies_{{ e.id }}">+</button>{% endif %}
                         </div>
                     </td>
                     <td>
-                        <textarea name="commentaire_{{ e.id }}" placeholder="Commentaire…">{{ s.commentaire|default:"" }}</textarea>
+                        <textarea name="commentaire_{{ e.id }}" placeholder="Commentaire…" {% if not item.peut_modifier %}disabled{% endif %}>{{ s.commentaire|default:"" }}</textarea>
                     </td>
                 </tr>
                 {% endwith %}

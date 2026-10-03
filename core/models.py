@@ -1450,6 +1450,10 @@ class SuiviPFMP(models.Model):
         'ProfilUtilisateur', on_delete=models.CASCADE, related_name='suivis_pfmp',
         verbose_name='Élève'
     )
+    classe_au_moment = models.CharField(
+        max_length=100, blank=True, default='',
+        verbose_name='Classe au moment du PFMP'
+    )
     nb_jours_effectues = models.PositiveIntegerField(
         default=0, verbose_name='Jours effectués'
     )

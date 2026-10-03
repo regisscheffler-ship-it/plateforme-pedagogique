@@ -2354,19 +2354,34 @@ def _stats_pfmp():
     from django.db.models import Sum
     result = []
     for classe in Classe.objects.order_by('nom'):
-        pfmps = list(PFMP.objects.filter(classes=classe, actif=True).order_by('date_debut'))
+        pfmps = list(
+            PFMP.objects.filter(classes=classe)
+            .filter(Q(actif=True) | Q(suivis__isnull=False))
+            .distinct().order_by('date_debut')
+        )
         if not pfmps:
             continue
-        eleves = list(ProfilUtilisateur.objects.filter(
+        eleves_actuels = list(ProfilUtilisateur.objects.filter(
             classe=classe, type_utilisateur='eleve', compte_approuve=True, est_sorti=False
         ).select_related('user').order_by('user__last_name', 'user__first_name'))
+        suivis = list(SuiviPFMP.objects.filter(pfmp__in=pfmps).select_related('eleve__user', 'eleve__classe'))
+        suivis_classe = [
+            suivi for suivi in suivis
+            if suivi.classe_au_moment == classe.nom
+            or (not suivi.classe_au_moment and suivi.eleve.classe_id == classe.id)
+        ]
+        eleves_par_id = {eleve.id: eleve for eleve in eleves_actuels}
+        for suivi in suivis_classe:
+            eleves_par_id[suivi.eleve_id] = suivi.eleve
+        eleves = sorted(
+            eleves_par_id.values(),
+            key=lambda eleve: (eleve.user.last_name, eleve.user.first_name),
+        )
         if not eleves:
             continue
-
-        # pré-charger tous les suivis pour cette classe d'un coup
-        suivis = {
-            (s.pfmp_id, s.eleve_id): s
-            for s in SuiviPFMP.objects.filter(pfmp__in=pfmps, eleve__in=eleves)
+        suivis_par_cle = {
+            (suivi.pfmp_id, suivi.eleve_id): suivi
+            for suivi in suivis_classe
         }
 
         eleves_data = []
@@ -2380,7 +2395,7 @@ def _stats_pfmp():
                 'total_injustifies': 0,
             }
             for pfmp in pfmps:
-                s = suivis.get((pfmp.id, eleve.id))
+                s = suivis_par_cle.get((pfmp.id, eleve.id))
                 if s:
                     ligne['suivis'].append({
                         'pfmp_id': pfmp.id,
@@ -3476,16 +3491,31 @@ def pfmp_fichier_delete(request, pk):
     return redirect('core:pfmp_detail', pk=pfmp_id)
 
 
+@login_required
+@user_passes_test(est_professeur)
 def saisie_suivi_pfmp(request, pfmp_id):
     """Saisie ou mise à jour des jours effectués / manqués par élève pour une PFMP."""
     pfmp = get_object_or_404(PFMP, id=pfmp_id)
-    eleves = ProfilUtilisateur.objects.filter(
+    eleves_actuels = ProfilUtilisateur.objects.filter(
         classe__in=pfmp.classes.all(), type_utilisateur='eleve',
         compte_approuve=True, est_sorti=False
-    ).select_related('user').order_by('user__last_name', 'user__first_name')
+    ).select_related('user', 'classe')
+    suivis = {
+        suivi.eleve_id: suivi
+        for suivi in SuiviPFMP.objects.filter(pfmp=pfmp).select_related('eleve__user', 'eleve__classe')
+    }
+    eleves_par_id = {eleve.id: eleve for eleve in eleves_actuels}
+    for suivi in suivis.values():
+        eleves_par_id[suivi.eleve_id] = suivi.eleve
+    eleves = sorted(
+        eleves_par_id.values(),
+        key=lambda eleve: (eleve.user.last_name, eleve.user.first_name),
+    )
 
     if request.method == 'POST':
         for eleve in eleves:
+            if eleve.est_sorti:
+                continue
             effectues  = int(request.POST.get(f'effectues_{eleve.id}', 0) or 0)
             justifies  = int(request.POST.get(f'justifies_{eleve.id}', 0) or 0)
             injustifies = int(request.POST.get(f'injustifies_{eleve.id}', 0) or 0)
@@ -3493,6 +3523,11 @@ def saisie_suivi_pfmp(request, pfmp_id):
             SuiviPFMP.objects.update_or_create(
                 pfmp=pfmp, eleve=eleve,
                 defaults={
+                    'classe_au_moment': (
+                        suivis[eleve.id].classe_au_moment
+                        if eleve.id in suivis and suivis[eleve.id].classe_au_moment
+                        else eleve.classe.nom if eleve.classe else ''
+                    ),
                     'nb_jours_effectues': effectues,
                     'nb_jours_manques_justifies': justifies,
                     'nb_jours_manques_injustifies': injustifies,
@@ -3502,10 +3537,15 @@ def saisie_suivi_pfmp(request, pfmp_id):
         messages.success(request, f'✅ Suivi PFMP "{pfmp.titre}" enregistré !')
         return redirect('core:gestion_pfmp')
 
-    suivis = {s.eleve_id: s for s in SuiviPFMP.objects.filter(pfmp=pfmp)}
     eleves_avec_suivi = []
     for eleve in eleves:
-        eleves_avec_suivi.append({'profil': eleve, 'suivi': suivis.get(eleve.id)})
+        suivi = suivis.get(eleve.id)
+        eleves_avec_suivi.append({
+            'profil': eleve,
+            'suivi': suivi,
+            'classe_suivi': (suivi.classe_au_moment if suivi and suivi.classe_au_moment else (eleve.classe.nom if eleve.classe else '—')),
+            'peut_modifier': not eleve.est_sorti,
+        })
 
     return render(request, 'core/saisie_suivi_pfmp.html', {
         'pfmp': pfmp,

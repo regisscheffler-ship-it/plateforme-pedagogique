@@ -5,7 +5,7 @@ Tests automatiques des URLs de la plateforme pédagogique
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
@@ -266,6 +266,115 @@ class TestDiplomaHistory(TestCase):
         self.assertContains(response, 'Diplômes obtenus')
         self.assertContains(response, 'Camille')
         self.assertContains(response, 'Assez Bien')
+
+
+class TestPFMPAttendanceHistory(TestCase):
+    def setUp(self):
+        niveau = Niveau.objects.create(nom='CAP', description='CAP')
+        self.classe_initiale = Classe.objects.create(nom='2CAP', niveau=niveau)
+        self.classe_suivante = Classe.objects.create(nom='1CAP', niveau=niveau)
+        prof_user = User.objects.create_user(username='prof_pfmp', password='test123456')
+        self.prof_profil = ProfilUtilisateur.objects.create(
+            user=prof_user, type_utilisateur='professeur'
+        )
+        self.eleve_user = User.objects.create_user(
+            username='eleve_pfmp', password='test123456', first_name='Alex', last_name='Dupont'
+        )
+        self.eleve = ProfilUtilisateur.objects.create(
+            user=self.eleve_user, type_utilisateur='eleve', classe=self.classe_initiale,
+            compte_approuve=True
+        )
+        self.pfmp = PFMP.objects.create(
+            titre='PFMP première année', createur=prof_user, nb_jours_prevus=20
+        )
+        self.pfmp.classes.add(self.classe_initiale)
+        self.suivi = SuiviPFMP.objects.create(
+            pfmp=self.pfmp, eleve=self.eleve,
+            classe_au_moment=self.classe_initiale.nom,
+            nb_jours_effectues=15,
+            nb_jours_manques_justifies=2,
+            nb_jours_manques_injustifies=1,
+        )
+        self.client.force_login(prof_user)
+
+    def test_passage_classe_preserve_suivi_et_le_garde_visible(self):
+        passage = self.client.post(
+            reverse('core:passer_en_classe_superieure', kwargs={'eleve_id': self.eleve.pk}),
+            {
+                'nouvelle_classe': self.classe_suivante.pk,
+                'annee_actuelle': '2025-2026',
+            },
+        )
+
+        self.assertEqual(passage.status_code, 302)
+        self.suivi.refresh_from_db()
+        self.eleve.refresh_from_db()
+        self.assertEqual(self.eleve.classe, self.classe_suivante)
+        self.assertEqual(self.suivi.nb_jours_effectues, 15)
+        self.assertEqual(self.suivi.classe_au_moment, '2CAP')
+
+        saisie = self.client.get(reverse('core:saisie_suivi_pfmp', kwargs={'pfmp_id': self.pfmp.pk}))
+        self.assertEqual(saisie.status_code, 200)
+        self.assertContains(saisie, 'Alex')
+        self.assertContains(saisie, '2CAP')
+        self.assertContains(saisie, 'Classe actuelle : 1CAP')
+        self.assertContains(saisie, 'value="15"')
+
+        self.client.post(
+            reverse('core:saisie_suivi_pfmp', kwargs={'pfmp_id': self.pfmp.pk}),
+            {
+                f'effectues_{self.eleve.pk}': '15',
+                f'justifies_{self.eleve.pk}': '2',
+                f'injustifies_{self.eleve.pk}': '1',
+            },
+        )
+        self.suivi.refresh_from_db()
+        self.assertEqual(self.suivi.nb_jours_effectues, 15)
+        self.assertEqual(self.suivi.classe_au_moment, '2CAP')
+
+    def test_mutation_preserve_suivi_et_statistiques_historique(self):
+        response = self.client.post(
+            reverse('core:muter_eleve', kwargs={'pk': self.eleve.pk}),
+            {'nouvelle_classe': self.classe_suivante.pk},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.suivi.refresh_from_db()
+        self.assertEqual(self.suivi.classe_au_moment, '2CAP')
+        self.pfmp.actif = False
+        self.pfmp.save(update_fields=['actif'])
+        from core.views_merged_ast import _stats_pfmp
+        stats = _stats_pfmp()
+        stats_classe_initiale = next(item for item in stats if item['classe'] == '2CAP')
+        suivi_stats = stats_classe_initiale['eleves'][0]['suivis'][0]
+        self.assertEqual(self.suivi.nb_jours_effectues, 15)
+        self.assertEqual(suivi_stats['effectues'], 15)
+
+    def test_redoublement_conserve_les_15_jours_effectues(self):
+        response = self.client.post(
+            reverse('core:passer_en_classe_superieure', kwargs={'eleve_id': self.eleve.pk}),
+            {
+                'nouvelle_classe': self.classe_initiale.pk,
+                'annee_actuelle': '2025-2026',
+                'mode': 'redoublement',
+                'redoublement': 'on',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.suivi.refresh_from_db()
+        self.assertEqual(self.suivi.nb_jours_effectues, 15)
+        self.assertEqual(self.suivi.classe_au_moment, '2CAP')
+
+    def test_eleve_sorti_reste_visible_en_lecture_seule(self):
+        self.eleve.est_sorti = True
+        self.eleve.save(update_fields=['est_sorti'])
+
+        response = self.client.get(reverse('core:saisie_suivi_pfmp', kwargs={'pfmp_id': self.pfmp.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'historique conservé')
+        self.assertContains(response, 'disabled')
 
 
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
