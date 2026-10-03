@@ -2153,7 +2153,6 @@ def _stats_moyennes_qcm(annee_selectionnee='', classe_selectionnee_id=None):
     sessions = list(
         SessionQCM.objects.filter(termine=True, note_sur_20__isnull=False)
         .select_related('eleve__user', 'eleve__classe', 'qcm')
-        .prefetch_related('qcm__classes')
         .order_by('qcm__titre', 'eleve__user__last_name', 'eleve__user__first_name')
     )
     classes, eleves = {}, {}
@@ -2163,32 +2162,31 @@ def _stats_moyennes_qcm(annee_selectionnee='', classe_selectionnee_id=None):
         if annee_selectionnee and annee != annee_selectionnee:
             continue
 
-        classes_qcm = list(session.qcm.classes.all())
-        if not classes_qcm and session.eleve.classe_id:
-            classes_qcm = [session.eleve.classe]
-        if classe_selectionnee_id:
-            classes_qcm = [classe for classe in classes_qcm if classe.pk == classe_selectionnee_id]
-        if not classes_qcm:
+        classe_eleve = session.eleve.classe
+        if not classe_eleve or (classe_selectionnee_id and classe_eleve.pk != classe_selectionnee_id):
             continue
 
         note = float(session.note_sur_20)
-        for classe in classes_qcm:
-            classes.setdefault(classe.nom, []).append(note)
-            key = (classe.pk, session.eleve_id)
-            row = eleves.setdefault(key, {
-                'classe': classe.nom,
-                'nom': '' if session.eleve.est_sorti else session.eleve.user.last_name.upper(),
-                'prenom': '' if session.eleve.est_sorti else session.eleve.user.first_name,
-                'anonyme': session.eleve.est_sorti,
-                'total': 0.0,
-                'nb_qcms': 0,
-            })
-            row['total'] += note
-            row['nb_qcms'] += 1
+        classes.setdefault(classe_eleve.pk, {'nom': classe_eleve.nom, 'notes': []})['notes'].append(note)
+        key = (classe_eleve.pk, session.eleve_id)
+        row = eleves.setdefault(key, {
+            'classe': classe_eleve.nom,
+            'nom': '' if session.eleve.est_sorti else session.eleve.user.last_name.upper(),
+            'prenom': '' if session.eleve.est_sorti else session.eleve.user.first_name,
+            'anonyme': session.eleve.est_sorti,
+            'total': 0.0,
+            'nb_qcms': 0,
+        })
+        row['total'] += note
+        row['nb_qcms'] += 1
 
     moyennes_classe = [
-        {'classe': classe, 'moyenne': round(sum(notes) / len(notes), 2), 'nb_qcms': len(notes)}
-        for classe, notes in sorted(classes.items())
+        {
+            'classe': valeurs['nom'],
+            'moyenne': round(sum(valeurs['notes']) / len(valeurs['notes']), 2),
+            'nb_qcms': len(valeurs['notes']),
+        }
+        for _, valeurs in sorted(classes.items(), key=lambda item: item[1]['nom'])
     ]
     moyennes_eleve = [
         {
@@ -2235,7 +2233,7 @@ def _stats_connexions_30j():
     """
     from core.models import ConnexionEleve
     from django.db.models.functions import TruncDate
-    today = date.today()
+    today = timezone.localdate()
     start = today - timedelta(days=29)
     qs = ConnexionEleve.objects.filter(horodatage__date__gte=start, horodatage__date__lte=today)\
         .annotate(jour=TruncDate('horodatage'))\
@@ -2262,7 +2260,7 @@ def _stats_connexions():
     """
     from core.models import ConnexionEleve
     from django.db.models.functions import TruncDate
-    aujourd_hui = date.today()
+    aujourd_hui = timezone.localdate()
     debut_periode = aujourd_hui - timedelta(days=29)
     eleves = ProfilUtilisateur.objects.filter(
         type_utilisateur='eleve', compte_approuve=True, est_sorti=False
@@ -2668,6 +2666,8 @@ def statistiques(request):
         for classe_id, classe_nom in Classe.objects.filter(qcms__sessions__termine=True)
         .values_list('id', 'nom').distinct()
     }
+    for session in SessionQCM.objects.filter(termine=True, eleve__classe__isnull=False).select_related('eleve__classe'):
+        classes_qcm_moyennes[session.eleve.classe_id] = session.eleve.classe.nom
     annees_evaluations, annee_moyennes_selectionnee, classes_moyennes, classe_moyennes_selectionnee, moyennes_classe, moyennes_eleve = _stats_moyennes_evaluations(
         request.GET.get('annee_moyennes', ''),
         request.GET.get('classe_moyennes', ''),

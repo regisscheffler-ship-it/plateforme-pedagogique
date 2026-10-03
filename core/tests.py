@@ -511,7 +511,7 @@ class TestStatisticsImprovements(TestCase):
         self.assertNotContains(response, 'PrénomSecret')
         self.assertContains(response, 'Remise à zéro')
         self.assertContains(response, 'Moyenne par classe')
-        self.assertContains(response, '`${jour}/${mois}`')
+        self.assertContains(response, "Intl.DateTimeFormat('fr-FR'")
         contenu = response.content.decode()
         self.assertLess(contenu.index('id="section-moyennes"'), contenu.index('id="section-overview"'))
         self.assertEqual(contenu.count('id="classe-moyennes"'), 1)
@@ -582,26 +582,26 @@ class TestStatisticsImprovements(TestCase):
 
     def test_moyennes_qcm_utilisent_les_meme_filtres_annee_et_classe(self):
         autre_classe = Classe.objects.create(nom='1M', niveau=self.classe.niveau)
+        autre_user = User.objects.create_user(
+            username='autre_eleve_qcm_stats', password='test123456', first_name='Sam', last_name='ClasseB'
+        )
+        autre_eleve = ProfilUtilisateur.objects.create(
+            user=autre_user, type_utilisateur='eleve', classe=autre_classe, compte_approuve=True
+        )
         referentiel = Referentiel.objects.create(nom='Référentiel QCM moyennes', description='Test')
         qcm_2m = QCM.objects.create(
-            titre='QCM 2M', createur=self.prof_user,
+            titre='QCM commun', createur=self.prof_user,
             date_limite=timezone.make_aware(datetime(2025, 12, 1)),
         )
         qcm_2m.classes.add(self.classe)
-        qcm_1m = QCM.objects.create(
-            titre='QCM 1M', createur=self.prof_user,
-            date_limite=timezone.make_aware(datetime(2025, 12, 1)),
-        )
-        qcm_1m.classes.add(autre_classe)
-        QCM.objects.filter(pk__in=[qcm_2m.pk, qcm_1m.pk]).update(
-            date_creation=timezone.make_aware(datetime(2025, 11, 1))
-        )
+        qcm_2m.classes.add(autre_classe)
+        QCM.objects.filter(pk=qcm_2m.pk).update(date_creation=timezone.make_aware(datetime(2025, 11, 1)))
         SessionQCM.objects.create(
             qcm=qcm_2m, eleve=self.eleve, termine=True, note_sur_20=18,
             date_soumission=timezone.make_aware(datetime(2025, 11, 10)),
         )
         SessionQCM.objects.create(
-            qcm=qcm_1m, eleve=self.eleve, termine=True, note_sur_20=10,
+            qcm=qcm_2m, eleve=autre_eleve, termine=True, note_sur_20=10,
             date_soumission=timezone.make_aware(datetime(2025, 11, 10)),
         )
         qcm_non_termine = QCM.objects.create(
@@ -615,6 +615,14 @@ class TestStatisticsImprovements(TestCase):
         SessionQCM.objects.create(
             qcm=qcm_non_termine, eleve=self.eleve, termine=False, note_sur_20=1,
         )
+
+        toutes_classes = self.client.get(reverse('core:statistiques'), {
+            'annee_moyennes': '2025-2026',
+        })
+        self.assertEqual(toutes_classes.context['moyennes_qcm_classe'], [
+            {'classe': '1M', 'moyenne': 10.0, 'nb_qcms': 1},
+            {'classe': '2M', 'moyenne': 18.0, 'nb_qcms': 1},
+        ])
 
         response = self.client.get(reverse('core:statistiques'), {
             'annee_moyennes': '2025-2026',
@@ -652,6 +660,10 @@ class TestStatisticsImprovements(TestCase):
             date.today(),
         )
         self.assertEqual(sum(point['nb'] for point in graphique), 2)
+        self.assertEqual(len(graphique), 30)
+        self.assertEqual(graphique[-1]['date'], timezone.localdate().isoformat())
+        page = self.client.get(reverse('core:statistiques'))
+        self.assertContains(page, "Intl.DateTimeFormat('fr-FR'")
 
     def test_remise_a_zero_connexions_seulement_apres_confirmation(self):
         ConnexionEleve.objects.create(user=self.eleve_user)

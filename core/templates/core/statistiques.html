@@ -1120,10 +1120,9 @@
         new Chart(document.getElementById('chartConnexions30j'), {
             type: 'line',
             data: {
-                labels: d30j.map(x => {
-                    const [annee, mois, jour] = x.date.split('-');
-                    return `${jour}/${mois}`;
-                }),
+                labels: d30j.map(x => new Intl.DateTimeFormat('fr-FR', {
+                    day: '2-digit', month: 'short'
+                }).format(new Date(`${x.date}T12:00:00`))),
                 datasets: [{ label: 'Connexions', data: d30j.map(x => x.nb), borderColor: ev, backgroundColor: 'rgba(42,176,144,0.1)', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: ev }]
             },
             options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }}}, plugins: { legend: { display: false }}}
