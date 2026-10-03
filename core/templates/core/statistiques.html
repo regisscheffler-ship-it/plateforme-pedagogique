@@ -253,6 +253,64 @@
         </a>
     </div>
 
+    <div id="section-moyennes" style="scroll-margin-top:80px;">
+        <div class="section-title" style="--section-color:#0ea5e9;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/></svg>
+            <span style="color:#0ea5e9;">Moyennes des évaluations validées</span>
+        </div>
+        <form method="get" class="filter-annee-bar" style="margin-bottom:1.2rem;">
+            <label for="annee-moyennes">Année scolaire :</label>
+            <select id="annee-moyennes" name="annee_moyennes" onchange="this.form.submit()">
+                <option value="" {% if not annee_moyennes_selectionnee %}selected{% endif %}>Toutes les années</option>
+                {% for annee in annees_evaluations %}
+                <option value="{{ annee }}" {% if annee == annee_moyennes_selectionnee %}selected{% endif %}>{{ annee }}</option>
+                {% endfor %}
+            </select>
+            <label for="classe-moyennes">Classe :</label>
+            <select id="classe-moyennes" name="classe_moyennes" onchange="this.form.submit()">
+                <option value="">Toutes les classes</option>
+                {% for classe in classes_moyennes %}
+                <option value="{{ classe.id }}" {% if classe.id == classe_moyennes_selectionnee %}selected{% endif %}>{{ classe.nom }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="chart-card" style="min-height:unset;">
+                <h2 style="color:#0ea5e9;">Moyenne par classe</h2>
+                {% if moyennes_classe %}
+                <div style="overflow-x:auto;">
+                    <table class="conn-table">
+                        <thead><tr><th>Classe</th><th style="text-align:center;">Moyenne /20</th><th style="text-align:center;">Évaluations validées</th></tr></thead>
+                        <tbody>
+                            {% for row in moyennes_classe %}
+                            <tr><td><strong>{{ row.classe }}</strong></td><td style="text-align:center;font-weight:700;">{{ row.moyenne }}</td><td style="text-align:center;">{{ row.nb_evaluations }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}<p style="color:var(--text-muted);">Aucune évaluation validée pour cette période.</p>{% endif %}
+            </div>
+            <div class="chart-card" style="min-height:unset;">
+                <h2 style="color:#0ea5e9;">Moyenne par élève</h2>
+                {% if moyennes_eleve %}
+                <div style="overflow-x:auto;max-height:420px;">
+                    <table class="conn-table">
+                        <thead><tr><th>Élève</th><th>Classe</th><th style="text-align:center;">Moyenne /20</th><th style="text-align:center;">Évaluations</th></tr></thead>
+                        <tbody>
+                            {% for row in moyennes_eleve %}
+                            <tr>
+                                <td>{% if row.anonyme %}Ancien élève{% else %}{{ row.nom }} {{ row.prenom }}{% endif %}</td>
+                                <td>{{ row.classe }}</td><td style="text-align:center;font-weight:700;">{{ row.moyenne }}</td><td style="text-align:center;">{{ row.nb_evaluations }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}<p style="color:var(--text-muted);">Aucune évaluation validée pour cette période.</p>{% endif %}
+            </div>
+        </div>
+    </div>
+
     <!-- Graphiques généraux -->
     <div id="section-overview" style="scroll-margin-top:80px;">
         <div class="section-title">
@@ -374,57 +432,6 @@
             {% else %}
                 <div style="text-align:center;padding:2rem;color:var(--text-muted);">Aucun travail noté.</div>
             {% endif %}
-        </div>
-    </div>
-
-    <div id="section-moyennes" style="scroll-margin-top:80px;">
-        <div class="section-title" style="--section-color:#0ea5e9;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/></svg>
-            <span style="color:#0ea5e9;">Moyennes des évaluations validées</span>
-        </div>
-        <form method="get" class="filter-annee-bar" style="margin-bottom:1.2rem;">
-            <label for="annee-moyennes">Année scolaire :</label>
-            <select id="annee-moyennes" name="annee_moyennes" onchange="this.form.submit()">
-                <option value="" {% if not annee_moyennes_selectionnee %}selected{% endif %}>Toutes les années</option>
-                {% for annee in annees_evaluations %}
-                <option value="{{ annee }}" {% if annee == annee_moyennes_selectionnee %}selected{% endif %}>{{ annee }}</option>
-                {% endfor %}
-            </select>
-        </form>
-        <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
-            <div class="chart-card" style="min-height:unset;">
-                <h2 style="color:#0ea5e9;">Moyenne par classe</h2>
-                {% if moyennes_classe %}
-                <div style="overflow-x:auto;">
-                    <table class="conn-table">
-                        <thead><tr><th>Classe</th><th style="text-align:center;">Moyenne /20</th><th style="text-align:center;">Évaluations validées</th></tr></thead>
-                        <tbody>
-                            {% for row in moyennes_classe %}
-                            <tr><td><strong>{{ row.classe }}</strong></td><td style="text-align:center;font-weight:700;">{{ row.moyenne }}</td><td style="text-align:center;">{{ row.nb_evaluations }}</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}<p style="color:var(--text-muted);">Aucune évaluation validée pour cette période.</p>{% endif %}
-            </div>
-            <div class="chart-card" style="min-height:unset;">
-                <h2 style="color:#0ea5e9;">Moyenne par élève</h2>
-                {% if moyennes_eleve %}
-                <div style="overflow-x:auto;max-height:420px;">
-                    <table class="conn-table">
-                        <thead><tr><th>Élève</th><th>Classe</th><th style="text-align:center;">Moyenne /20</th><th style="text-align:center;">Évaluations</th></tr></thead>
-                        <tbody>
-                            {% for row in moyennes_eleve %}
-                            <tr>
-                                <td>{% if row.anonyme %}Ancien élève{% else %}{{ row.nom }} {{ row.prenom }}{% endif %}</td>
-                                <td>{{ row.classe }}</td><td style="text-align:center;font-weight:700;">{{ row.moyenne }}</td><td style="text-align:center;">{{ row.nb_evaluations }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}<p style="color:var(--text-muted);">Aucune évaluation validée pour cette période.</p>{% endif %}
-            </div>
         </div>
     </div>
 
@@ -830,7 +837,7 @@
     <div class="connexions-section">
         <div class="section-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            Connexions des élèves
+            Connexions des 30 derniers jours
         </div>
 
         <div class="detail-tabs">
@@ -846,22 +853,22 @@
             </div>
             <div class="cx-stat warn">
                 <div class="val">{{ nb_jamais_connectes }}</div>
-                <div class="lbl">Jamais connectés</div>
+                <div class="lbl">0 connexion sur 30 jours</div>
             </div>
             <div class="cx-stat">
                 <div class="val">{% with connexions_eleves as cx %}{% if cx %}{{ cx.0.nb_connexions }}{% else %}0{% endif %}{% endwith %}</div>
-                <div class="lbl">Record de connexions</div>
+                <div class="lbl">Maximum connexions (30 j)</div>
             </div>
             <div class="cx-stat">
                 <div class="val">{% with connexions_eleves as cx %}{% if cx %}{{ cx.0.nb_jours_actifs }}{% else %}0{% endif %}{% endwith %}</div>
-                <div class="lbl">Record jours actifs</div>
+                <div class="lbl">Maximum jours actifs (30 j)</div>
             </div>
         </div>
 
         {% if connexions_eleves %}
         <table class="conn-table" style="margin-bottom: 2rem;">
             <thead>
-                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Connexions</th><th>Jours actifs</th><th>Dernière connexion</th></tr>
+                <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Connexions (30 j)</th><th>Jours actifs (30 j)</th><th>Dernière connexion (30 j)</th></tr>
             </thead>
             <tbody>
                 {% for eleve in connexions_eleves %}

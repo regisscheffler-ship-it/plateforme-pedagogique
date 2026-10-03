@@ -2073,7 +2073,7 @@ def _annee_scolaire_pour_date(date_value):
     return f'{debut}-{debut + 1}'
 
 
-def _stats_moyennes_evaluations(annee_selectionnee=''):
+def _stats_moyennes_evaluations(annee_selectionnee='', classe_selectionnee=''):
     evaluations = list(
         FicheEvaluation.objects.filter(validee=True, note_sur_20__isnull=False)
         .select_related('eleve__user', 'eleve__classe', 'fiche_contrat__classe')
@@ -2093,9 +2093,26 @@ def _stats_moyennes_evaluations(annee_selectionnee=''):
     if annee_selectionnee not in annees:
         annee_selectionnee = ''
 
+    classes_disponibles = {
+        evaluation.fiche_contrat.classe_id: evaluation.fiche_contrat.classe.nom
+        for evaluation in evaluations
+    }
+    classes_moyennes = [
+        {'id': classe_id, 'nom': nom}
+        for classe_id, nom in sorted(classes_disponibles.items(), key=lambda item: item[1])
+    ]
+    try:
+        classe_selectionnee_id = int(classe_selectionnee) if classe_selectionnee else None
+    except (ValueError, TypeError):
+        classe_selectionnee_id = None
+    if classe_selectionnee_id not in classes_disponibles:
+        classe_selectionnee_id = None
+
     classes, eleves = {}, {}
     for evaluation in evaluations:
         if annee_selectionnee and annee_par_evaluation[evaluation.id] != annee_selectionnee:
+            continue
+        if classe_selectionnee_id and evaluation.fiche_contrat.classe_id != classe_selectionnee_id:
             continue
         classe_nom = evaluation.fiche_contrat.classe.nom
         note = float(evaluation.note_sur_20)
@@ -2128,7 +2145,7 @@ def _stats_moyennes_evaluations(annee_selectionnee=''):
             'nb_evaluations': row['nb_evaluations'],
         })
     moyennes_eleve.sort(key=lambda row: (row['classe'], row['anonyme'], row['nom'], row['prenom']))
-    return annees, annee_selectionnee, moyennes_classe, moyennes_eleve
+    return annees, annee_selectionnee, classes_moyennes, classe_selectionnee_id, moyennes_classe, moyennes_eleve
 
 
 def _stats_eleves_a_risque():
@@ -2163,7 +2180,7 @@ def _stats_connexions_30j():
     from django.db.models.functions import TruncDate
     today = date.today()
     start = today - timedelta(days=29)
-    qs = ConnexionEleve.objects.filter(horodatage__date__gte=start)\
+    qs = ConnexionEleve.objects.filter(horodatage__date__gte=start, horodatage__date__lte=today)\
         .annotate(jour=TruncDate('horodatage'))\
         .values('jour').annotate(nb=Count('id')).order_by('jour')
     data = {(start + timedelta(days=i)).isoformat(): 0 for i in range(30)}
@@ -2184,22 +2201,26 @@ def _stats_sorties_par_annee():
 
 def _stats_connexions():
     """
-    Retourne les stats de connexion des élèves :
-    - liste par élève : nb total de connexions + dernière connexion + jours distincts
-    - jamais connectés
+    Retourne les statistiques de connexions et de jours actifs sur les 30 derniers jours.
     """
     from core.models import ConnexionEleve
     from django.db.models.functions import TruncDate
-    from django.db.models import Count as DjCount
+    aujourd_hui = date.today()
+    debut_periode = aujourd_hui - timedelta(days=29)
     eleves = ProfilUtilisateur.objects.filter(
         type_utilisateur='eleve', compte_approuve=True, est_sorti=False
     ).select_related('user').order_by('user__last_name', 'user__first_name')
 
     data = []
     for eleve in eleves:
-        nb = ConnexionEleve.objects.filter(user=eleve.user).count()
-        derniere = ConnexionEleve.objects.filter(user=eleve.user).order_by('-horodatage').first()
-        nb_jours = ConnexionEleve.objects.filter(user=eleve.user)\
+        connexions_periode = ConnexionEleve.objects.filter(
+            user=eleve.user,
+            horodatage__date__gte=debut_periode,
+            horodatage__date__lte=aujourd_hui,
+        )
+        nb = connexions_periode.count()
+        derniere = connexions_periode.order_by('-horodatage').first()
+        nb_jours = connexions_periode\
             .annotate(jour=TruncDate('horodatage'))\
             .values('jour').distinct().count()
         data.append({
@@ -2585,8 +2606,8 @@ def statistiques(request):
     annee_sorties_selectionnee = request.GET.get('annee_sortie', '')
     if annee_sorties_selectionnee not in annees_sortis:
         annee_sorties_selectionnee = ''
-    annees_evaluations, annee_moyennes_selectionnee, moyennes_classe, moyennes_eleve = _stats_moyennes_evaluations(
-        request.GET.get('annee_moyennes', '')
+    annees_evaluations, annee_moyennes_selectionnee, classes_moyennes, classe_moyennes_selectionnee, moyennes_classe, moyennes_eleve = _stats_moyennes_evaluations(
+        request.GET.get('annee_moyennes', ''), request.GET.get('classe_moyennes', '')
     )
     orig_college, orig_classe, orig_diplome, orig_ville = _stats_profil_origine()
     # gender stats
@@ -2645,6 +2666,8 @@ def statistiques(request):
         'moyennes_eleve': moyennes_eleve,
         'annees_evaluations': annees_evaluations,
         'annee_moyennes_selectionnee': annee_moyennes_selectionnee,
+        'classes_moyennes': classes_moyennes,
+        'classe_moyennes_selectionnee': classe_moyennes_selectionnee,
         'decrocheurs_par_annee_json': dec_annee_data,
         'diplomes_par_annee_json': dipl_annee_data,
         'postformation_cats_json': postform_cats_data,

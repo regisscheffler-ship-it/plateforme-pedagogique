@@ -5,7 +5,7 @@ Tests automatiques des URLs de la plateforme pédagogique
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from django.utils import timezone
 from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM
 from django.core.files.base import ContentFile
@@ -511,6 +511,9 @@ class TestStatisticsImprovements(TestCase):
         self.assertNotContains(response, 'PrénomSecret')
         self.assertContains(response, 'Remise à zéro')
         self.assertContains(response, 'Moyenne par classe')
+        contenu = response.content.decode()
+        self.assertLess(contenu.index('id="section-moyennes"'), contenu.index('id="section-overview"'))
+        self.assertEqual(contenu.count('id="classe-moyennes"'), 1)
         self.assertContains(response, 'Ancien élève')
         self.assertEqual(response.context['diplomes'], 2)
         self.assertNotIn('nom', response.context['sorties_post_formation'][0])
@@ -542,6 +545,63 @@ class TestStatisticsImprovements(TestCase):
         self.assertEqual(response.context['moyennes_eleve'][0]['moyenne'], 15.0)
         self.assertEqual(response.context['moyennes_eleve'][0]['nb_evaluations'], 2)
         self.assertContains(response, 'Moyenne par élève')
+
+    def test_moyennes_par_eleve_peuvent_etre_filtrees_par_classe(self):
+        autre_classe = Classe.objects.create(nom='1M', niveau=self.classe.niveau)
+        autre_user = User.objects.create_user(
+            username='autre_eleve_stats', password='test123456', first_name='Sam', last_name='ClasseB'
+        )
+        autre_eleve = ProfilUtilisateur.objects.create(
+            user=autre_user, type_utilisateur='eleve', classe=autre_classe, compte_approuve=True
+        )
+        referentiel = Referentiel.objects.create(nom='Référentiel filtre classe', description='Test')
+        fiche_a = FicheContrat.objects.create(
+            referentiel=referentiel, classe=self.classe, titre_tp='TP classe 2M',
+            date_tp=date(2025, 11, 1), createur=self.prof_user,
+        )
+        fiche_b = FicheContrat.objects.create(
+            referentiel=referentiel, classe=autre_classe, titre_tp='TP classe 1M',
+            date_tp=date(2025, 11, 1), createur=self.prof_user,
+        )
+        FicheEvaluation.objects.create(fiche_contrat=fiche_a, eleve=self.eleve, validee=True, note_sur_20='14.00')
+        FicheEvaluation.objects.create(fiche_contrat=fiche_b, eleve=autre_eleve, validee=True, note_sur_20='18.00')
+
+        response = self.client.get(reverse('core:statistiques'), {
+            'annee_moyennes': '2025-2026',
+            'classe_moyennes': str(autre_classe.pk),
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['classe_moyennes_selectionnee'], autre_classe.pk)
+        self.assertEqual(response.context['moyennes_classe'], [
+            {'classe': '1M', 'moyenne': 18.0, 'nb_evaluations': 1}
+        ])
+        self.assertEqual(len(response.context['moyennes_eleve']), 1)
+        self.assertEqual(response.context['moyennes_eleve'][0]['prenom'], 'Sam')
+
+    def test_connexions_et_jours_actifs_ne_comptent_que_les_30_derniers_jours(self):
+        from core.views_merged_ast import _stats_connexions, _stats_connexions_30j
+
+        connexion_recente = ConnexionEleve.objects.create(user=self.eleve_user)
+        ConnexionEleve.objects.filter(pk=connexion_recente.pk).update(
+            horodatage=timezone.now() - timedelta(days=5)
+        )
+        ConnexionEleve.objects.create(user=self.eleve_user)
+        connexion_ancienne = ConnexionEleve.objects.create(user=self.eleve_user)
+        ConnexionEleve.objects.filter(pk=connexion_ancienne.pk).update(
+            horodatage=timezone.now() - timedelta(days=31)
+        )
+
+        ligne = _stats_connexions()[0]
+        graphique = _stats_connexions_30j()
+
+        self.assertEqual(ligne['nb_connexions'], 2)
+        self.assertEqual(ligne['nb_jours_actifs'], 2)
+        self.assertEqual(
+            datetime.strptime(ligne['derniere'], '%d/%m/%Y %H:%M').date(),
+            date.today(),
+        )
+        self.assertEqual(sum(point['nb'] for point in graphique), 2)
 
     def test_remise_a_zero_connexions_seulement_apres_confirmation(self):
         ConnexionEleve.objects.create(user=self.eleve_user)
