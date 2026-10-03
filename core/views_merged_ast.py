@@ -3634,24 +3634,56 @@ def passer_en_classe_superieure(request, eleve_id):
 
 
 def evaluations_home(request):
-    fiches_actives = FicheContrat.objects.filter(
+    toutes_fiches_actives = FicheContrat.objects.filter(
         createur=request.user, actif=True
     ).select_related('classe', 'referentiel').prefetch_related('evaluations').order_by('-date_creation')
     fiches_archivees = FicheContrat.objects.filter(
         createur=request.user, actif=False
     ).order_by('-date_modification')
-    nb_fiches_contrat = fiches_actives.count()
+    nb_fiches_contrat = toutes_fiches_actives.count()
     # Compter une évaluation par fiche-contrat (indépendamment du nombre d'élèves)
     nb_evaluations = nb_fiches_contrat
     # Compter les fiches-contrat entièrement validées (toutes les évaluations élèves validées)
     nb_validees = 0
-    for fc in fiches_actives:
+    for fc in toutes_fiches_actives:
         total_ev = FicheEvaluation.objects.filter(fiche_contrat=fc).count()
         if total_ev == 0:
             continue
         validees = FicheEvaluation.objects.filter(fiche_contrat=fc, validee=True).count()
         if validees >= total_ev:
             nb_validees += 1
+
+    classes_filtres = Classe.objects.filter(
+        fiches_contrat__createur=request.user,
+        fiches_contrat__actif=True,
+    ).distinct().order_by('nom')
+    selected_class_ids = [
+        value for value in request.GET.getlist('classe')
+        if value.isdigit() and classes_filtres.filter(pk=value).exists()
+    ]
+    date_debut = request.GET.get('date_debut', '').strip()
+    date_fin = request.GET.get('date_fin', '').strip()
+    try:
+        date_debut_valide = date.fromisoformat(date_debut) if date_debut else None
+    except ValueError:
+        date_debut_valide = None
+        date_debut = ''
+    try:
+        date_fin_valide = date.fromisoformat(date_fin) if date_fin else None
+    except ValueError:
+        date_fin_valide = None
+        date_fin = ''
+
+    fiches_filtrees = toutes_fiches_actives
+    if selected_class_ids:
+        fiches_filtrees = fiches_filtrees.filter(classe_id__in=selected_class_ids)
+    if date_debut_valide:
+        fiches_filtrees = fiches_filtrees.filter(date_tp__gte=date_debut_valide)
+    if date_fin_valide:
+        fiches_filtrees = fiches_filtrees.filter(date_tp__lte=date_fin_valide)
+
+    filtres_actifs = bool(selected_class_ids or date_debut_valide or date_fin_valide)
+    fiches_recentes = list(fiches_filtrees if filtres_actifs else fiches_filtrees[:10])
     qcms = QCM.objects.annotate(nb_questions=Count('questions')).select_related('theme').prefetch_related('classes').order_by('-date_creation')
     return render(request, 'core/evaluations_home.html', {
         'nb_fiches_contrat': nb_fiches_contrat,
@@ -3659,8 +3691,13 @@ def evaluations_home(request):
         'nb_evaluations': nb_evaluations,
         'nb_validees': nb_validees,
         'nb_en_cours': nb_evaluations - nb_validees,
-        'fiches_recentes': fiches_actives[:10],
+        'fiches_recentes': fiches_recentes,
         'fiches_archivees': fiches_archivees,
+        'classes_filtres': classes_filtres,
+        'classes_selectionnees': selected_class_ids,
+        'date_debut_filtre': date_debut,
+        'date_fin_filtre': date_fin,
+        'filtres_actifs': filtres_actifs,
         'qcms': qcms,
         'nb_qcm': qcms.filter(actif=True).count(),
     })

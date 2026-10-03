@@ -5,6 +5,7 @@ Tests automatiques des URLs de la plateforme pédagogique
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
+from datetime import date
 from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP
 from django.core.files.base import ContentFile
 from unittest.mock import patch
@@ -266,6 +267,45 @@ class TestDiplomaHistory(TestCase):
         self.assertContains(response, 'Diplômes obtenus')
         self.assertContains(response, 'Camille')
         self.assertContains(response, 'Assez Bien')
+
+
+class TestEvaluationListFilters(TestCase):
+    def setUp(self):
+        niveau = Niveau.objects.create(nom='CAP', description='CAP')
+        self.classe_a = Classe.objects.create(nom='2M', niveau=niveau)
+        self.classe_b = Classe.objects.create(nom='1M', niveau=niveau)
+        self.prof_user = User.objects.create_user(username='prof_filtres_eval', password='test123456')
+        ProfilUtilisateur.objects.create(user=self.prof_user, type_utilisateur='professeur')
+        referentiel = Referentiel.objects.create(nom='Référentiel filtres', description='Test filtres')
+        self.fiche_a_janvier = FicheContrat.objects.create(
+            referentiel=referentiel, classe=self.classe_a, titre_tp='TP 2M janvier',
+            date_tp=date(2026, 1, 12), createur=self.prof_user,
+        )
+        self.fiche_b_janvier = FicheContrat.objects.create(
+            referentiel=referentiel, classe=self.classe_b, titre_tp='TP 1M janvier',
+            date_tp=date(2026, 1, 20), createur=self.prof_user,
+        )
+        self.fiche_a_fevrier = FicheContrat.objects.create(
+            referentiel=referentiel, classe=self.classe_a, titre_tp='TP 2M février',
+            date_tp=date(2026, 2, 10), createur=self.prof_user,
+        )
+        self.client.force_login(self.prof_user)
+
+    def test_filtre_plusieurs_classes_et_plage_dates(self):
+        response = self.client.get(reverse('core:evaluations_home'), {
+            'classe': [str(self.classe_a.pk), str(self.classe_b.pk)],
+            'date_debut': '2026-01-01',
+            'date_fin': '2026-01-31',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        fiches = response.context['fiches_recentes']
+        self.assertEqual(
+            {fiche.pk for fiche in fiches},
+            {self.fiche_a_janvier.pk, self.fiche_b_janvier.pk},
+        )
+        self.assertContains(response, 'Toutes les classes')
+        self.assertContains(response, 'Date du TP, à partir du')
 
 
 class TestPFMPAttendanceHistory(TestCase):
