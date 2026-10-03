@@ -5,8 +5,9 @@ Tests automatiques des URLs de la plateforme pédagogique
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve
 from django.core.files.base import ContentFile
+from unittest.mock import patch
 
 
 class TestStudentAccountUpdates(TestCase):
@@ -58,6 +59,89 @@ class TestStudentAccountUpdates(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(user.first_name, '')
         self.assertEqual(user.last_name, '')
+
+
+class TestCommunicationActions(TestCase):
+    def setUp(self):
+        self.prof_user = User.objects.create_user(username='prof_comm', password='test123456')
+        self.prof_profil = ProfilUtilisateur.objects.create(
+            user=self.prof_user, type_utilisateur='professeur'
+        )
+        eleve_user = User.objects.create_user(username='eleve_comm', password='test123456')
+        self.eleve_profil = ProfilUtilisateur.objects.create(
+            user=eleve_user, type_utilisateur='eleve'
+        )
+        self.message = MessageEleve.objects.create(
+            eleve=self.eleve_profil,
+            professeur=self.prof_profil,
+            texte='Rapport de test',
+            image='messages/rapport.jpg',
+        )
+        self.client.force_login(self.prof_user)
+
+    def test_consulter_est_un_lien_direct_vers_la_piece_jointe(self):
+        response = self.client.get(reverse('core:communications_list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Consulter')
+        self.assertContains(response, 'target="_blank"')
+        self.assertNotContains(response, 'consult-btn')
+
+    def test_telechargement_sert_le_fichier_du_stockage(self):
+        image_storage = MessageEleve._meta.get_field('image').storage
+        with patch.object(image_storage, 'open', return_value=ContentFile(b'contenu image')):
+            response = self.client.get(
+                reverse('core:communication_telecharger', kwargs={'message_id': self.message.pk})
+            )
+            contenu = b''.join(response.streaming_content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('attachment', response['Content-Disposition'])
+        self.assertEqual(contenu, b'contenu image')
+
+    def test_telechargement_cloudinary_redirige_avec_flag_attachment(self):
+        image_storage = MessageEleve._meta.get_field('image').storage
+        url_cloudinary = 'https://res.cloudinary.com/demo/image/upload/v123/messages/rapport.jpg'
+        with (
+            patch.object(image_storage, '_get_resource_type', return_value='image', create=True),
+            patch.object(image_storage, 'url', return_value=url_cloudinary),
+        ):
+            response = self.client.get(
+                reverse('core:communication_telecharger', kwargs={'message_id': self.message.pk})
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response['Location'],
+            'https://res.cloudinary.com/demo/image/upload/fl_attachment/v123/messages/rapport.jpg',
+        )
+
+    def test_suppression_post_supprime_le_message(self):
+        image_storage = MessageEleve._meta.get_field('image').storage
+        with patch.object(image_storage, 'delete') as delete_file:
+            response = self.client.post(
+                reverse('core:communication_supprimer', kwargs={'message_id': self.message.pk})
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(MessageEleve.objects.filter(pk=self.message.pk).exists())
+        delete_file.assert_called_once_with('messages/rapport.jpg')
+
+    def test_professeur_ne_peut_pas_supprimer_le_message_d_un_autre(self):
+        autre_user = User.objects.create_user(username='autre_prof', password='test123456')
+        autre_prof = ProfilUtilisateur.objects.create(
+            user=autre_user, type_utilisateur='professeur'
+        )
+        autre_message = MessageEleve.objects.create(
+            eleve=self.eleve_profil, professeur=autre_prof, texte='Message privé'
+        )
+
+        response = self.client.post(
+            reverse('core:communication_supprimer', kwargs={'message_id': autre_message.pk})
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(MessageEleve.objects.filter(pk=autre_message.pk).exists())
 
 
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')

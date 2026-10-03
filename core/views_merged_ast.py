@@ -323,16 +323,21 @@ def communication_repondre(request, message_id):
     return redirect('core:communication_prof')
 
 
+@login_required
+@require_POST
 def communication_supprimer(request, message_id):
     """Le prof supprime un message"""
     profil = request.user.profil
     if profil.type_utilisateur != 'professeur':
         return redirect('core:dashboard_professeur')
     
-    msg = get_object_or_404(MessageEleve, id=message_id)
+    msg = get_object_or_404(MessageEleve, id=message_id, professeur=profil)
+    for image_file in (msg.image_annotee, msg.image):
+        if image_file and image_file.name:
+            image_file.delete(save=False)
     msg.delete()
     messages.success(request, 'Message supprimé.')
-    return redirect('core:communication_prof')
+    return redirect('core:communications_list')
 
 
 try:
@@ -5473,6 +5478,8 @@ def dashboard_professeur(request):
     return render(request, 'core/dashboard_professeur.html', context)
 
 
+@login_required
+@user_passes_test(est_professeur)
 def communications_list(request):
     """Liste les messages d'élèves destinés au professeur connecté."""
     communications = MessageEleve.objects.filter(
@@ -5484,29 +5491,26 @@ def communications_list(request):
     return render(request, 'core/communications_list.html', context)
 
 
+@login_required
+@user_passes_test(est_professeur)
 def communication_telecharger(request, message_id):
-    """Proxy de téléchargement d'une image de communication élève (contourne CORS Cloudinary)."""
-    msg = get_object_or_404(MessageEleve, id=message_id)
-    try:
-        profil = request.user.profil
-    except ProfilUtilisateur.DoesNotExist:
-        return redirect('core:communications_list')
-    if msg.professeur != profil:
-        messages.error(request, 'Accès non autorisé.')
-        return redirect('core:communications_list')
+    """Télécharge une image de communication via le stockage configuré."""
+    msg = get_object_or_404(MessageEleve, id=message_id, professeur=request.user.profil)
     image_file = msg.image_annotee if (msg.image_annotee and msg.image_annotee.name) else msg.image
     if not image_file or not image_file.name:
         return HttpResponse('Aucune image disponible.', status=404)
     try:
-        import requests as _req
-        resp = _req.get(image_file.url, timeout=30)
-        resp.raise_for_status()
-        content_type = resp.headers.get('Content-Type', 'application/octet-stream')
-        filename = image_file.url.split('?')[0].rsplit('/', 1)[-1]
-        response = HttpResponse(resp.content, content_type=content_type)
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
-    except Exception:
+        image_url = image_file.url
+        if hasattr(image_file.storage, '_get_resource_type'):
+            from urllib.parse import urlsplit, urlunsplit
+            url_parts = urlsplit(image_url)
+            path_parts = url_parts.path.split('/')
+            upload_index = path_parts.index('upload')
+            path_parts.insert(upload_index + 1, 'fl_attachment')
+            return redirect(urlunsplit(url_parts._replace(path='/'.join(path_parts))))
+        filename = os.path.basename(image_file.name)
+        return FileResponse(image_file.open('rb'), as_attachment=True, filename=filename)
+    except (OSError, IOError, ValueError):
         return HttpResponse('Erreur lors du téléchargement.', status=500)
 
 
