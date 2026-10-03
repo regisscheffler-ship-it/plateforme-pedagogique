@@ -106,7 +106,7 @@ from .models import (
     PFMP, Atelier, DossierPFMP, FichierPFMP,
     DossierAtelier, FichierAtelier,
     FicheRevision, CarteRevision,
-    SuiviPFMP, HistoriqueClasse,
+    SuiviPFMP, HistoriqueClasse, DiplomeEleve,
     QCM, QuestionQCM, SessionQCM,
     ModeOperatoire, LigneModeOperatoire,
     MessageEleve, ReponseProf,
@@ -1509,6 +1509,24 @@ def _annee_scolaire_courante():
     return f"{today.year - 1}-{today.year}"
 
 
+def _enregistrer_diplomes_eleve(profil, diplomes, annee, classe, mentions=None):
+    diplomes_valides = dict(ProfilUtilisateur.TYPE_DIPLOME_OBTENU)
+    mentions_valides = {code for code, _ in DiplomeEleve.MENTION_CHOICES}
+    mentions = mentions or {}
+    classe_nom = classe.nom if classe else ''
+
+    for diplome in set(diplomes) & diplomes_valides.keys():
+        mention = mentions.get(diplome, '')
+        if mention not in mentions_valides:
+            mention = ''
+        DiplomeEleve.objects.update_or_create(
+            eleve=profil,
+            diplome=diplome,
+            annee_scolaire=annee,
+            defaults={'mention': mention, 'classe': classe_nom},
+        )
+
+
 def gestion_sorties(request):
     eleves_actifs = ProfilUtilisateur.objects.filter(
         type_utilisateur='eleve', est_sorti=False, compte_approuve=True
@@ -1531,6 +1549,19 @@ def marquer_sortie(request, pk):
         mention    = request.POST.get('mention_obtenue', '')
         poursuite  = request.POST.get('poursuite_etudes') == 'on'
         type_pours = request.POST.get('type_poursuite', '')
+        diplomes = request.POST.getlist('diplomes')
+        aucun_diplome = request.POST.get('aucun_diplome') == 'on'
+        if aucun_diplome:
+            diplomes = []
+        mentions = {code: request.POST.get(f'mention_{code}', '') for code in diplomes}
+        if not aucun_diplome and raison in ('cap_mention', 'cap_sans_mention') and 'cap' not in diplomes:
+            diplomes.append('cap')
+            mentions['cap'] = mention
+        elif not aucun_diplome and raison in ('bac_pro_mention', 'bac_pro_sans_mention') and 'bac_pro' not in diplomes:
+            diplomes.append('bac_pro')
+            mentions['bac_pro'] = mention
+        mention = next((mentions.get(code) for code in diplomes if mentions.get(code)), mention)
+        _enregistrer_diplomes_eleve(profil, diplomes, annee, profil.classe, mentions)
         # Inférer le type de diplôme
         if raison in ('cap_mention', 'cap_sans_mention', 'echec_cap'):
             type_diplome = 'cap'
@@ -1580,6 +1611,20 @@ def modifier_sortie(request, pk):
         mention    = request.POST.get('mention_obtenue', '')
         poursuite  = request.POST.get('poursuite_etudes') == 'on'
         type_pours = request.POST.get('type_poursuite', '')
+        diplomes = request.POST.getlist('diplomes')
+        aucun_diplome = request.POST.get('aucun_diplome') == 'on'
+        if aucun_diplome:
+            diplomes = []
+        mentions = {code: request.POST.get(f'mention_{code}', '') for code in diplomes}
+        if not aucun_diplome and raison in ('cap_mention', 'cap_sans_mention') and 'cap' not in diplomes:
+            diplomes.append('cap')
+            mentions['cap'] = mention
+        elif not aucun_diplome and raison in ('bac_pro_mention', 'bac_pro_sans_mention') and 'bac_pro' not in diplomes:
+            diplomes.append('bac_pro')
+            mentions['bac_pro'] = mention
+        mention = next((mentions.get(code) for code in diplomes if mentions.get(code)), mention)
+        profil.diplomes_obtenus.filter(annee_scolaire=annee).exclude(diplome__in=diplomes).delete()
+        _enregistrer_diplomes_eleve(profil, diplomes, annee, profil.classe, mentions)
         if raison in ('cap_mention', 'cap_sans_mention', 'echec_cap'):
             type_diplome = 'cap'
         elif raison in ('bac_pro_mention', 'bac_pro_sans_mention', 'echec_bac_pro'):
@@ -1599,6 +1644,13 @@ def modifier_sortie(request, pk):
     return render(request, 'core/modifier_sortie.html', {
         'profil': profil,
         'annee_defaut': annee_defaut,
+        'diplomes_selectionnes': list(profil.diplomes_obtenus.filter(
+            annee_scolaire=annee_defaut
+        ).values_list('diplome', flat=True)),
+        'mentions_diplomes': {
+            diplome.diplome: diplome.mention
+            for diplome in profil.diplomes_obtenus.filter(annee_scolaire=annee_defaut)
+        },
     })
 
 
@@ -1868,10 +1920,7 @@ def _stats_compteurs_eleves():
     total_eleves  = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True).count()
     eleves_actifs = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False).count()
     eleves_sortis = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).count()
-    nb_diplomes   = ProfilUtilisateur.objects.filter(
-        type_utilisateur='eleve', est_sorti=True,
-        raison_sortie__in=['cap_mention', 'cap_sans_mention', 'bac_pro_mention', 'bac_pro_sans_mention']
-    ).count()
+    nb_diplomes = DiplomeEleve.objects.values('eleve_id').distinct().count()
     
     # 💥 LA LIGNE MAGIQUE POUR CORRIGER LE CRASH :
     return total_eleves, eleves_actifs, eleves_sortis, nb_diplomes
@@ -2418,6 +2467,20 @@ def statistiques(request):
     today = date.today()
 
     total_eleves, eleves_actifs, eleves_sortis, nb_diplomes = _stats_compteurs_eleves()
+    diplomes_obtenus_data = []
+    diplomes_obtenus_par_type = {label: 0 for _, label in ProfilUtilisateur.TYPE_DIPLOME_OBTENU}
+    mentions_labels = dict(DiplomeEleve.MENTION_CHOICES)
+    for diplome in DiplomeEleve.objects.select_related('eleve__user', 'eleve__classe'):
+        diplomes_obtenus_par_type[diplome.get_diplome_display()] += 1
+        diplomes_obtenus_data.append({
+            'nom': diplome.eleve.user.last_name.upper(),
+            'prenom': diplome.eleve.user.first_name,
+            'classe': diplome.classe or (diplome.eleve.classe.nom if diplome.eleve.classe else '—'),
+            'annee': diplome.annee_scolaire,
+            'diplome': diplome.get_diplome_display(),
+            'mention': mentions_labels.get(diplome.mention, 'Sans mention'),
+            'statut': 'Sorti' if diplome.eleve.est_sorti else 'En établissement',
+        })
     eleves_par_classe_data, inscriptions_data               = _stats_repartition_classes()
     top_etablissements_data, raisons_data, niveaux_data     = _stats_etablissements_raisons_niveaux()
     ages_data    = _stats_ages_par_classe(today)
@@ -2480,6 +2543,8 @@ def statistiques(request):
         'sorties_diplomes': diplomes_data,
         'sorties_post_formation': postformation_data,
         'sorties_reorientation': reorientation_data,
+        'diplomes_obtenus_data': diplomes_obtenus_data,
+        'diplomes_obtenus_par_type': diplomes_obtenus_par_type,
         'decrocheurs_par_annee_json': dec_annee_data,
         'diplomes_par_annee_json': dipl_annee_data,
         'postformation_cats_json': postform_cats_data,
@@ -3460,6 +3525,10 @@ def passer_en_classe_superieure(request, eleve_id):
         annee_actuelle     = request.POST.get('annee_actuelle', '').strip()
         date_fin_str       = request.POST.get('date_fin', '')
         redoublement       = request.POST.get('redoublement') == 'on'
+        diplomes = request.POST.getlist('diplomes')
+        if request.POST.get('aucun_diplome') == 'on':
+            diplomes = []
+        mentions = {code: request.POST.get(f'mention_{code}', '') for code in diplomes}
         if not nouvelle_classe_id or not annee_actuelle:
             messages.error(request, "❌ La nouvelle classe et l'année scolaire sont obligatoires.")
         else:
@@ -3478,6 +3547,7 @@ def passer_en_classe_superieure(request, eleve_id):
                     date_fin=date_fin_val,
                     redoublement=redoublement,
                 )
+            _enregistrer_diplomes_eleve(eleve, diplomes, annee_actuelle, eleve.classe, mentions)
             # Affecter la nouvelle classe (même classe si redoublement)
             ancienne_classe = eleve.classe.nom if eleve.classe else '—'
             # Si on a choisi l'option spéciale AFB depuis le formulaire, créer/récupérer la classe 1AFB
@@ -3505,10 +3575,19 @@ def passer_en_classe_superieure(request, eleve_id):
                 messages.success(request, f'✅ {eleve.user.get_full_name()} transféré de {ancienne_classe} vers {eleve.classe.nom}. Historique enregistré.')
             return redirect('core:classe_detail', pk=int(nouvelle_classe_id))
 
+    annee_diplomes = request.POST.get('annee_actuelle', '') or (
+        eleve.classe.annee_scolaire if eleve.classe else ''
+    )
+    diplomes_annee = eleve.diplomes_obtenus.filter(annee_scolaire=annee_diplomes)
     return render(request, 'core/passer_en_classe_superieure.html', {
         'eleve': eleve,
         'classes': classes,
         'historique': HistoriqueClasse.objects.filter(eleve=eleve).order_by('-date_debut'),
+        'diplomes_selectionnes': list(diplomes_annee.values_list('diplome', flat=True)),
+        'mentions_diplomes': {
+            diplome.diplome: diplome.mention
+            for diplome in diplomes_annee
+        },
         'mode': mode,
         'est_redoublement': est_redoublement,
     })

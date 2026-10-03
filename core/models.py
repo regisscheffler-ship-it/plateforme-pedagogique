@@ -1516,6 +1516,46 @@ class HistoriqueClasse(models.Model):
         return f"{self.eleve} — {classe_nom} ({self.annee})"
 
 
+class DiplomeEleve(models.Model):
+    """Diplôme obtenu par un élève, avec son année et sa mention."""
+    MENTION_CHOICES = [
+        ('', 'Sans mention'),
+        ('AB', 'Assez Bien'),
+        ('B', 'Bien'),
+        ('TB', 'Très Bien'),
+    ]
+
+    eleve = models.ForeignKey(
+        'ProfilUtilisateur', on_delete=models.CASCADE,
+        related_name='diplomes_obtenus', verbose_name='Élève'
+    )
+    diplome = models.CharField(
+        max_length=20,
+        choices=ProfilUtilisateur.TYPE_DIPLOME_OBTENU,
+        verbose_name='Diplôme'
+    )
+    mention = models.CharField(
+        max_length=2, choices=MENTION_CHOICES, blank=True, default='',
+        verbose_name='Mention'
+    )
+    annee_scolaire = models.CharField(max_length=20, verbose_name='Année scolaire')
+    classe = models.CharField(max_length=100, blank=True, verbose_name='Classe au moment de l’obtention')
+
+    class Meta:
+        verbose_name = 'Diplôme obtenu'
+        verbose_name_plural = 'Diplômes obtenus'
+        ordering = ['-annee_scolaire', 'diplome', 'eleve__user__last_name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['eleve', 'diplome', 'annee_scolaire'],
+                name='unique_diplome_eleve_annee'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.get_diplome_display()} — {self.eleve} ({self.annee_scolaire})'
+
+
 # =====================================================
 # MODES OPÉRATOIRES
 # =====================================================

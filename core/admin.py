@@ -9,7 +9,7 @@ from .models import (
     FicheContrat, LigneContrat, FicheEvaluation, EvaluationLigne,
     DossierPFMP, FichierPFMP, DossierAtelier, FichierAtelier,
     FicheRevision, CarteRevision, QCM, QuestionQCM, SessionQCM,
-    SuiviPFMP, HistoriqueClasse,
+    SuiviPFMP, HistoriqueClasse, DiplomeEleve,
     ModeOperatoire, LigneModeOperatoire,
     Portfolio, FichePortfolio, PhotoPortfolio,
 )
@@ -36,6 +36,13 @@ class SuiviPFMPAdmin(admin.ModelAdmin):
 class HistoriqueClasseAdmin(admin.ModelAdmin):
     list_display  = ['eleve', 'classe', 'annee', 'date_debut', 'date_fin']
     list_filter   = ['annee', 'classe']
+    search_fields = ['eleve__user__last_name', 'eleve__user__first_name']
+
+
+@admin.register(DiplomeEleve)
+class DiplomeEleveAdmin(admin.ModelAdmin):
+    list_display = ['eleve', 'diplome', 'mention', 'annee_scolaire', 'classe']
+    list_filter = ['diplome', 'mention', 'annee_scolaire']
     search_fields = ['eleve__user__last_name', 'eleve__user__first_name']
 
 

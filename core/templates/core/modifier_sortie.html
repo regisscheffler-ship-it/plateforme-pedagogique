@@ -174,17 +174,22 @@
                 </select>
             </div>
 
+            <fieldset class="form-group" style="border:1px solid #dbe3eb;border-radius:10px;padding:1rem;">
+                <legend style="font-weight:700;color:#1e293b;padding:0 0.4rem;">Diplômes obtenus au départ</legend>
+                <div class="field-hint" style="margin-bottom:0.7rem;">Cochez tous les diplômes obtenus et sélectionnez une mention pour chacun.</div>
+                <label class="toggle-row"><input type="checkbox" name="diplomes" value="cap" {% if 'cap' in diplomes_selectionnes %}checked{% endif %}> CAP</label>
+                <div class="form-group"><label for="mention_cap">Mention du CAP</label>
+                    <select id="mention_cap" name="mention_cap"><option value="">Sans mention</option><option value="AB" {% if mentions_diplomes.cap == 'AB' %}selected{% endif %}>Assez Bien</option><option value="B" {% if mentions_diplomes.cap == 'B' %}selected{% endif %}>Bien</option><option value="TB" {% if mentions_diplomes.cap == 'TB' %}selected{% endif %}>Très Bien</option></select>
+                </div>
+                <label class="toggle-row"><input type="checkbox" name="diplomes" value="bac_pro" {% if 'bac_pro' in diplomes_selectionnes %}checked{% endif %}> Bac Pro</label>
+                <div class="form-group"><label for="mention_bac_pro">Mention du Bac Pro</label>
+                    <select id="mention_bac_pro" name="mention_bac_pro"><option value="">Sans mention</option><option value="AB" {% if mentions_diplomes.bac_pro == 'AB' %}selected{% endif %}>Assez Bien</option><option value="B" {% if mentions_diplomes.bac_pro == 'B' %}selected{% endif %}>Bien</option><option value="TB" {% if mentions_diplomes.bac_pro == 'TB' %}selected{% endif %}>Très Bien</option></select>
+                </div>
+                <label class="toggle-row"><input type="checkbox" id="aucun-diplome" name="aucun_diplome"> Aucun diplôme obtenu</label>
+            </fieldset>
+
             <!-- Bloc diplôme -->
             <div id="bloc-diplome" class="cond-section">
-                <div class="form-group">
-                    <label>Mention obtenue</label>
-                    <select name="mention_obtenue">
-                        <option value=""   {% if not profil.mention_obtenue %}selected{% endif %}>— Sans mention / Non renseigné —</option>
-                        <option value="AB" {% if profil.mention_obtenue == 'AB' %}selected{% endif %}>Assez Bien (AB)</option>
-                        <option value="B"  {% if profil.mention_obtenue == 'B' %}selected{% endif %}>Bien (B)</option>
-                        <option value="TB" {% if profil.mention_obtenue == 'TB' %}selected{% endif %}>Très Bien (TB)</option>
-                    </select>
-                </div>
                 <div class="toggle-row">
                     <input type="checkbox" id="chk-poursuite" name="poursuite_etudes"
                         {% if profil.poursuite_etudes %}checked{% endif %}>
@@ -252,6 +257,14 @@
 <script>
 const DIPLOMES_RAISONS  = ['cap_mention','cap_sans_mention','bac_pro_mention','bac_pro_sans_mention','echec_cap','echec_bac_pro'];
 const POURSUITE_RAISONS = ['poursuite_bac_pro','poursuite_bts','poursuite_autre'];
+const aucunDiplome = document.getElementById('aucun-diplome');
+const diplomesChecks = document.querySelectorAll('input[name="diplomes"]');
+aucunDiplome.addEventListener('change', function () {
+    if (this.checked) diplomesChecks.forEach((checkbox) => { checkbox.checked = false; });
+});
+diplomesChecks.forEach((checkbox) => checkbox.addEventListener('change', function () {
+    if (this.checked) aucunDiplome.checked = false;
+}));
 
 function updateConditional() {
     const raison = document.querySelector('[name="raison_sortie"]').value;

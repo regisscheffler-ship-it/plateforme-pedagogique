@@ -473,6 +473,39 @@
             <span style="color:#e74c3c;">Parcours des sortis</span>
         </div>
 
+        <div style="background:white;border-radius:12px;padding:1.5rem;margin-bottom:2rem;border-left:5px solid #10b981;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+            <h2 style="margin:0 0 1rem;color:#166534;font-size:1.05rem;">Diplômes obtenus</h2>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;">
+                {% for type, total in diplomes_obtenus_par_type.items %}
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:0.6rem 0.9rem;color:#166534;font-weight:600;">
+                    {{ type }} : {{ total }}
+                </div>
+                {% endfor %}
+            </div>
+            {% if diplomes_obtenus_data %}
+            <div style="overflow-x:auto;">
+                <table class="conn-table">
+                    <thead><tr><th>Nom</th><th>Prénom</th><th>Diplôme</th><th>Mention</th><th>Classe</th><th>Année scolaire</th><th>Situation</th></tr></thead>
+                    <tbody>
+                        {% for d in diplomes_obtenus_data %}
+                        <tr>
+                            <td><strong>{{ d.nom|default:'—' }}</strong></td>
+                            <td>{{ d.prenom|default:'—' }}</td>
+                            <td>{{ d.diplome }}</td>
+                            <td>{{ d.mention }}</td>
+                            <td>{{ d.classe }}</td>
+                            <td>{{ d.annee }}</td>
+                            <td>{{ d.statut }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="margin:0;color:var(--text-muted);">Aucun diplôme obtenu enregistré.</p>
+            {% endif %}
+        </div>
+
         <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
             <div class="chart-card" style="border-left-color:#8b5cf6;min-height:300px;">
                 <h2 style="color:#8b5cf6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>

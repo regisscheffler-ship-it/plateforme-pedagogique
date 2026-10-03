@@ -5,7 +5,7 @@ Tests automatiques des URLs de la plateforme pédagogique
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 
@@ -142,6 +142,98 @@ class TestCommunicationActions(TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(MessageEleve.objects.filter(pk=autre_message.pk).exists())
+
+
+class TestDiplomaHistory(TestCase):
+    def setUp(self):
+        self.niveau = Niveau.objects.create(nom='CAP', description='CAP')
+        self.classe_actuelle = Classe.objects.create(
+            nom='2CAP', niveau=self.niveau, annee_scolaire='2025-2026'
+        )
+        self.classe_suivante = Classe.objects.create(
+            nom='1BAC', niveau=self.niveau, annee_scolaire='2026-2027'
+        )
+        prof_user = User.objects.create_user(username='prof_diplomes', password='test123456')
+        self.prof_profil = ProfilUtilisateur.objects.create(
+            user=prof_user, type_utilisateur='professeur'
+        )
+        eleve_user = User.objects.create_user(
+            username='eleve_diplomes', password='test123456', first_name='Camille', last_name='Martin'
+        )
+        self.eleve = ProfilUtilisateur.objects.create(
+            user=eleve_user, type_utilisateur='eleve', classe=self.classe_actuelle,
+            compte_approuve=True
+        )
+        self.client.force_login(prof_user)
+
+    def test_passage_enregistre_plusieurs_diplomes_et_mentions(self):
+        response = self.client.post(
+            reverse('core:passer_en_classe_superieure', kwargs={'eleve_id': self.eleve.pk}),
+            {
+                'nouvelle_classe': self.classe_suivante.pk,
+                'annee_actuelle': '2025-2026',
+                'diplomes': ['cap', 'bac_pro'],
+                'mention_cap': 'AB',
+                'mention_bac_pro': 'TB',
+            },
+        )
+
+        diplomes = DiplomeEleve.objects.filter(eleve=self.eleve).order_by('diplome')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(diplomes.count(), 2)
+        self.assertEqual(diplomes.get(diplome='cap').mention, 'AB')
+        self.assertEqual(diplomes.get(diplome='bac_pro').mention, 'TB')
+        self.assertEqual(diplomes.get(diplome='cap').classe, '2CAP')
+
+    def test_sortie_enregistre_diplomes_independamment_du_motif(self):
+        response = self.client.post(
+            reverse('core:marquer_sortie', kwargs={'pk': self.eleve.pk}),
+            {
+                'raison_sortie': 'travail_formation',
+                'annee_scolaire_sortie': '2025-2026',
+                'diplomes': ['cap', 'bac_pro'],
+                'mention_cap': 'B',
+                'mention_bac_pro': 'TB',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(DiplomeEleve.objects.filter(eleve=self.eleve).count(), 2)
+        self.assertEqual(DiplomeEleve.objects.get(eleve=self.eleve, diplome='cap').mention, 'B')
+
+    def test_modifier_sortie_peut_corriger_vers_aucun_diplome(self):
+        self.eleve.est_sorti = True
+        self.eleve.annee_scolaire_sortie = '2025-2026'
+        self.eleve.save()
+        DiplomeEleve.objects.create(
+            eleve=self.eleve, diplome='cap', mention='AB',
+            annee_scolaire='2025-2026', classe='2CAP'
+        )
+
+        response = self.client.post(
+            reverse('core:modifier_sortie', kwargs={'pk': self.eleve.pk}),
+            {
+                'raison_sortie': 'travail_formation',
+                'annee_scolaire_sortie': '2025-2026',
+                'aucun_diplome': 'on',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(DiplomeEleve.objects.filter(eleve=self.eleve, annee_scolaire='2025-2026').exists())
+
+    def test_statistiques_affichent_les_diplomes_et_les_mentions(self):
+        DiplomeEleve.objects.create(
+            eleve=self.eleve, diplome='cap', mention='AB',
+            annee_scolaire='2025-2026', classe='2CAP'
+        )
+
+        response = self.client.get(reverse('core:statistiques'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Diplômes obtenus')
+        self.assertContains(response, 'Camille')
+        self.assertContains(response, 'Assez Bien')
 
 
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')

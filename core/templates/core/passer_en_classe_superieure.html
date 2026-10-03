@@ -143,6 +143,27 @@
                 <input type="date" id="date_fin" name="date_fin">
                 <div class="form-hint">Laissez vide pour utiliser la date du jour.</div>
             </div>
+            <fieldset class="form-group" style="border:1px solid #cbd5e1;border-radius:8px;padding:1rem;">
+                <legend style="font-weight:700;color:#1f2d3d;padding:0 0.4rem;">Diplômes obtenus pendant cette année</legend>
+                <div class="form-hint" style="margin-bottom:0.7rem;">Cochez chaque diplôme obtenu et indiquez sa mention. Sans diplôme, cochez « Aucun ».</div>
+                <label style="display:flex;align-items:center;gap:0.55rem;margin:0.6rem 0;"><input type="checkbox" name="diplomes" value="cap" {% if 'cap' in diplomes_selectionnes %}checked{% endif %}> CAP</label>
+                <label for="mention_cap">Mention du CAP</label>
+                <select id="mention_cap" name="mention_cap" style="margin-bottom:0.7rem;">
+                    <option value="">Sans mention</option>
+                    <option value="AB" {% if mentions_diplomes.cap == 'AB' %}selected{% endif %}>Assez Bien</option>
+                    <option value="B" {% if mentions_diplomes.cap == 'B' %}selected{% endif %}>Bien</option>
+                    <option value="TB" {% if mentions_diplomes.cap == 'TB' %}selected{% endif %}>Très Bien</option>
+                </select>
+                <label style="display:flex;align-items:center;gap:0.55rem;margin:0.6rem 0;"><input type="checkbox" name="diplomes" value="bac_pro" {% if 'bac_pro' in diplomes_selectionnes %}checked{% endif %}> Bac Pro</label>
+                <label for="mention_bac_pro">Mention du Bac Pro</label>
+                <select id="mention_bac_pro" name="mention_bac_pro" style="margin-bottom:0.7rem;">
+                    <option value="">Sans mention</option>
+                    <option value="AB" {% if mentions_diplomes.bac_pro == 'AB' %}selected{% endif %}>Assez Bien</option>
+                    <option value="B" {% if mentions_diplomes.bac_pro == 'B' %}selected{% endif %}>Bien</option>
+                    <option value="TB" {% if mentions_diplomes.bac_pro == 'TB' %}selected{% endif %}>Très Bien</option>
+                </select>
+                <label style="display:flex;align-items:center;gap:0.55rem;margin-top:0.7rem;"><input type="checkbox" id="aucun-diplome" name="aucun_diplome"> Aucun diplôme obtenu cette année</label>
+            </fieldset>
             <div class="form-group" style="display:flex;align-items:center;gap:10px;background:var(--pcs-light);border:1px solid var(--pcs);border-radius:8px;padding:12px 14px;">
                 <input type="checkbox" id="redoublement" name="redoublement" style="width:18px;height:18px;accent-color:var(--pcs);cursor:pointer;" {% if est_redoublement %}checked{% endif %}>
                 <label for="redoublement" style="margin:0;font-size:0.9rem;font-weight:600;color:var(--pcs);cursor:pointer;">
@@ -198,4 +219,14 @@
     </div>
     {% endif %}
 </div>
+<script>
+const aucunDiplome = document.getElementById('aucun-diplome');
+const diplomesChecks = document.querySelectorAll('input[name="diplomes"]');
+aucunDiplome.addEventListener('change', function () {
+    if (this.checked) diplomesChecks.forEach((checkbox) => { checkbox.checked = false; });
+});
+diplomesChecks.forEach((checkbox) => checkbox.addEventListener('change', function () {
+    if (this.checked) aucunDiplome.checked = false;
+}));
+</script>
 {% endblock %}
