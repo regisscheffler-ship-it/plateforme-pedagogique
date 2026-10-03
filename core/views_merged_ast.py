@@ -242,7 +242,7 @@ def communication_eleve(request):
     
     if request.method == 'POST':
         texte = request.POST.get('texte', '').strip()
-        image_annotee_data = request.POST.get('image_annotee_data', '')
+        image_annotee_data = request.POST.get('image_annotee_data') or request.POST.get('annotation_data', '')
         image_fichier = request.FILES.get('image')
         
         if not texte and not image_fichier and not image_annotee_data:
@@ -5572,25 +5572,49 @@ def communications_list(request):
 
 @login_required
 @user_passes_test(est_professeur)
-def communication_telecharger(request, message_id):
-    """Télécharge une image de communication via le stockage configuré."""
-    msg = get_object_or_404(MessageEleve, id=message_id, professeur=request.user.profil)
+@require_POST
+def communication_marquer_lu(request, message_id):
+    msg = get_object_or_404(
+        MessageEleve, id=message_id, professeur=request.user.profil
+    )
+    if not msg.lu:
+        msg.lu = True
+        msg.save(update_fields=['lu'])
+    messages.success(request, 'Message marqué comme lu. Il reste accessible à l’élève.')
+    return redirect('core:communications_list')
+
+
+def _communication_file_response(message_id, professeur, as_attachment):
+    msg = get_object_or_404(MessageEleve, id=message_id, professeur=professeur)
     image_file = msg.image_annotee if (msg.image_annotee and msg.image_annotee.name) else msg.image
     if not image_file or not image_file.name:
         return HttpResponse('Aucune image disponible.', status=404)
     try:
-        image_url = image_file.url
-        if hasattr(image_file.storage, '_get_resource_type'):
-            from urllib.parse import urlsplit, urlunsplit
-            url_parts = urlsplit(image_url)
-            path_parts = url_parts.path.split('/')
-            upload_index = path_parts.index('upload')
-            path_parts.insert(upload_index + 1, 'fl_attachment')
-            return redirect(urlunsplit(url_parts._replace(path='/'.join(path_parts))))
-        filename = os.path.basename(image_file.name)
-        return FileResponse(image_file.open('rb'), as_attachment=True, filename=filename)
-    except (OSError, IOError, ValueError):
-        return HttpResponse('Erreur lors du téléchargement.', status=500)
+        image_file.open('rb')
+        return FileResponse(
+            image_file,
+            as_attachment=as_attachment,
+            filename=os.path.basename(image_file.name),
+        )
+    except Exception:
+        logging.getLogger(__name__).exception(
+            'Impossible de lire le fichier du message de communication %s', message_id
+        )
+        return HttpResponse('Impossible de récupérer la pièce jointe.', status=502)
+
+
+@login_required
+@user_passes_test(est_professeur)
+def communication_consulter(request, message_id):
+    """Affiche une image de communication via le stockage configuré."""
+    return _communication_file_response(message_id, request.user.profil, as_attachment=False)
+
+
+@login_required
+@user_passes_test(est_professeur)
+def communication_telecharger(request, message_id):
+    """Télécharge une image de communication via le stockage configuré."""
+    return _communication_file_response(message_id, request.user.profil, as_attachment=True)
 
 
 def dashboard_eleve(request):

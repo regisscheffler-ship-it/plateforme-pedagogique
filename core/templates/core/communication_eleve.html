@@ -28,6 +28,7 @@
       {% for msg in messages_liste %}
         <div class="message-card">
           <div style="color:#6b7280;font-size:0.95rem;">{{ msg.date_envoi|date:'d/m/Y H:i' }}</div>
+          {% if msg.lu %}<div style="margin-top:0.35rem;color:#047857;font-size:0.85rem;">Lu par le professeur</div>{% endif %}
           <div style="margin-top:0.5rem;color:#374151;">{{ msg.texte|linebreaksbr }}</div>
           {% if msg.image_annotee %}
             <img src="{{ msg.image_annotee.url }}" class="comm-thumb" alt="Image annotée" />

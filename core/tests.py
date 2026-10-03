@@ -63,13 +63,15 @@ class TestStudentAccountUpdates(TestCase):
 
 class TestCommunicationActions(TestCase):
     def setUp(self):
+        niveau = Niveau.objects.create(nom='CAP', description='CAP')
+        classe = Classe.objects.create(nom='2M', niveau=niveau, description='Classe test')
         self.prof_user = User.objects.create_user(username='prof_comm', password='test123456')
         self.prof_profil = ProfilUtilisateur.objects.create(
             user=self.prof_user, type_utilisateur='professeur'
         )
-        eleve_user = User.objects.create_user(username='eleve_comm', password='test123456')
+        self.eleve_user = User.objects.create_user(username='eleve_comm', password='test123456')
         self.eleve_profil = ProfilUtilisateur.objects.create(
-            user=eleve_user, type_utilisateur='eleve'
+            user=self.eleve_user, type_utilisateur='eleve', classe=classe
         )
         self.message = MessageEleve.objects.create(
             eleve=self.eleve_profil,
@@ -86,6 +88,19 @@ class TestCommunicationActions(TestCase):
         self.assertContains(response, 'Consulter')
         self.assertContains(response, 'target="_blank"')
         self.assertNotContains(response, 'consult-btn')
+        self.assertContains(response, reverse('core:communication_consulter', kwargs={'message_id': self.message.pk}))
+
+    def test_consulter_sert_l_image_en_ligne(self):
+        image_storage = MessageEleve._meta.get_field('image').storage
+        with patch.object(image_storage, 'open', return_value=ContentFile(b'image en ligne')):
+            response = self.client.get(
+                reverse('core:communication_consulter', kwargs={'message_id': self.message.pk})
+            )
+            contenu = b''.join(response.streaming_content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('inline', response['Content-Disposition'])
+        self.assertEqual(contenu, b'image en ligne')
 
     def test_telechargement_sert_le_fichier_du_stockage(self):
         image_storage = MessageEleve._meta.get_field('image').storage
@@ -101,20 +116,31 @@ class TestCommunicationActions(TestCase):
 
     def test_telechargement_cloudinary_redirige_avec_flag_attachment(self):
         image_storage = MessageEleve._meta.get_field('image').storage
-        url_cloudinary = 'https://res.cloudinary.com/demo/image/upload/v123/messages/rapport.jpg'
-        with (
-            patch.object(image_storage, '_get_resource_type', return_value='image', create=True),
-            patch.object(image_storage, 'url', return_value=url_cloudinary),
-        ):
+        with patch.object(image_storage, 'open', return_value=ContentFile(b'image telechargee')):
             response = self.client.get(
                 reverse('core:communication_telecharger', kwargs={'message_id': self.message.pk})
             )
+            contenu = b''.join(response.streaming_content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('attachment', response['Content-Disposition'])
+        self.assertEqual(contenu, b'image telechargee')
+
+    def test_marquer_lu_ne_supprime_pas_le_message_de_l_eleve(self):
+        response = self.client.post(
+            reverse('core:communication_marquer_lu', kwargs={'message_id': self.message.pk})
+        )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(
-            response['Location'],
-            'https://res.cloudinary.com/demo/image/upload/fl_attachment/v123/messages/rapport.jpg',
-        )
+        self.message.refresh_from_db()
+        self.assertTrue(self.message.lu)
+        self.assertTrue(MessageEleve.objects.filter(pk=self.message.pk).exists())
+
+        self.client.force_login(self.eleve_user)
+        reponse_eleve = self.client.get(reverse('core:communication_eleve'))
+        self.assertEqual(reponse_eleve.status_code, 200)
+        self.assertContains(reponse_eleve, 'Rapport de test')
+        self.assertContains(reponse_eleve, 'Lu par le professeur')
 
     def test_suppression_post_supprime_le_message(self):
         image_storage = MessageEleve._meta.get_field('image').storage

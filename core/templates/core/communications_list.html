@@ -33,18 +33,26 @@
                         </div>
                         <div style="flex:2;">
                             {% if c.image_annotee %}
-                                <img src="{{ c.image_annotee.url }}" style="max-width:100%;border-radius:8px;display:block;margin-bottom:0.5rem;"/>
+                                <img src="{% url 'core:communication_consulter' c.id %}" alt="Image annotée envoyée par {{ c.eleve.user.get_full_name }}" style="max-width:100%;border-radius:8px;display:block;margin-bottom:0.5rem;"/>
                             {% elif c.image %}
-                                <img src="{{ c.image.url }}" style="max-width:100%;border-radius:8px;display:block;margin-bottom:0.5rem;"/>
+                                <img src="{% url 'core:communication_consulter' c.id %}" alt="Image envoyée par {{ c.eleve.user.get_full_name }}" style="max-width:100%;border-radius:8px;display:block;margin-bottom:0.5rem;"/>
                             {% endif %}
                             <div style="color:#6c757d;">{{ c.texte|linebreaksbr }}</div>
                             <div style="margin-top:0.6rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
                                 {% if c.image_annotee %}
-                                    <a href="{{ c.image_annotee.url }}" class="btn-outline" target="_blank" rel="noopener">Consulter</a>
+                                    <a href="{% url 'core:communication_consulter' c.id %}" class="btn-outline" target="_blank" rel="noopener">Consulter</a>
                                     <a href="{% url 'core:communication_telecharger' c.id %}" class="btn-outline">Télécharger</a>
                                 {% elif c.image %}
-                                    <a href="{{ c.image.url }}" class="btn-outline" target="_blank" rel="noopener">Consulter</a>
+                                    <a href="{% url 'core:communication_consulter' c.id %}" class="btn-outline" target="_blank" rel="noopener">Consulter</a>
                                     <a href="{% url 'core:communication_telecharger' c.id %}" class="btn-outline">Télécharger</a>
+                                {% endif %}
+                                {% if not c.lu %}
+                                <form method="post" action="{% url 'core:communication_marquer_lu' c.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-outline">Marquer comme lu</button>
+                                </form>
+                                {% else %}
+                                <span style="align-self:center;color:#64748b;font-size:0.85rem;">Lu</span>
                                 {% endif %}
                                 <form method="post" action="{% url 'core:communication_supprimer' c.id %}" style="display:inline;">
                                     {% csrf_token %}

@@ -48,7 +48,7 @@ def communication_eleve(request):
     
 	if request.method == 'POST':
 		texte = request.POST.get('texte', '').strip()
-		image_annotee_data = request.POST.get('image_annotee_data', '')
+		image_annotee_data = request.POST.get('image_annotee_data') or request.POST.get('annotation_data', '')
 		image_fichier = request.FILES.get('image')
         
 		if not texte and not image_fichier and not image_annotee_data:

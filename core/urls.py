@@ -175,8 +175,10 @@ urlpatterns = [
     path('communication/prof/',                           views.communication_prof,   name='communication_prof'),
     path('communication/repondre/<int:message_id>/',     views.communication_repondre, name='communication_repondre'),
     path('communication/supprimer/<int:message_id>/',    views.communication_supprimer, name='communication_supprimer'),
+    path('communication/<int:message_id>/lu/',          views.communication_marquer_lu, name='communication_marquer_lu'),
     path('communications/',                               views.communications_list,  name='communications_list'),
     path('communications/export-pdf/',                   views.communications_export_pdf, name='communications_export_pdf'),
+    path('communication/<int:message_id>/consulter/',    views.communication_consulter, name='communication_consulter'),
     path('communication/<int:message_id>/telecharger/',  views.communication_telecharger, name='communication_telecharger'),
 
     # ═══════════════════════════════════════
