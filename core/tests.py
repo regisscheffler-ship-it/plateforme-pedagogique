@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve
 from django.core.files.base import ContentFile
 from unittest.mock import patch
+from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
 
 
 class TestStudentAccountUpdates(TestCase):
@@ -80,6 +81,11 @@ class TestCommunicationActions(TestCase):
             image='messages/rapport.jpg',
         )
         self.client.force_login(self.prof_user)
+
+    def test_identifiant_cloudinary_sans_extension_reste_une_image(self):
+        storage = AutoMediaCloudinaryStorage()
+
+        self.assertEqual(storage._get_resource_type('messages/public_id_sans_extension'), RESOURCE_TYPES['IMAGE'])
 
     def test_consulter_est_un_lien_direct_vers_la_piece_jointe(self):
         response = self.client.get(reverse('core:communications_list'))
