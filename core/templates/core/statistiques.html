@@ -190,6 +190,8 @@
         padding:0.4rem 0.8rem; border:1.5px solid var(--border-light);
         border-radius:6px; font-size:0.9rem; background:white; cursor:pointer; outline:none;
     }
+    .connection-tab-panel { display:none; }
+    .connection-tab-panel.active { display:block; }
 </style>
 
 <div class="page-container">
@@ -375,6 +377,57 @@
         </div>
     </div>
 
+    <div id="section-moyennes" style="scroll-margin-top:80px;">
+        <div class="section-title" style="--section-color:#0ea5e9;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/></svg>
+            <span style="color:#0ea5e9;">Moyennes des évaluations validées</span>
+        </div>
+        <form method="get" class="filter-annee-bar" style="margin-bottom:1.2rem;">
+            <label for="annee-moyennes">Année scolaire :</label>
+            <select id="annee-moyennes" name="annee_moyennes" onchange="this.form.submit()">
+                <option value="" {% if not annee_moyennes_selectionnee %}selected{% endif %}>Toutes les années</option>
+                {% for annee in annees_evaluations %}
+                <option value="{{ annee }}" {% if annee == annee_moyennes_selectionnee %}selected{% endif %}>{{ annee }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <div class="charts-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="chart-card" style="min-height:unset;">
+                <h2 style="color:#0ea5e9;">Moyenne par classe</h2>
+                {% if moyennes_classe %}
+                <div style="overflow-x:auto;">
+                    <table class="conn-table">
+                        <thead><tr><th>Classe</th><th style="text-align:center;">Moyenne /20</th><th style="text-align:center;">Évaluations validées</th></tr></thead>
+                        <tbody>
+                            {% for row in moyennes_classe %}
+                            <tr><td><strong>{{ row.classe }}</strong></td><td style="text-align:center;font-weight:700;">{{ row.moyenne }}</td><td style="text-align:center;">{{ row.nb_evaluations }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}<p style="color:var(--text-muted);">Aucune évaluation validée pour cette période.</p>{% endif %}
+            </div>
+            <div class="chart-card" style="min-height:unset;">
+                <h2 style="color:#0ea5e9;">Moyenne par élève</h2>
+                {% if moyennes_eleve %}
+                <div style="overflow-x:auto;max-height:420px;">
+                    <table class="conn-table">
+                        <thead><tr><th>Élève</th><th>Classe</th><th style="text-align:center;">Moyenne /20</th><th style="text-align:center;">Évaluations</th></tr></thead>
+                        <tbody>
+                            {% for row in moyennes_eleve %}
+                            <tr>
+                                <td>{% if row.anonyme %}Ancien élève{% else %}{{ row.nom }} {{ row.prenom }}{% endif %}</td>
+                                <td>{{ row.classe }}</td><td style="text-align:center;font-weight:700;">{{ row.moyenne }}</td><td style="text-align:center;">{{ row.nb_evaluations }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}<p style="color:var(--text-muted);">Aucune évaluation validée pour cette période.</p>{% endif %}
+            </div>
+        </div>
+    </div>
+
     <!-- Seconde Pro : répartition (camembert) -->
     <div class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
@@ -477,8 +530,8 @@
             <h2 style="margin:0 0 1rem;color:#166534;font-size:1.05rem;">Diplômes obtenus</h2>
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;">
                 {% for type, total in diplomes_obtenus_par_type.items %}
-                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:0.6rem 0.9rem;color:#166534;font-weight:600;">
-                    {{ type }} : {{ total }}
+                <div data-diplome-compteur="{{ type }}" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:0.6rem 0.9rem;color:#166534;font-weight:600;">
+                    {{ type }} : <span class="diplome-compteur-valeur">{{ total }}</span>
                 </div>
                 {% endfor %}
             </div>
@@ -486,11 +539,11 @@
             <div style="overflow-x:auto;">
                 <table class="conn-table">
                     <thead><tr><th>Nom</th><th>Prénom</th><th>Diplôme</th><th>Mention</th><th>Classe</th><th>Année scolaire</th><th>Situation</th></tr></thead>
-                    <tbody>
+                    <tbody id="tbody-diplomes-obtenus">
                         {% for d in diplomes_obtenus_data %}
-                        <tr>
-                            <td><strong>{{ d.nom|default:'—' }}</strong></td>
-                            <td>{{ d.prenom|default:'—' }}</td>
+                        <tr data-annee="{{ d.annee }}" data-diplome="{{ d.diplome }}">
+                            <td><strong>{% if d.statut == 'Sorti' %}—{% else %}{{ d.nom|default:'—' }}{% endif %}</strong></td>
+                            <td>{% if d.statut == 'Sorti' %}—{% else %}{{ d.prenom|default:'—' }}{% endif %}</td>
                             <td>{{ d.diplome }}</td>
                             <td>{{ d.mention }}</td>
                             <td>{{ d.classe }}</td>
@@ -544,9 +597,9 @@
                 <div class="filter-annee-bar">
                     <label>Année&nbsp;:</label>
                     <select id="filtre-annee-stats" onchange="filtrerTablesStats()">
-                        <option value="">Toutes les années</option>
+                        <option value="" {% if not annee_sorties_selectionnee %}selected{% endif %}>Toutes les années</option>
                         {% for annee in annees_sortis %}
-                        <option value="{{ annee }}">{{ annee }}</option>
+                        <option value="{{ annee }}" {% if annee == annee_sorties_selectionnee %}selected{% endif %}>{{ annee }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -564,12 +617,11 @@
             {% if sorties_diplomes %}
             <table class="conn-table">
                 <thead>
-                    <tr><th>Nom</th><th>Prénom</th><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Diplôme</th><th>Mention</th></tr>
+                    <tr><th>Classe</th><th>Établissement d'origine</th><th>Année</th><th>Diplôme</th><th>Mention</th></tr>
                 </thead>
                 <tbody id="tbody-diplomes">
                     {% for e in sorties_diplomes %}
                     <tr data-annee="{{ e.annee }}">
-                        <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
                         <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
                         <td>{{ e.etablissement_orig }}</td><td>{{ e.annee }}</td>
                         <td><span style="font-weight:600;">{{ e.raison }}</span></td>
@@ -586,12 +638,11 @@
             {% if sorties_post_formation %}
             <table class="conn-table">
                 <thead>
-                    <tr><th>Nom</th><th>Prénom</th><th>Dernière Classe</th><th>Année</th><th>Situation actuelle</th><th>Détails</th></tr>
+                    <tr><th>Dernière Classe</th><th>Année</th><th>Situation actuelle</th><th>Détails</th></tr>
                 </thead>
                 <tbody id="tbody-postformation">
                     {% for e in sorties_post_formation %}
                     <tr data-annee="{{ e.annee }}">
-                        <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
                         <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
                         <td>{{ e.annee }}</td>
                         <td><span style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
@@ -608,12 +659,11 @@
             {% if sorties_reorientation %}
             <table class="conn-table">
                 <thead>
-                    <tr><th>Nom</th><th>Prénom</th><th>Classe quittée</th><th>Année</th><th>Type de changement</th><th>Commentaire</th></tr>
+                    <tr><th>Classe quittée</th><th>Année</th><th>Type de changement</th><th>Commentaire</th></tr>
                 </thead>
                 <tbody id="tbody-reorientation">
                     {% for e in sorties_reorientation %}
                     <tr data-annee="{{ e.annee }}">
-                        <td><strong>{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
                         <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
                         <td>{{ e.annee }}</td>
                         <td><span style="background:#fef3c7;color:#b45309;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
@@ -632,12 +682,11 @@
             {% if sorties_decrocheurs %}
             <table class="conn-table">
                 <thead>
-                    <tr><th>Nom</th><th>Prénom</th><th>Dernière Classe</th><th>Année</th><th>Situation</th><th>Commentaire</th></tr>
+                    <tr><th>Dernière Classe</th><th>Année</th><th>Situation</th><th>Commentaire</th></tr>
                 </thead>
                 <tbody id="tbody-decrocheurs">
                     {% for e in sorties_decrocheurs %}
                     <tr data-annee="{{ e.annee }}">
-                        <td><strong style="color:#e74c3c;">{{ e.nom }}</strong></td><td>{{ e.prenom }}</td>
                         <td><span style="background:#f1f5f9;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">{{ e.classe }}</span></td>
                         <td>{{ e.annee }}</td>
                         <td><span style="background:#fee2e2;color:#991b1b;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;">{{ e.raison }}</span></td>
@@ -784,6 +833,12 @@
             Connexions des élèves
         </div>
 
+        <div class="detail-tabs">
+            <button type="button" class="detail-tab connection-tab active" onclick="showConnectionTab('connexion-suivi', this)">Suivi</button>
+            <button type="button" class="detail-tab connection-tab" onclick="showConnectionTab('connexion-reset', this)">Remise à zéro</button>
+        </div>
+
+        <div id="connexion-suivi" class="connection-tab-panel active">
         <div class="connexions-grid">
             <div class="cx-stat">
                 <div class="val">{{ connexions_eleves|length }}</div>
@@ -846,6 +901,20 @@
         <div>
             <h3 style="font-size:1.1rem;font-weight:700;color:var(--text-main);margin-bottom:1rem;">Connexions sur les 30 derniers jours</h3>
             <div style="height:220px;"><canvas id="chartConnexions30j"></canvas></div>
+        </div>
+        </div>
+
+        <div id="connexion-reset" class="connection-tab-panel" style="background:#fff8f8;border:1px solid #fecaca;border-radius:10px;padding:1.25rem;">
+            <h3 style="margin:0 0 0.6rem;color:#991b1b;font-size:1rem;">Remettre à zéro les compteurs de connexion</h3>
+            <p style="margin:0 0 1rem;color:#7f1d1d;">Cette action supprime l’historique de connexion enregistré ({{ nb_connexions_total }} événement(s)). Les connexions suivantes recommenceront le comptage à zéro.</p>
+            <form method="post" action="{% url 'core:statistiques_reinitialiser_connexions' %}" onsubmit="return confirm('Confirmer la suppression de tout l’historique de connexion ?');">
+                {% csrf_token %}
+                <label style="display:flex;align-items:center;gap:0.55rem;margin-bottom:1rem;font-weight:600;color:#7f1d1d;">
+                    <input type="checkbox" name="confirmation" value="oui" required>
+                    Je confirme la remise à zéro de tous les compteurs
+                </label>
+                <button type="submit" style="padding:0.6rem 1rem;border:0;border-radius:7px;background:#b91c1c;color:white;font-weight:700;cursor:pointer;">Remettre à zéro</button>
+            </form>
         </div>
     </div>
     </div>
@@ -1048,14 +1117,32 @@
         document.getElementById(tabId).classList.add('active');
         btn.classList.add('active');
     }
+    function showConnectionTab(panelId, btn) {
+        document.querySelectorAll('.connection-tab-panel').forEach(panel => panel.classList.remove('active'));
+        document.querySelectorAll('.connection-tab').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(panelId).classList.add('active');
+        btn.classList.add('active');
+    }
     function filtrerTablesStats() {
         const val = document.getElementById('filtre-annee-stats').value;
-                ['tbody-diplomes','tbody-decrocheurs','tbody-postformation', 'tbody-reorientation'].forEach(id => {
+        ['tbody-diplomes-obtenus','tbody-diplomes','tbody-decrocheurs','tbody-postformation','tbody-reorientation'].forEach(id => {
             const tbody = document.getElementById(id);
             if (!tbody) return;
             tbody.querySelectorAll('tr').forEach(row => { row.style.display = (!val || row.dataset.annee === val) ? '' : 'none'; });
         });
+        const diplomesTable = document.getElementById('tbody-diplomes-obtenus');
+        const compteurs = {};
+        if (diplomesTable) {
+            diplomesTable.querySelectorAll('tr').forEach(row => {
+                if (!val || row.dataset.annee === val) compteurs[row.dataset.diplome] = (compteurs[row.dataset.diplome] || 0) + 1;
+            });
+        }
+        document.querySelectorAll('[data-diplome-compteur]').forEach(compteur => {
+            const valeur = compteur.querySelector('.diplome-compteur-valeur');
+            if (valeur) valeur.textContent = compteurs[compteur.dataset.diplomeCompteur] || 0;
+        });
     }
+    filtrerTablesStats();
 
     // Graphiques Profil Origine
     function getOrigData(id) {

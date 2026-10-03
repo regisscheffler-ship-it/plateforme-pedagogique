@@ -28,7 +28,7 @@ VIEW_NAMES = [
     'mes_travaux_eleve', 'rendre_travail', 'corriger_rendu', 'marquer_corrige',
     'communication_eleve', 'communication_prof', 'communication_repondre', 'communication_supprimer', 'communication_marquer_lu', 'communication_consulter', 'communication_telecharger', 'communications_list', 'communications_export_pdf',
     'mes_notifications', 'marquer_notification_lue', 'marquer_toutes_lues',
-    'archives', 'archives_export', 'export_annuel_complet', 'supprimer_archive', 'archive_detail', 'statistiques',
+    'archives', 'archives_export', 'export_annuel_complet', 'supprimer_archive', 'archive_detail', 'statistiques', 'statistiques_reinitialiser_connexions',
     'api_eleves_par_classe', 'api_competences_par_referentiel', 'contact',
     'gestion_portfolio',
     'portfolio_detail', 'fiche_portfolio_create', 'fiche_portfolio_update',

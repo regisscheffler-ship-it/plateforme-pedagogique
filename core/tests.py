@@ -6,7 +6,7 @@ from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
 from datetime import date
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
@@ -415,6 +415,107 @@ class TestPFMPAttendanceHistory(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'historique conservé')
         self.assertContains(response, 'disabled')
+
+
+class TestStatisticsImprovements(TestCase):
+    def setUp(self):
+        niveau = Niveau.objects.create(nom='CAP', description='CAP')
+        self.classe = Classe.objects.create(nom='2M', niveau=niveau)
+        self.prof_user = User.objects.create_user(username='prof_stats', password='test123456')
+        ProfilUtilisateur.objects.create(user=self.prof_user, type_utilisateur='professeur')
+        self.eleve_user = User.objects.create_user(
+            username='eleve_stats', password='test123456', first_name='Alice', last_name='Active'
+        )
+        self.eleve = ProfilUtilisateur.objects.create(
+            user=self.eleve_user, type_utilisateur='eleve', classe=self.classe,
+            compte_approuve=True
+        )
+        self.client.force_login(self.prof_user)
+
+    def test_sorti_anonymise_et_diplome_est_statistique(self):
+        sorti_user = User.objects.create_user(
+            username='eleve_sorti_stats', password='test123456',
+            first_name='PrénomSecret', last_name='NomSecret'
+        )
+        sorti = ProfilUtilisateur.objects.create(
+            user=sorti_user, type_utilisateur='eleve', classe=self.classe,
+            compte_approuve=True, est_sorti=True,
+            raison_sortie='travail_formation', annee_scolaire_sortie='2025-2026'
+        )
+        DiplomeEleve.objects.create(
+            eleve=sorti, diplome='cap', mention='AB',
+            annee_scolaire='2025-2026', classe='2M'
+        )
+        DiplomeEleve.objects.create(
+            eleve=self.eleve, diplome='bac_pro', mention='',
+            annee_scolaire='2025-2026', classe='2M'
+        )
+        pfmp = PFMP.objects.create(titre='PFMP passée', createur=self.prof_user)
+        pfmp.classes.add(self.classe)
+        SuiviPFMP.objects.create(
+            pfmp=pfmp, eleve=sorti, classe_au_moment='2M', nb_jours_effectues=15
+        )
+        referentiel = Referentiel.objects.create(nom='Référentiel ancien élève', description='Test')
+        fiche = FicheContrat.objects.create(
+            referentiel=referentiel, classe=self.classe, titre_tp='Évaluation ancien élève',
+            date_tp=date(2025, 11, 1), createur=self.prof_user,
+        )
+        FicheEvaluation.objects.create(
+            fiche_contrat=fiche, eleve=sorti, validee=True, note_sur_20='12.00'
+        )
+
+        response = self.client.get(reverse('core:statistiques'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'NomSecret')
+        self.assertNotContains(response, 'PrénomSecret')
+        self.assertContains(response, 'Remise à zéro')
+        self.assertContains(response, 'Moyenne par classe')
+        self.assertContains(response, 'Ancien élève')
+        self.assertEqual(response.context['diplomes'], 2)
+        self.assertNotIn('nom', response.context['sorties_post_formation'][0])
+        diplomes_annee = response.context['diplomes_par_annee_json']
+        self.assertEqual(diplomes_annee[0]['annee'], '2025-2026')
+        self.assertEqual(diplomes_annee[0]['cap_mention'], 1)
+        self.assertEqual(diplomes_annee[0]['bp_sans'], 1)
+        origine_non_renseignee = next(row for row in response.context['orig_college'] if row['label'] == 'Non renseigné')
+        self.assertEqual(origine_non_renseignee['total'], 2)
+        self.assertEqual(origine_non_renseignee['diplomes'], 2)
+
+    def test_moyennes_par_classe_et_eleve_filtrees_par_annee(self):
+        referentiel = Referentiel.objects.create(nom='Référentiel moyennes', description='Test')
+        for index, (jour, note) in enumerate(((date(2025, 11, 1), '14.00'), (date(2025, 12, 1), '16.00'), (date(2024, 11, 1), '10.00'))):
+            fiche = FicheContrat.objects.create(
+                referentiel=referentiel, classe=self.classe,
+                titre_tp=f'Évaluation {index}', date_tp=jour, createur=self.prof_user,
+            )
+            FicheEvaluation.objects.create(
+                fiche_contrat=fiche, eleve=self.eleve, validee=True, note_sur_20=note
+            )
+
+        response = self.client.get(reverse('core:statistiques'), {'annee_moyennes': '2025-2026'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['moyennes_classe'], [
+            {'classe': '2M', 'moyenne': 15.0, 'nb_evaluations': 2}
+        ])
+        self.assertEqual(response.context['moyennes_eleve'][0]['moyenne'], 15.0)
+        self.assertEqual(response.context['moyennes_eleve'][0]['nb_evaluations'], 2)
+        self.assertContains(response, 'Moyenne par élève')
+
+    def test_remise_a_zero_connexions_seulement_apres_confirmation(self):
+        ConnexionEleve.objects.create(user=self.eleve_user)
+        ConnexionEleve.objects.create(user=self.eleve_user)
+
+        url = reverse('core:statistiques_reinitialiser_connexions')
+        response_sans_confirmation = self.client.post(url)
+        self.assertEqual(response_sans_confirmation.status_code, 302)
+        self.assertEqual(ConnexionEleve.objects.filter(user=self.eleve_user).count(), 2)
+
+        response_confirmee = self.client.post(url, {'confirmation': 'oui'})
+        self.assertEqual(response_confirmee.status_code, 302)
+        self.assertEqual(ConnexionEleve.objects.count(), 0)
+        self.assertTrue(ProfilUtilisateur.objects.filter(pk=self.eleve.pk).exists())
 
 
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')

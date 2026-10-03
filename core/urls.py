@@ -198,6 +198,7 @@ urlpatterns = [
     path('archives/<int:pk>/supprimer/', views.supprimer_archive, name='supprimer_archive'),
     path('archives/<int:pk>/',           views.archive_detail,    name='archive_detail'),
     path('statistiques/',                views.statistiques,      name='statistiques'),
+    path('statistiques/connexions/reinitialiser/', views.statistiques_reinitialiser_connexions, name='statistiques_reinitialiser_connexions'),
 
     # ═══════════════════════════════════════
     # API AJAX

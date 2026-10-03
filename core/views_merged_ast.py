@@ -2066,6 +2066,71 @@ def _stats_notes_par_travail():
     return result
 
 
+def _annee_scolaire_pour_date(date_value):
+    if not date_value:
+        return ''
+    debut = date_value.year if date_value.month >= 9 else date_value.year - 1
+    return f'{debut}-{debut + 1}'
+
+
+def _stats_moyennes_evaluations(annee_selectionnee=''):
+    evaluations = list(
+        FicheEvaluation.objects.filter(validee=True, note_sur_20__isnull=False)
+        .select_related('eleve__user', 'eleve__classe', 'fiche_contrat__classe')
+        .order_by('fiche_contrat__classe__nom', 'eleve__user__last_name', 'eleve__user__first_name')
+    )
+    annee_par_evaluation = {}
+    annees = set()
+    for evaluation in evaluations:
+        fiche = evaluation.fiche_contrat
+        date_evaluation = fiche.date_tp or fiche.date_creation.date()
+        annee = _annee_scolaire_pour_date(date_evaluation)
+        annee_par_evaluation[evaluation.id] = annee
+        if annee:
+            annees.add(annee)
+
+    annees = sorted(annees, reverse=True)
+    if annee_selectionnee not in annees:
+        annee_selectionnee = ''
+
+    classes, eleves = {}, {}
+    for evaluation in evaluations:
+        if annee_selectionnee and annee_par_evaluation[evaluation.id] != annee_selectionnee:
+            continue
+        classe_nom = evaluation.fiche_contrat.classe.nom
+        note = float(evaluation.note_sur_20)
+        classes.setdefault(classe_nom, []).append(note)
+        eleve = evaluation.eleve
+        key = (classe_nom, eleve.id)
+        row = eleves.setdefault(key, {
+            'classe': classe_nom,
+            'nom': '' if eleve.est_sorti else eleve.user.last_name.upper(),
+            'prenom': '' if eleve.est_sorti else eleve.user.first_name,
+            'anonyme': eleve.est_sorti,
+            'total': 0.0,
+            'nb_evaluations': 0,
+        })
+        row['total'] += note
+        row['nb_evaluations'] += 1
+
+    moyennes_classe = [
+        {'classe': classe, 'moyenne': round(sum(notes) / len(notes), 2), 'nb_evaluations': len(notes)}
+        for classe, notes in sorted(classes.items())
+    ]
+    moyennes_eleve = []
+    for row in eleves.values():
+        moyennes_eleve.append({
+            'classe': row['classe'],
+            'nom': row['nom'],
+            'prenom': row['prenom'],
+            'anonyme': row['anonyme'],
+            'moyenne': round(row['total'] / row['nb_evaluations'], 2),
+            'nb_evaluations': row['nb_evaluations'],
+        })
+    moyennes_eleve.sort(key=lambda row: (row['classe'], row['anonyme'], row['nom'], row['prenom']))
+    return annees, annee_selectionnee, moyennes_classe, moyennes_eleve
+
+
 def _stats_eleves_a_risque():
     """
     Élèves actifs avec 0 connexion ET 0 rendu.
@@ -2149,57 +2214,6 @@ def _stats_connexions():
     return data
 
 
-
-    """
-    Retourne QUATRE listes d'élèves sortis catégorisés :
-    - sorties_decrocheurs    : décrocheurs, exclus, échecs, décès, sans emploi
-    - sorties_diplomes       : diplômes obtenus
-    - sorties_post_formation : post-formation (poursuite BTS/Bac, travail)
-    - sorties_reorientation  : orientation AFB, réorientation interne/externe
-    """
-    LABELS = dict(ProfilUtilisateur.RAISON_SORTIE)
-    
-    # Nouvelles catégories strictes
-    DIPLOMES = {'cap_mention', 'cap_sans_mention', 'bac_pro_mention', 'bac_pro_sans_mention'}
-    DECROCHEURS = {'decrocheur', 'exclusion', 'echec_cap', 'echec_bac_pro', 'deces', 'raison_inconnue', 'sans_emploi'}
-    REORIENTATIONS = {'reorientation_interne', 'reorientation_externe', 'orientation_afb', 'retour_pays'}
-    # Tout ce qui n'est pas dans ces 3 listes sera considéré comme "Post-formation" (travail, bts, etc.)
-
-    sortis = ProfilUtilisateur.objects.filter(
-        type_utilisateur='eleve', est_sorti=True
-    ).select_related('user', 'classe', 'etablissement_origine').order_by('-date_sortie', 'user__last_name')
-
-    MENTION_LABELS = {'AB': 'Assez Bien', 'B': 'Bien', 'TB': 'Très Bien'}
-
-    decrocheurs, diplomes, post_formation, reorientations = [], [], [], []
-    
-    for p in sortis:
-        r = p.raison_sortie or ''
-        etab_orig = p.etablissement_origine.nom if p.etablissement_origine else getattr(p, 'etablissement_origine_autre', '')
-        
-        entry = {
-            'nom': p.user.last_name.upper(),
-            'prenom': p.user.first_name,
-            'classe': p.classe.nom if p.classe else '—',
-            'annee': p.annee_scolaire_sortie or '—',
-            'raison': LABELS.get(r, r or '—'),
-            'commentaire': getattr(p, 'commentaire_sortie', '') or '',
-            'mention': MENTION_LABELS.get(getattr(p, 'mention_obtenue', '') or '', ''),
-            'etablissement_orig': etab_orig or 'Non renseigné',
-        }
-        
-        if r in DIPLOMES:
-            diplomes.append(entry)
-        elif r in REORIENTATIONS:
-            reorientations.append(entry)
-        elif r in DECROCHEURS:
-            decrocheurs.append(entry)
-        else: # Post-formation
-            post_formation.append(entry)
-
-    return decrocheurs, diplomes, post_formation, reorientations
-
-
 def _stats_sorties_detail():
     """Retourne 4 listes catégorisées pour les statistiques."""
     LABELS = dict(ProfilUtilisateur.RAISON_SORTIE)
@@ -2207,17 +2221,17 @@ def _stats_sorties_detail():
     DECROCHEURS = {'decrocheur', 'exclusion', 'echec_cap', 'echec_bac_pro', 'deces', 'raison_inconnue', 'sans_emploi'}
     REORIENTATIONS = {'reorientation_interne', 'reorientation_externe', 'orientation_afb', 'retour_pays'}
 
-    sortis = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).select_related('user', 'classe', 'etablissement_origine').order_by('-date_sortie', 'user__last_name')
+    sortis = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).select_related('classe', 'etablissement_origine').order_by('-date_sortie')
+    diplomes_par_eleve = {}
+    for diplome in DiplomeEleve.objects.filter(eleve__est_sorti=True).select_related('eleve'):
+        diplomes_par_eleve.setdefault(diplome.eleve_id, []).append(diplome)
     MENTION_LABELS = {'AB': 'Assez Bien', 'B': 'Bien', 'TB': 'Très Bien'}
 
     decrocheurs, diplomes, post_formation, reorientations = [], [], [], []
-    
     for p in sortis:
         r = p.raison_sortie or ''
         etab_orig = p.etablissement_origine.nom if p.etablissement_origine else getattr(p, 'etablissement_origine_autre', '')
         entry = {
-            'nom': p.user.last_name.upper(),
-            'prenom': p.user.first_name,
             'classe': p.classe.nom if p.classe else '—',
             'annee': p.annee_scolaire_sortie or '—',
             'raison': LABELS.get(r, r or '—'),
@@ -2225,10 +2239,25 @@ def _stats_sorties_detail():
             'mention': MENTION_LABELS.get(getattr(p, 'mention_obtenue', '') or '', ''),
             'etablissement_orig': etab_orig or 'Non renseigné',
         }
-        if r in DIPLOMES: diplomes.append(entry)
-        elif r in REORIENTATIONS: reorientations.append(entry)
-        elif r in DECROCHEURS: decrocheurs.append(entry)
-        else: post_formation.append(entry)
+        diplomes_eleve = diplomes_par_eleve.get(p.id, [])
+        if diplomes_eleve:
+            for diplome in diplomes_eleve:
+                diplomes.append({
+                    **entry,
+                    'classe': diplome.classe or entry['classe'],
+                    'annee': diplome.annee_scolaire or entry['annee'],
+                    'raison': diplome.get_diplome_display(),
+                    'mention': MENTION_LABELS.get(diplome.mention, ''),
+                })
+        elif r in DIPLOMES:
+            diplomes.append(entry)
+
+        if r in REORIENTATIONS:
+            reorientations.append(entry)
+        elif r in DECROCHEURS:
+            decrocheurs.append(entry)
+        elif r not in DIPLOMES:
+            post_formation.append(entry)
 
     return decrocheurs, diplomes, post_formation, reorientations
 
@@ -2244,7 +2273,7 @@ def _stats_sorties_charts():
 
     sortis = ProfilUtilisateur.objects.filter(
         type_utilisateur='eleve', est_sorti=True, date_sortie__isnull=False
-    ).values('raison_sortie', 'annee_scolaire_sortie')
+    ).values('id', 'raison_sortie', 'annee_scolaire_sortie')
 
     dec_by_year = {}
     dipl_by_year = {}
@@ -2257,10 +2286,11 @@ def _stats_sorties_charts():
         'travail_formation': 'Travaille (formation)',
         'travail_hors_formation': 'Travaille (autre)',
         'apprentissage': 'Apprentissage',
-        'reorientation_interne': 'Réorientation',
-        'reorientation_externe': 'Réorientation',
-        'orientation_afb': '1ère AFB',
     }
+
+    diplomes_par_eleve = {}
+    for diplome in DiplomeEleve.objects.select_related('eleve'):
+        diplomes_par_eleve.setdefault(diplome.eleve_id, []).append(diplome)
 
     for s in sortis:
         r = s['raison_sortie'] or ''
@@ -2268,16 +2298,35 @@ def _stats_sorties_charts():
         
         if r in DECROCHEURS:
             dec_by_year[annee] = dec_by_year.get(annee, 0) + 1
-        elif r in DIPLOMES:
-            if annee not in dipl_by_year:
-                dipl_by_year[annee] = {'cap_mention': 0, 'cap_sans': 0, 'bp_mention': 0, 'bp_sans': 0}
-            if r == 'cap_mention':        dipl_by_year[annee]['cap_mention'] += 1
-            elif r == 'cap_sans_mention': dipl_by_year[annee]['cap_sans'] += 1
-            elif r == 'bac_pro_mention':  dipl_by_year[annee]['bp_mention'] += 1
-            elif r == 'bac_pro_sans_mention': dipl_by_year[annee]['bp_sans'] += 1
         elif r in POSTFORM_LABELS:
             lbl = POSTFORM_LABELS[r]
             postform_totals[lbl] = postform_totals.get(lbl, 0) + 1
+
+    diplomes_enregistres = set()
+    for eleve_id, diplomes_eleve in diplomes_par_eleve.items():
+        for diplome in diplomes_eleve:
+            annee = diplome.annee_scolaire or 'Inconnue'
+            if annee not in dipl_by_year:
+                dipl_by_year[annee] = {'cap_mention': 0, 'cap_sans': 0, 'bp_mention': 0, 'bp_sans': 0}
+            cle = ('cap' if diplome.diplome == 'cap' else 'bp') + ('_mention' if diplome.mention else '_sans')
+            dipl_by_year[annee][cle] += 1
+        diplomes_enregistres.add(eleve_id)
+
+    legacy_diplomes = ProfilUtilisateur.objects.filter(
+        type_utilisateur='eleve', est_sorti=True, raison_sortie__in=DIPLOMES
+    ).exclude(id__in=diplomes_enregistres).values('id', 'raison_sortie', 'annee_scolaire_sortie')
+    for legacy in legacy_diplomes:
+        r = legacy['raison_sortie']
+        annee = legacy['annee_scolaire_sortie'] or 'Inconnue'
+        if annee not in dipl_by_year:
+            dipl_by_year[annee] = {'cap_mention': 0, 'cap_sans': 0, 'bp_mention': 0, 'bp_sans': 0}
+        cle = {
+            'cap_mention': 'cap_mention',
+            'cap_sans_mention': 'cap_sans',
+            'bac_pro_mention': 'bp_mention',
+            'bac_pro_sans_mention': 'bp_sans',
+        }[r]
+        dipl_by_year[annee][cle] += 1
 
     all_years = sorted(set(list(dec_by_year.keys()) + list(dipl_by_year.keys())))
 
@@ -2306,15 +2355,18 @@ def _stats_sortis_enriched():
     ).select_related('etablissement_origine')
 
     annees = sorted(
-        {p.annee_scolaire_sortie for p in sortis if p.annee_scolaire_sortie},
+        {p.annee_scolaire_sortie for p in sortis if p.annee_scolaire_sortie}
+        | set(DiplomeEleve.objects.exclude(annee_scolaire='').values_list('annee_scolaire', flat=True)),
         reverse=True
     )
 
     # Top collèges / lycées d'origine parmi les diplômés
     etabs = {}
-    for p in sortis:
-        if p.raison_sortie not in DIPLOMES:
-            continue
+    diplomes_ids = set(DiplomeEleve.objects.values_list('eleve_id', flat=True))
+    diplomes_legacy = set(sortis.filter(raison_sortie__in=DIPLOMES).values_list('id', flat=True))
+    diplomes_ids.update(diplomes_legacy)
+    diplomes = ProfilUtilisateur.objects.filter(id__in=diplomes_ids).select_related('etablissement_origine')
+    for p in diplomes:
         nom = (
             p.etablissement_origine.nom
             if p.etablissement_origine
@@ -2387,8 +2439,8 @@ def _stats_pfmp():
         eleves_data = []
         for eleve in eleves:
             ligne = {
-                'nom': eleve.user.last_name.upper(),
-                'prenom': eleve.user.first_name,
+                'nom': 'Ancien élève' if eleve.est_sorti else eleve.user.last_name.upper(),
+                'prenom': '' if eleve.est_sorti else eleve.user.first_name,
                 'suivis': [],
                 'total_effectues': 0,
                 'total_justifies': 0,
@@ -2430,19 +2482,26 @@ def _stats_profil_origine():
     MENTIONS    = {'cap_mention', 'bac_pro_mention'}
     DECROCHEURS = {'decrocheur', 'echec_cap', 'echec_bac_pro', 'exclusion'}
 
-    sortis = ProfilUtilisateur.objects.filter(
-        type_utilisateur='eleve', est_sorti=True
-    ).select_related('etablissement_origine')
+    diplomes_par_eleve = set(DiplomeEleve.objects.values_list('eleve_id', flat=True))
+    mentions_par_eleve = set(
+        DiplomeEleve.objects.exclude(mention='').values_list('eleve_id', flat=True)
+    )
+    profils_avec_resultat = ProfilUtilisateur.objects.filter(
+        Q(type_utilisateur='eleve', est_sorti=True)
+        | Q(type_utilisateur='eleve', diplomes_obtenus__isnull=False)
+    ).select_related('etablissement_origine').distinct()
 
     def agréger(keyfn):
         data = {}
-        for p in sortis:
+        for p in profils_avec_resultat:
             key = keyfn(p) or 'Non renseigné'
             if key not in data:
                 data[key] = {'total': 0, 'diplomes': 0, 'mention': 0, 'decrocheurs': 0}
             data[key]['total'] += 1
-            if p.raison_sortie in DIPLOMES:    data[key]['diplomes'] += 1
-            if p.raison_sortie in MENTIONS:    data[key]['mention'] += 1
+            a_obtenu_diplome = p.id in diplomes_par_eleve or p.raison_sortie in DIPLOMES
+            a_obtenu_mention = p.id in mentions_par_eleve or p.raison_sortie in MENTIONS
+            if a_obtenu_diplome: data[key]['diplomes'] += 1
+            if a_obtenu_mention: data[key]['mention'] += 1
             if p.raison_sortie in DECROCHEURS: data[key]['decrocheurs'] += 1
         result = []
         for k, v in sorted(data.items(), key=lambda x: -x[1]['total']):
@@ -2478,6 +2537,20 @@ def _stats_profil_origine():
     return par_college, par_classe_orig, par_diplome_entre, par_ville
 
 
+@login_required
+@user_passes_test(est_professeur)
+@require_POST
+def statistiques_reinitialiser_connexions(request):
+    if request.POST.get('confirmation') != 'oui':
+        messages.error(request, 'Cochez la confirmation pour remettre les compteurs à zéro.')
+        return redirect('core:statistiques')
+
+    from .models import ConnexionEleve
+    nombre_supprime, _ = ConnexionEleve.objects.all().delete()
+    messages.success(request, f'Compteurs de connexions remis à zéro ({nombre_supprime} événement(s) supprimé(s)).')
+    return redirect('core:statistiques')
+
+
 def statistiques(request):
     today = date.today()
 
@@ -2488,8 +2561,8 @@ def statistiques(request):
     for diplome in DiplomeEleve.objects.select_related('eleve__user', 'eleve__classe'):
         diplomes_obtenus_par_type[diplome.get_diplome_display()] += 1
         diplomes_obtenus_data.append({
-            'nom': diplome.eleve.user.last_name.upper(),
-            'prenom': diplome.eleve.user.first_name,
+            'nom': '' if diplome.eleve.est_sorti else diplome.eleve.user.last_name.upper(),
+            'prenom': '' if diplome.eleve.est_sorti else diplome.eleve.user.first_name,
             'classe': diplome.classe or (diplome.eleve.classe.nom if diplome.eleve.classe else '—'),
             'annee': diplome.annee_scolaire,
             'diplome': diplome.get_diplome_display(),
@@ -2509,6 +2582,12 @@ def statistiques(request):
     connexions_30j     = _stats_connexions_30j()
     pfmp_stats         = _stats_pfmp()
     annees_sortis, top_etabs_diplomes_json, poursuite_json = _stats_sortis_enriched()
+    annee_sorties_selectionnee = request.GET.get('annee_sortie', '')
+    if annee_sorties_selectionnee not in annees_sortis:
+        annee_sorties_selectionnee = ''
+    annees_evaluations, annee_moyennes_selectionnee, moyennes_classe, moyennes_eleve = _stats_moyennes_evaluations(
+        request.GET.get('annee_moyennes', '')
+    )
     orig_college, orig_classe, orig_diplome, orig_ville = _stats_profil_origine()
     # gender stats
     nb_garcons = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False, sexe='M').count()
@@ -2516,6 +2595,8 @@ def statistiques(request):
     total_gender = nb_garcons + nb_filles
     pc_garcons = f"{nb_garcons*100/total_gender:.0f}" if total_gender else '0'
     pc_filles  = f"{nb_filles*100/total_gender:.0f}" if total_gender else '0'
+    from .models import ConnexionEleve
+    nb_connexions_total = ConnexionEleve.objects.count()
 
     # Statistiques spécifiques Seconde Pro (niveau Bac Pro)
     bacpro_active_qs = ProfilUtilisateur.objects.filter(
@@ -2560,6 +2641,10 @@ def statistiques(request):
         'sorties_reorientation': reorientation_data,
         'diplomes_obtenus_data': diplomes_obtenus_data,
         'diplomes_obtenus_par_type': diplomes_obtenus_par_type,
+        'moyennes_classe': moyennes_classe,
+        'moyennes_eleve': moyennes_eleve,
+        'annees_evaluations': annees_evaluations,
+        'annee_moyennes_selectionnee': annee_moyennes_selectionnee,
         'decrocheurs_par_annee_json': dec_annee_data,
         'diplomes_par_annee_json': dipl_annee_data,
         'postformation_cats_json': postform_cats_data,
@@ -2571,6 +2656,7 @@ def statistiques(request):
         'pfmp_stats': pfmp_stats,
         # Stats sortis enrichies
         'annees_sortis': annees_sortis,
+        'annee_sorties_selectionnee': annee_sorties_selectionnee,
         'top_etabs_diplomes_json': top_etabs_diplomes_json,
         'poursuite_json': poursuite_json,
         # Corrélations profil d'origine → résultats
@@ -2584,6 +2670,7 @@ def statistiques(request):
         'nb_filles': nb_filles,
         'pc_garcons': pc_garcons,
         'pc_filles': pc_filles,
+        'nb_connexions_total': nb_connexions_total,
         # Seconde Pro (camembert + détail par classe)
         'inscrits_bacpro': inscrits_bacpro,
         'abandons_bacpro': abandons_bacpro,
