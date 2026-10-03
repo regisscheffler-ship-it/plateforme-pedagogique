@@ -182,10 +182,9 @@
     <form method="post" class="form-card">
         {% csrf_token %}
 
-        <!-- Info non modifiable -->
-        <div class="static-info">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <span>Identifiant système : <strong>{{ profil.user.username }}</strong></span>
+        <div class="form-group">
+            <label for="username">Identifiant de connexion</label>
+            <input type="text" id="username" name="username" value="{{ profil.user.username }}" required autocomplete="username">
         </div>
 
         <!-- Section Identité -->
@@ -197,11 +196,11 @@
         <div class="form-grid">
             <div class="form-group">
                 <label for="first_name">Prénom</label>
-                <input type="text" id="first_name" name="first_name" value="{{ profil.user.first_name }}" required>
+                <input type="text" id="first_name" name="first_name" value="{{ profil.user.first_name }}">
             </div>
             <div class="form-group">
                 <label for="last_name">Nom</label>
-                <input type="text" id="last_name" name="last_name" value="{{ profil.user.last_name }}" required>
+                <input type="text" id="last_name" name="last_name" value="{{ profil.user.last_name }}">
             </div>
         </div>
 

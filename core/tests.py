@@ -9,6 +9,57 @@ from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheCon
 from django.core.files.base import ContentFile
 
 
+class TestStudentAccountUpdates(TestCase):
+    def test_modifier_eleve_change_identifiant_et_mot_de_passe_sans_noms(self):
+        user = User.objects.create_user(username='eleve_avant', password='ancien-mot-de-passe')
+        profil = ProfilUtilisateur.objects.create(user=user, type_utilisateur='eleve')
+
+        response = self.client.post(reverse('core:modifier_eleve', kwargs={'pk': profil.pk}), {
+            'username': 'eleve_apres',
+            'first_name': '',
+            'last_name': '',
+            'new_password': 'nouveau-mot-de-passe',
+        })
+
+        user.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(user.username, 'eleve_apres')
+        self.assertEqual(user.first_name, '')
+        self.assertEqual(user.last_name, '')
+        self.assertTrue(user.check_password('nouveau-mot-de-passe'))
+
+    def test_modifier_eleve_refuse_un_identifiant_deja_utilise(self):
+        user = User.objects.create_user(username='eleve_avant', password='mot-de-passe')
+        profil = ProfilUtilisateur.objects.create(user=user, type_utilisateur='eleve')
+        User.objects.create_user(username='identifiant_pris', password='mot-de-passe')
+
+        response = self.client.post(reverse('core:modifier_eleve', kwargs={'pk': profil.pk}), {
+            'username': 'identifiant_pris',
+            'first_name': '',
+            'last_name': '',
+        })
+
+        user.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(user.username, 'eleve_avant')
+
+    def test_inscription_eleve_accepte_nom_et_prenom_vides(self):
+        niveau = Niveau.objects.create(nom='CAP', description='CAP')
+        classe = Classe.objects.create(nom='2M', niveau=niveau, description='Classe test')
+
+        response = self.client.post(reverse('core:inscription_eleve'), {
+            'username': 'eleve_sans_nom',
+            'password1': 'mot-de-passe-test',
+            'password2': 'mot-de-passe-test',
+            'classe': classe.pk,
+        })
+
+        user = User.objects.get(username='eleve_sans_nom')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(user.first_name, '')
+        self.assertEqual(user.last_name, '')
+
+
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
 class TestURLsAccessibility(TestCase):
     """Teste si toutes les URLs sont accessibles sans erreur 500"""

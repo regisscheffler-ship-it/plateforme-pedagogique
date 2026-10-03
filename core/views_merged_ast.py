@@ -584,13 +584,16 @@ def login_eleve_view(request):
 def inscription_eleve(request):
     classes = Classe.objects.all()
     if request.method == 'POST':
-        nom = request.POST.get('nom')
-        prenom = request.POST.get('prenom')
+        nom = request.POST.get('nom', '').strip()
+        prenom = request.POST.get('prenom', '').strip()
         date_naissance = request.POST.get('date_naissance')
         classe_id = request.POST.get('classe')
-        username = request.POST.get('username')
+        username = request.POST.get('username', '').strip()
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
+        if not username:
+            messages.error(request, '❌ Veuillez saisir un identifiant.')
+            return render(request, 'core/inscription_eleve.html', {'classes': classes})
         if password1 != password2:
             messages.error(request, '❌ Les mots de passe ne correspondent pas.')
             return render(request, 'core/inscription_eleve.html', {'classes': classes})
@@ -611,6 +614,7 @@ def inscription_eleve(request):
                 date_naissance=date_naissance if date_naissance else None,
                 compte_approuve=False, annee_entree=str(datetime.now().year)
             )
+            nom_affiche = f'{prenom} {nom}'.strip() or username
             # Notifier tous les professeurs qu'un élève attend l'approbation
             profs = ProfilUtilisateur.objects.filter(
                 type_utilisateur='professeur'
@@ -620,7 +624,7 @@ def inscription_eleve(request):
                     destinataire=prof.user,
                     type_notification='approbation_eleve',
                     titre='🎓 Nouvelle demande d\'inscription',
-                    message=f'L\'élève {prenom} {nom} ({username}) demande l\'accès à la plateforme dans la classe {classe.nom}.',
+                    message=f'L\'élève {nom_affiche} ({username}) demande l\'accès à la plateforme dans la classe {classe.nom}.',
                     lien='/gestion/eleves/approbations/',
                 )
             messages.success(request, "✅ Demande d'inscription envoyée !")
@@ -691,15 +695,17 @@ def classe_detail(request, pk):
 
 def gestion_eleves(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
+        username = request.POST.get('username', '').strip()
         if User.objects.filter(username=username).exists():
             messages.error(request, f"❌ L'utilisateur {username} existe déjà !")
+        elif not username:
+            messages.error(request, "❌ L'identifiant est obligatoire.")
         else:
             user = User.objects.create_user(
                 username=username,
                 password=request.POST.get('password'),
-                first_name=request.POST.get('firstname'),
-                last_name=request.POST.get('lastname'),
+                first_name=request.POST.get('firstname', '').strip(),
+                last_name=request.POST.get('lastname', '').strip(),
                 email=request.POST.get('email', '')
             )
             classe = Classe.objects.get(id=request.POST.get('classe')) if request.POST.get('classe') else None
@@ -810,8 +816,16 @@ def muter_eleve(request, pk):
 def modifier_eleve(request, pk):
     profil = get_object_or_404(ProfilUtilisateur, id=pk)
     if request.method == 'POST':
-        profil.user.first_name = request.POST.get('first_name') or request.POST.get('firstname', '')
-        profil.user.last_name  = request.POST.get('last_name')  or request.POST.get('lastname', '')
+        username = request.POST.get('username', profil.user.username).strip()
+        if not username:
+            messages.error(request, "❌ L'identifiant ne peut pas être vide.")
+            return render(request, 'core/modifier_eleve.html', {'profil': profil, 'classes': Classe.objects.all().order_by('nom')})
+        if User.objects.filter(username=username).exclude(pk=profil.user_id).exists():
+            messages.error(request, f"❌ L'identifiant {username} est déjà utilisé.")
+            return render(request, 'core/modifier_eleve.html', {'profil': profil, 'classes': Classe.objects.all().order_by('nom')})
+        profil.user.username = username
+        profil.user.first_name = (request.POST.get('first_name') or request.POST.get('firstname', '')).strip()
+        profil.user.last_name  = (request.POST.get('last_name') or request.POST.get('lastname', '')).strip()
         profil.user.email      = request.POST.get('email', '')
         if request.POST.get('new_password'):
             profil.user.set_password(request.POST.get('new_password'))
