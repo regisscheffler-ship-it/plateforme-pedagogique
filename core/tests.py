@@ -5,8 +5,9 @@ Tests automatiques des URLs de la plateforme pédagogique
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
-from datetime import date
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve
+from datetime import date, datetime
+from django.utils import timezone
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
@@ -289,6 +290,40 @@ class TestEvaluationListFilters(TestCase):
             referentiel=referentiel, classe=self.classe_a, titre_tp='TP 2M février',
             date_tp=date(2026, 2, 10), createur=self.prof_user,
         )
+        self.qcm_a = QCM.objects.create(
+            titre='QCM 2M janvier', createur=self.prof_user,
+            date_limite=timezone.make_aware(datetime(2026, 1, 28)),
+        )
+        self.qcm_a.classes.add(self.classe_a)
+        QCM.objects.filter(pk=self.qcm_a.pk).update(
+            date_creation=timezone.make_aware(datetime(2026, 1, 12, 9))
+        )
+        self.qcm_b = QCM.objects.create(
+            titre='QCM 1M janvier', createur=self.prof_user,
+            date_limite=timezone.make_aware(datetime(2026, 1, 28)),
+        )
+        self.qcm_b.classes.add(self.classe_b)
+        QCM.objects.filter(pk=self.qcm_b.pk).update(
+            date_creation=timezone.make_aware(datetime(2026, 1, 20, 9))
+        )
+        self.qcm_fevrier = QCM.objects.create(
+            titre='QCM 2M février', createur=self.prof_user,
+            date_limite=timezone.make_aware(datetime(2026, 2, 28)),
+        )
+        self.qcm_fevrier.classes.add(self.classe_a)
+        QCM.objects.filter(pk=self.qcm_fevrier.pk).update(
+            date_creation=timezone.make_aware(datetime(2026, 2, 10, 9))
+        )
+        self.qcm_autre_classe = QCM.objects.create(
+            titre='QCM classe sans fiche TP', createur=self.prof_user,
+            date_limite=timezone.make_aware(datetime(2026, 1, 28)),
+        )
+        self.qcm_autre_classe.classes.add(
+            Classe.objects.create(nom='1B', niveau=niveau)
+        )
+        QCM.objects.filter(pk=self.qcm_autre_classe.pk).update(
+            date_creation=timezone.make_aware(datetime(2026, 1, 15, 9))
+        )
         self.client.force_login(self.prof_user)
 
     def test_filtre_plusieurs_classes_et_plage_dates(self):
@@ -303,6 +338,11 @@ class TestEvaluationListFilters(TestCase):
         self.assertEqual(
             {fiche.pk for fiche in fiches},
             {self.fiche_a_janvier.pk, self.fiche_b_janvier.pk},
+        )
+        qcms = response.context['qcms']
+        self.assertEqual(
+            {qcm.pk for qcm in qcms},
+            {self.qcm_a.pk, self.qcm_b.pk},
         )
         self.assertContains(response, 'Toutes les classes')
         self.assertContains(response, 'Date du TP, à partir du')

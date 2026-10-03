@@ -3741,8 +3741,8 @@ def evaluations_home(request):
             nb_validees += 1
 
     classes_filtres = Classe.objects.filter(
-        fiches_contrat__createur=request.user,
-        fiches_contrat__actif=True,
+        Q(fiches_contrat__createur=request.user, fiches_contrat__actif=True)
+        | Q(qcms__isnull=False)
     ).distinct().order_by('nom')
     selected_class_ids = [
         value for value in request.GET.getlist('classe')
@@ -3772,6 +3772,12 @@ def evaluations_home(request):
     filtres_actifs = bool(selected_class_ids or date_debut_valide or date_fin_valide)
     fiches_recentes = list(fiches_filtrees if filtres_actifs else fiches_filtrees[:10])
     qcms = QCM.objects.annotate(nb_questions=Count('questions')).select_related('theme').prefetch_related('classes').order_by('-date_creation')
+    if selected_class_ids:
+        qcms = qcms.filter(classes__id__in=selected_class_ids).distinct()
+    if date_debut_valide:
+        qcms = qcms.filter(date_creation__date__gte=date_debut_valide)
+    if date_fin_valide:
+        qcms = qcms.filter(date_creation__date__lte=date_fin_valide)
     return render(request, 'core/evaluations_home.html', {
         'nb_fiches_contrat': nb_fiches_contrat,
         'nb_archives': fiches_archivees.count(),
