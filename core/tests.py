@@ -748,6 +748,54 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         self.prof.refresh_from_db()
         self.assertTrue(self.prof.check_password('nouveau-mot-de-passe-123'))
 
+    def test_un_professeur_ne_peut_pas_reinitialiser_le_mot_de_passe_admin(self):
+        admin_protege = User.objects.create_user(
+            username='admin_protege', password='motdepasse-admin-2', is_staff=True,
+            first_name='Admin', last_name='Protégé',
+        )
+        profil_admin_protege = ProfilUtilisateur.objects.create(
+            user=admin_protege, type_utilisateur='professeur', compte_approuve=True,
+        )
+        ancien_hash = admin_protege.password
+
+        self.client.force_login(self.prof)
+        response = self.client.post(reverse('core:gestion_eleves'), {
+            'action': 'reinitialiser_mot_de_passe_professeur',
+            'professeur_id': profil_admin_protege.pk,
+            'nouveau_mot_de_passe': 'mot-de-passe-admin-hacke',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        admin_protege.refresh_from_db()
+        self.assertEqual(admin_protege.password, ancien_hash)
+
+    def test_administrateur_peut_supprimer_un_compte_professeur(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(reverse('core:gestion_eleves'), {
+            'action': 'supprimer_compte_professeur',
+            'professeur_id': self.prof_profil.pk,
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(User.objects.filter(username='prof_simple').exists())
+
+    def test_professeur_ne_peut_pas_supprimer_un_compte_professeur(self):
+        autre_prof = User.objects.create_user(
+            username='autre_prof', password='motdepasse-prof-2',
+            first_name='Claire', last_name='Bernard',
+        )
+        ProfilUtilisateur.objects.create(user=autre_prof, type_utilisateur='professeur', compte_approuve=True)
+
+        self.client.force_login(self.prof)
+        response = self.client.post(reverse('core:gestion_eleves'), {
+            'action': 'supprimer_compte_professeur',
+            'professeur_id': ProfilUtilisateur.objects.get(user=autre_prof).pk,
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(User.objects.filter(username='autre_prof').exists())
+
     def test_creation_de_theme_enregistre_le_createur_et_affiche_sa_couleur(self):
         self.client.force_login(self.prof)
 

@@ -701,7 +701,7 @@ def classe_detail(request, pk):
 def gestion_eleves(request):
     if request.method == 'POST':
         action = request.POST.get('action', 'ajouter_eleve')
-        if action in ('ajouter_professeur', 'reinitialiser_mot_de_passe_professeur') and not (
+        if action in ('ajouter_professeur', 'reinitialiser_mot_de_passe_professeur', 'supprimer_compte_professeur') and not (
             request.user.is_staff or request.user.is_superuser
         ):
             messages.error(request, "❌ Seuls les administrateurs peuvent gérer les comptes professeurs.")
@@ -737,6 +737,12 @@ def gestion_eleves(request):
             except (ProfilUtilisateur.DoesNotExist, ValueError, TypeError):
                 messages.error(request, '❌ Profil professeur introuvable.')
                 return redirect('core:gestion_eleves')
+
+            if profil_prof.user.is_staff or profil_prof.user.is_superuser:
+                if not request.user.is_superuser:
+                    messages.error(request, '❌ Les comptes administrateurs sont protégés et ne peuvent être réinitialisés que par le super-admin.')
+                    return redirect('core:gestion_eleves')
+
             nouveau_mot_de_passe = request.POST.get('nouveau_mot_de_passe', '')
             if not nouveau_mot_de_passe:
                 messages.error(request, '❌ Le nouveau mot de passe est obligatoire.')
@@ -744,6 +750,28 @@ def gestion_eleves(request):
                 profil_prof.user.set_password(nouveau_mot_de_passe)
                 profil_prof.user.save(update_fields=['password'])
                 messages.success(request, f'✅ Mot de passe réinitialisé pour {profil_prof.user.get_full_name() or profil_prof.user.username}.')
+            return redirect('core:gestion_eleves')
+
+        if action == 'supprimer_compte_professeur':
+            try:
+                profil_prof = ProfilUtilisateur.objects.select_related('user').get(
+                    pk=request.POST.get('professeur_id'), type_utilisateur='professeur'
+                )
+            except (ProfilUtilisateur.DoesNotExist, ValueError, TypeError):
+                messages.error(request, '❌ Profil professeur introuvable.')
+                return redirect('core:gestion_eleves')
+
+            if profil_prof.user.is_staff or profil_prof.user.is_superuser:
+                messages.error(request, '❌ Les comptes administrateurs ne peuvent pas être supprimés depuis cette zone.')
+                return redirect('core:gestion_eleves')
+
+            if profil_prof.user == request.user:
+                messages.error(request, '❌ Vous ne pouvez pas supprimer votre propre compte depuis cette interface.')
+                return redirect('core:gestion_eleves')
+
+            username = profil_prof.user.username
+            profil_prof.user.delete()
+            messages.success(request, f'✅ Compte professeur {username} supprimé.')
             return redirect('core:gestion_eleves')
 
         username = request.POST.get('username', '').strip()

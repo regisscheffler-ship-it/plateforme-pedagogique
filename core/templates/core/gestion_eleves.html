@@ -551,13 +551,23 @@
                     <td>{{ professeur.user.username }}</td>
                     <td>{{ professeur.user.email|default:"—" }}</td>
                     <td>
-                        <form method="post" style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="reinitialiser_mot_de_passe_professeur">
-                            <input type="hidden" name="professeur_id" value="{{ professeur.id }}">
-                            <input type="password" name="nouveau_mot_de_passe" required autocomplete="new-password" placeholder="Nouveau mot de passe" aria-label="Nouveau mot de passe pour {{ professeur.user.username }}" style="padding:0.5rem;border:1px solid #cbd5e1;border-radius:6px;">
-                            <button type="submit" class="btn-action btn-edit" onclick="return confirm('Remplacer le mot de passe de ce professeur ?')">Réinitialiser</button>
-                        </form>
+                        <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
+                            <form method="post" style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reinitialiser_mot_de_passe_professeur">
+                                <input type="hidden" name="professeur_id" value="{{ professeur.id }}">
+                                <input type="password" name="nouveau_mot_de_passe" required autocomplete="new-password" placeholder="Nouveau mot de passe" aria-label="Nouveau mot de passe pour {{ professeur.user.username }}" style="padding:0.5rem;border:1px solid #cbd5e1;border-radius:6px;">
+                                <button type="submit" class="btn-action btn-edit" onclick="return confirm('Remplacer le mot de passe de ce professeur ?')">Réinitialiser</button>
+                            </form>
+                            {% if not professeur.user.is_staff and not professeur.user.is_superuser %}
+                            <form method="post" onsubmit="return confirm('Supprimer ce compte professeur ?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="supprimer_compte_professeur">
+                                <input type="hidden" name="professeur_id" value="{{ professeur.id }}">
+                                <button type="submit" class="btn-action btn-delete">Supprimer</button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
