@@ -521,6 +521,52 @@
         </form>
     </div>
 
+    {% if user.is_staff or user.is_superuser %}
+    <div class="form-card" style="border-left-color:#0ea5e9;">
+        <h2 style="color:#075985;">Créer un compte professeur</h2>
+        <p style="margin:-0.8rem 0 1.4rem;color:#64748b;">Ce compte aura les mêmes accès professeur que les autres enseignants.</p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="ajouter_professeur">
+            <div class="form-grid">
+                <div class="form-group"><label for="prof_username">Identifiant *</label><input id="prof_username" name="prof_username" required autocomplete="off"></div>
+                <div class="form-group"><label for="prof_password">Mot de passe initial *</label><input id="prof_password" name="prof_password" type="password" required autocomplete="new-password"></div>
+                <div class="form-group"><label for="prof_first_name">Prénom</label><input id="prof_first_name" name="prof_first_name"></div>
+                <div class="form-group"><label for="prof_last_name">Nom</label><input id="prof_last_name" name="prof_last_name"></div>
+                <div class="form-group"><label for="prof_email">Courriel</label><input id="prof_email" name="prof_email" type="email"></div>
+            </div>
+            <button type="submit" class="btn-submit" style="color:#0369a1;border-color:#0369a1;">Créer le compte professeur</button>
+        </form>
+    </div>
+
+    <div class="table-card" style="border-left-color:#0ea5e9;">
+        <h2 style="color:#075985;">Comptes professeurs et mots de passe</h2>
+        {% if professeurs %}
+        <table>
+            <thead><tr><th>Professeur</th><th>Identifiant</th><th>Courriel</th><th>Réinitialiser le mot de passe</th></tr></thead>
+            <tbody>
+                {% for professeur in professeurs %}
+                <tr>
+                    <td><strong>{{ professeur.user.get_full_name|default:"Nom non renseigné" }}</strong></td>
+                    <td>{{ professeur.user.username }}</td>
+                    <td>{{ professeur.user.email|default:"—" }}</td>
+                    <td>
+                        <form method="post" style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="reinitialiser_mot_de_passe_professeur">
+                            <input type="hidden" name="professeur_id" value="{{ professeur.id }}">
+                            <input type="password" name="nouveau_mot_de_passe" required autocomplete="new-password" placeholder="Nouveau mot de passe" aria-label="Nouveau mot de passe pour {{ professeur.user.username }}" style="padding:0.5rem;border:1px solid #cbd5e1;border-radius:6px;">
+                            <button type="submit" class="btn-action btn-edit" onclick="return confirm('Remplacer le mot de passe de ce professeur ?')">Réinitialiser</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}<div class="empty-state">Aucun compte professeur.</div>{% endif %}
+    </div>
+    {% endif %}
+
     <!-- Liste élèves -->
     <div class="table-card">
         <h2>

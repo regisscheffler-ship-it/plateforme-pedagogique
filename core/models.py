@@ -209,6 +209,10 @@ class ProfilUtilisateur(models.Model):
 # =====================================================
 class Theme(models.Model):
     nom = models.CharField(max_length=200)
+    createur = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='themes_crees', verbose_name='Créé par'
+    )
     classes = models.ManyToManyField(Classe, related_name='themes', blank=True)
     description = models.TextField(blank=True, null=True)
     ressources_html = models.TextField(blank=True, null=True, verbose_name="Ressources intégrées (HTML)")
@@ -226,6 +230,13 @@ class Theme(models.Model):
     def __str__(self):
         classes_str = ", ".join(c.nom for c in self.classes.all()) or "Sans classe"
         return f"{self.nom} - {classes_str}"
+
+    @property
+    def couleur_createur(self):
+        if not self.createur_id:
+            return self.couleur
+        teinte = (self.createur_id * 137.508) % 360
+        return f'hsl({teinte:.0f}, 58%, 44%)'
 
 
 # =====================================================

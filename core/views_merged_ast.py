@@ -700,6 +700,52 @@ def classe_detail(request, pk):
 
 def gestion_eleves(request):
     if request.method == 'POST':
+        action = request.POST.get('action', 'ajouter_eleve')
+        if action in ('ajouter_professeur', 'reinitialiser_mot_de_passe_professeur') and not (
+            request.user.is_staff or request.user.is_superuser
+        ):
+            messages.error(request, "❌ Seuls les administrateurs peuvent gérer les comptes professeurs.")
+            return redirect('core:gestion_eleves')
+
+        if action == 'ajouter_professeur':
+            username = request.POST.get('prof_username', '').strip()
+            password = request.POST.get('prof_password', '')
+            if not username or not password:
+                messages.error(request, "❌ L'identifiant et le mot de passe du professeur sont obligatoires.")
+            elif User.objects.filter(username=username).exists():
+                messages.error(request, f"❌ L'identifiant {username} est déjà utilisé.")
+            else:
+                user = User.objects.create_user(
+                    username=username,
+                    password=password,
+                    first_name=request.POST.get('prof_first_name', '').strip(),
+                    last_name=request.POST.get('prof_last_name', '').strip(),
+                    email=request.POST.get('prof_email', '').strip(),
+                    is_active=True,
+                )
+                ProfilUtilisateur.objects.create(
+                    user=user, type_utilisateur='professeur', compte_approuve=True
+                )
+                messages.success(request, f'✅ Compte professeur créé pour {user.get_full_name() or username}.')
+            return redirect('core:gestion_eleves')
+
+        if action == 'reinitialiser_mot_de_passe_professeur':
+            try:
+                profil_prof = ProfilUtilisateur.objects.select_related('user').get(
+                    pk=request.POST.get('professeur_id'), type_utilisateur='professeur'
+                )
+            except (ProfilUtilisateur.DoesNotExist, ValueError, TypeError):
+                messages.error(request, '❌ Profil professeur introuvable.')
+                return redirect('core:gestion_eleves')
+            nouveau_mot_de_passe = request.POST.get('nouveau_mot_de_passe', '')
+            if not nouveau_mot_de_passe:
+                messages.error(request, '❌ Le nouveau mot de passe est obligatoire.')
+            else:
+                profil_prof.user.set_password(nouveau_mot_de_passe)
+                profil_prof.user.save(update_fields=['password'])
+                messages.success(request, f'✅ Mot de passe réinitialisé pour {profil_prof.user.get_full_name() or profil_prof.user.username}.')
+            return redirect('core:gestion_eleves')
+
         username = request.POST.get('username', '').strip()
         if User.objects.filter(username=username).exists():
             messages.error(request, f"❌ L'utilisateur {username} existe déjà !")
@@ -719,6 +765,8 @@ def gestion_eleves(request):
             return redirect('core:gestion_eleves')
     eleves = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', compte_approuve=True, est_sorti=False)\
         .select_related('user', 'classe').order_by('classe__nom', 'user__last_name')
+    professeurs = ProfilUtilisateur.objects.filter(type_utilisateur='professeur')\
+        .select_related('user').order_by('user__last_name', 'user__first_name')
     nb_eleves_sortis = ProfilUtilisateur.objects.filter(type_utilisateur='eleve', est_sorti=True).count()
     nb_garcons = eleves.filter(sexe='M').count()
     nb_filles  = eleves.filter(sexe='F').count()
@@ -768,6 +816,7 @@ def gestion_eleves(request):
 
     return render(request, 'core/gestion_eleves.html', {
         'eleves': eleves,
+        'professeurs': professeurs,
         'classes': Classe.objects.all().order_by('nom'),
         'eleves_en_attente': ProfilUtilisateur.objects.filter(
             type_utilisateur='eleve', compte_approuve=False, user__is_active=False
@@ -887,9 +936,12 @@ def gestion_themes(request):
     classes = Classe.objects.all().order_by('nom')
     classe_selectionnee = request.GET.get('classe')
     if classe_selectionnee:
-        themes = Theme.objects.filter(classes__id=classe_selectionnee).annotate(nb_dossiers=Count('dossiers'))
+        themes = Theme.objects.filter(classes__id=classe_selectionnee)
     else:
-        themes = Theme.objects.all().annotate(nb_dossiers=Count('dossiers'))
+        themes = Theme.objects.all()
+    themes = themes.select_related('createur').prefetch_related('classes').annotate(
+        nb_dossiers=Count('dossiers', distinct=True)
+    ).order_by('ordre', 'nom')
     return render(request, 'core/gestion_themes.html', {'classes': classes, 'themes': themes, 'classe_selectionnee': classe_selectionnee})
 
 
@@ -902,9 +954,10 @@ def theme_create(request):
             return render(request, 'core/theme_create.html', {'classes': Classe.objects.all()})
         theme = Theme.objects.create(
             nom=nom,
+            createur=request.user,
             description=request.POST.get('description', ''),
             visible_eleves=request.POST.get('visible_eleves') == 'on',
-            ordre=request.POST.get('ordre', 0)
+            ordre=request.POST.get('ordre', 0),
         )
         if classe_ids:
             theme.classes.set(Classe.objects.filter(id__in=classe_ids))
@@ -982,6 +1035,8 @@ def theme_update(request, pk):
             theme.nom = nom
             theme.description = request.POST.get('description', '')
             theme.visible_eleves = request.POST.get('visible_eleves') == 'on'
+            if not theme.createur_id:
+                theme.createur = request.user
             classe_ids = request.POST.getlist('classes')
             theme.classes.set(Classe.objects.filter(id__in=classe_ids))
             theme.save()

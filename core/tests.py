@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from datetime import date, datetime, timedelta
 from django.utils import timezone
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM, Theme
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
@@ -678,6 +678,100 @@ class TestStatisticsImprovements(TestCase):
         self.assertEqual(response_confirmee.status_code, 302)
         self.assertEqual(ConnexionEleve.objects.count(), 0)
         self.assertTrue(ProfilUtilisateur.objects.filter(pk=self.eleve.pk).exists())
+
+
+class TestProfessorAccountsAndThemeOwners(TestCase):
+    def setUp(self):
+        self.niveau = Niveau.objects.create(nom='CAP', description='CAP')
+        self.classe = Classe.objects.create(nom='2M', niveau=self.niveau)
+        self.admin = User.objects.create_user(
+            username='admin_comptes', password='motdepasse-admin', is_staff=True,
+            first_name='Admin', last_name='Site',
+        )
+        ProfilUtilisateur.objects.create(user=self.admin, type_utilisateur='professeur', compte_approuve=True)
+        self.prof = User.objects.create_user(
+            username='prof_simple', password='motdepasse-prof', first_name='Pauline', last_name='Martin',
+        )
+        self.prof_profil = ProfilUtilisateur.objects.create(
+            user=self.prof, type_utilisateur='professeur', compte_approuve=True,
+        )
+
+    def test_administrateur_cree_un_compte_professeur(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(reverse('core:gestion_eleves'), {
+            'action': 'ajouter_professeur',
+            'prof_username': 'nouveau_prof',
+            'prof_password': 'mot-de-passe-sur-123',
+            'prof_first_name': 'Nora',
+            'prof_last_name': 'Durand',
+            'prof_email': 'nora@example.org',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(username='nouveau_prof')
+        self.assertTrue(user.check_password('mot-de-passe-sur-123'))
+        self.assertFalse(user.is_staff)
+        self.assertEqual(user.profil.type_utilisateur, 'professeur')
+        self.assertTrue(user.profil.compte_approuve)
+
+    def test_professeur_ordinaire_ne_peut_pas_creer_ni_reinitialiser(self):
+        self.client.force_login(self.prof)
+
+        creation = self.client.post(reverse('core:gestion_eleves'), {
+            'action': 'ajouter_professeur',
+            'prof_username': 'interdit',
+            'prof_password': 'mot-de-passe-sur-123',
+        })
+        reinitialisation = self.client.post(reverse('core:gestion_eleves'), {
+            'action': 'reinitialiser_mot_de_passe_professeur',
+            'professeur_id': self.prof_profil.pk,
+            'nouveau_mot_de_passe': 'autre-mot-de-passe-123',
+        })
+
+        self.assertEqual(creation.status_code, 302)
+        self.assertEqual(reinitialisation.status_code, 302)
+        self.assertFalse(User.objects.filter(username='interdit').exists())
+        self.prof.refresh_from_db()
+        self.assertTrue(self.prof.check_password('motdepasse-prof'))
+
+    def test_administrateur_reinitialise_le_mot_de_passe_d_un_professeur(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(reverse('core:gestion_eleves'), {
+            'action': 'reinitialiser_mot_de_passe_professeur',
+            'professeur_id': self.prof_profil.pk,
+            'nouveau_mot_de_passe': 'nouveau-mot-de-passe-123',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.prof.refresh_from_db()
+        self.assertTrue(self.prof.check_password('nouveau-mot-de-passe-123'))
+
+    def test_creation_de_theme_enregistre_le_createur_et_affiche_sa_couleur(self):
+        self.client.force_login(self.prof)
+
+        response = self.client.post(reverse('core:theme_create'), {
+            'nom': 'Maçonnerie de Pauline',
+            'classes': [self.classe.pk],
+            'visible_eleves': 'on',
+        })
+        theme = Theme.objects.get(nom='Maçonnerie de Pauline')
+        liste = self.client.get(reverse('core:gestion_themes'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(theme.createur, self.prof)
+        self.assertContains(liste, 'Pauline Martin')
+        self.assertContains(liste, theme.couleur_createur)
+
+    def test_ancien_theme_sans_auteur_est_identifie_comme_equipe(self):
+        Theme.objects.create(nom='Ancien thème')
+        self.client.force_login(self.prof)
+
+        liste = self.client.get(reverse('core:gestion_themes'))
+
+        self.assertContains(liste, 'Ancien thème')
+        self.assertContains(liste, 'Équipe')
 
 
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
