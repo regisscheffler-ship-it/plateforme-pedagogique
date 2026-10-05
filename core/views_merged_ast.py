@@ -895,6 +895,13 @@ def muter_eleve(request, pk):
     })
 
 
+def _synchroniser_classes_theme(theme):
+    classes_ids = set()
+    for dossier in Dossier.objects.filter(theme=theme).prefetch_related('classes'):
+        classes_ids.update(dossier.classes.values_list('pk', flat=True))
+    theme.classes.set(classes_ids)
+
+
 def modifier_eleve(request, pk):
     profil = get_object_or_404(ProfilUtilisateur, id=pk)
     if request.method == 'POST':
@@ -976,7 +983,6 @@ def gestion_themes(request):
 def theme_create(request):
     if request.method == 'POST':
         nom = request.POST.get('nom')
-        classe_ids = request.POST.getlist('classes')
         if not nom:
             messages.error(request, '❌ Le nom du thème est obligatoire.')
             return render(request, 'core/theme_create.html', {'classes': Classe.objects.all()})
@@ -988,8 +994,6 @@ def theme_create(request):
             epingle=request.POST.get('epingle') == 'on',
             ordre=request.POST.get('ordre', 0),
         )
-        if classe_ids:
-            theme.classes.set(Classe.objects.filter(id__in=classe_ids))
         messages.success(request, f'✅ Thème "{theme.nom}" créé !')
         dossier = None
         if request.POST.get('creer_dossier') == 'on':
@@ -1002,6 +1006,7 @@ def theme_create(request):
                     visible_eleves=request.POST.get('dossier_visible') == 'on'
                 )
                 dossier.classes.set(Classe.objects.filter(id__in=request.POST.getlist('dossier_classes')))
+                _synchroniser_classes_theme(theme)
                 messages.success(request, f'📂 Dossier "{dossier.nom}" créé !')
         if dossier and request.POST.get('ajouter_fichier') == 'on':
             fichier_nom = request.POST.get('fichier_nom', '').strip()
@@ -1030,15 +1035,12 @@ def theme_detail(request, pk):
     
     if hasattr(request.user, 'profil') and request.user.profil.est_eleve():
         classe_id = request.user.profil.classe_id
-        if not theme.visible_eleves or (classe_id and not theme.classes.filter(pk=classe_id).exists()):
+        if not theme.visible_eleves or not classe_id or not theme.classes.filter(pk=classe_id).exists():
             messages.error(request, "❌ Vous n'avez pas accès à ce thème.")
             return redirect('core:dashboard_eleve')
-        dossiers = Dossier.objects.filter(theme=theme, actif=True, visible_eleves=True)
-        if classe_id:
-            dossiers = dossiers.filter(Q(classes__isnull=True) | Q(classes=classe_id))
-        else:
-            dossiers = dossiers.filter(classes__isnull=True)
-        dossiers = dossiers.distinct().order_by('ordre', 'nom')
+        dossiers = Dossier.objects.filter(
+            theme=theme, actif=True, visible_eleves=True, classes=classe_id,
+        ).order_by('ordre', 'nom')
     else:
         dossiers = Dossier.objects.filter(theme=theme, actif=True).order_by('ordre', 'nom')
         
@@ -1085,20 +1087,6 @@ def theme_update(request, pk):
                 return redirect('core:theme_update', pk=theme.pk)
 
             with transaction.atomic():
-                classes_cible = list(theme_cible.classes.all())
-                classes_source = list(theme.classes.all())
-
-                dossiers_cible_sans_classe = Dossier.objects.filter(theme=theme_cible, classes__isnull=True).distinct()
-                dossiers_source_sans_classe = Dossier.objects.filter(theme=theme, classes__isnull=True).distinct()
-
-                if classes_cible:
-                    for dossier in dossiers_cible_sans_classe:
-                        dossier.classes.add(*classes_cible)
-                if classes_source:
-                    for dossier in dossiers_source_sans_classe:
-                        dossier.classes.add(*classes_source)
-
-                theme_cible.classes.add(*classes_source)
                 theme_cible.nom = nouveau_nom
                 theme_cible.description = theme_cible.description or theme.description
                 theme_cible.visible_eleves = theme_cible.visible_eleves or theme.visible_eleves
@@ -1108,6 +1096,7 @@ def theme_update(request, pk):
                 Dossier.objects.filter(theme=theme).update(theme=theme_cible)
                 QCM.objects.filter(theme=theme).update(theme=theme_cible)
                 ModeOperatoire.objects.filter(theme=theme).update(theme=theme_cible)
+                _synchroniser_classes_theme(theme_cible)
                 theme.delete()
 
             messages.success(request, f'✅ Fusion effectuée : les dossiers ont été intégrés dans "{theme_cible.nom}".')
@@ -1123,8 +1112,6 @@ def theme_update(request, pk):
             theme.epingle = request.POST.get('epingle') == 'on'
             if not theme.createur_id:
                 theme.createur = request.user
-            classe_ids = request.POST.getlist('classes')
-            theme.classes.set(Classe.objects.filter(id__in=classe_ids))
             theme.save()
             messages.success(request, f'✅ Thème "{theme.nom}" modifié.')
             if request.POST.get('ajouter_ressource') == 'on':
@@ -1199,9 +1186,10 @@ def dossier_create(request, theme_id):
                 visible_eleves=request.POST.get('visible_eleves') == 'on'
             )
             dossier.classes.set(Classe.objects.filter(id__in=request.POST.getlist('classes')))
+            _synchroniser_classes_theme(theme)
             messages.success(request, f'✅ Dossier "{nom}" créé !')
             return redirect('core:theme_detail', pk=theme_id)
-    classes = theme.classes.all() or Classe.objects.all().order_by('nom')
+    classes = Classe.objects.all().order_by('nom')
     return render(request, 'core/dossier_create.html', {'theme': theme, 'classes': classes})
 
 
@@ -1211,15 +1199,8 @@ def dossier_detail(request, pk):
         profil = request.user.profil
         if not profil.est_prof():
             classe_id = profil.classe_id
-            classe_autorisee = (
-                not classe_id or not dossier.theme.classes.exists()
-                or dossier.theme.classes.filter(pk=classe_id).exists()
-            )
-            dossier_classes = dossier.classes.all()
-            dossier_visible_pour_classe = (
-                not dossier_classes.exists()
-                or (classe_id and dossier_classes.filter(pk=classe_id).exists())
-            )
+            classe_autorisee = classe_id and dossier.theme.classes.filter(pk=classe_id).exists()
+            dossier_visible_pour_classe = classe_id and dossier.classes.filter(pk=classe_id).exists()
             if not dossier.visible_eleves or not dossier.theme.visible_eleves or not classe_autorisee or not dossier_visible_pour_classe:
                 messages.error(request, "❌ Ce dossier n'est pas accessible.")
                 return redirect('core:dashboard_eleve')
@@ -1241,9 +1222,10 @@ def dossier_update(request, pk):
         dossier.visible_eleves = request.POST.get('visible_eleves') == 'on'
         dossier.save()
         dossier.classes.set(Classe.objects.filter(id__in=request.POST.getlist('classes')))
+        _synchroniser_classes_theme(dossier.theme)
         messages.success(request, '✅ Dossier modifié !')
         return redirect('core:theme_detail', pk=dossier.theme.id)
-    classes = dossier.theme.classes.all() or Classe.objects.all().order_by('nom')
+    classes = Classe.objects.all().order_by('nom')
     return render(request, 'core/dossier_update.html', {'dossier': dossier, 'classes': classes})
 
 
@@ -1253,6 +1235,7 @@ def dossier_delete(request, pk):
     if request.method == 'POST':
         nom = dossier.nom
         dossier.delete()
+        _synchroniser_classes_theme(dossier.theme)
         messages.success(request, f'✅ Dossier "{nom}" supprimé !')
     return redirect('core:theme_detail', pk=theme_id)
 
@@ -4963,8 +4946,13 @@ def fiche_revision_detail(request, pk):
     fiche = get_object_or_404(FicheRevision, id=pk)
     if hasattr(request.user, 'profil') and request.user.profil.est_eleve():
         classe_eleve = request.user.profil.classe
-        # La fiche est liée à un dossier -> thème -> classes. Vérifier l'appartenance de la classe.
-        if not classe_eleve or not fiche.dossier or not fiche.dossier.theme.classes.filter(pk=classe_eleve.id).exists():
+        if (
+            not classe_eleve
+            or not fiche.dossier
+            or not fiche.dossier.visible_eleves
+            or not fiche.dossier.theme.visible_eleves
+            or not fiche.dossier.classes.filter(pk=classe_eleve.id).exists()
+        ):
             messages.error(request, "❌ Vous n'avez pas accès à cette fiche.")
             return redirect('core:dashboard_eleve')
     cartes = fiche.cartes.all()

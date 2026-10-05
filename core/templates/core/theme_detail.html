@@ -128,6 +128,9 @@
                     </svg>
                 </div>
                 <h1>{{ theme.nom }}</h1>
+                {% if is_prof %}
+                    <span class="badge badge-info">Classes accessibles : {{ theme.classes.all|join:", "|default:"Aucune" }}</span>
+                {% endif %}
             </div>
             {% if theme.description %}
                 <p class="theme-desc">{{ theme.description }}</p>

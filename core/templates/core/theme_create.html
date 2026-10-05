@@ -265,17 +265,6 @@
                         <label>Nom du thème *</label>
                         <input type="text" name="nom" placeholder="Ex: Électronique numérique" required autofocus>
                     </div>
-                    <div class="form-group">
-                        <label>Classes *</label>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.8rem;max-height:200px;overflow:auto;">
-                            {% for classe in classes %}
-                            <label style="display:flex;align-items:center;gap:6px;">
-                                <input type="checkbox" name="classes" value="{{ classe.id }}">
-                                {{ classe.nom }}
-                            </label>
-                            {% endfor %}
-                        </div>
-                    </div>
                 </div>
                 <div class="form-group">
                     <label>Description <span class="badge-optional">Optionnel</span></label>
@@ -335,7 +324,7 @@
                         </label>
                         {% endfor %}
                     </div>
-                    <small style="display:block;color:#6c757d;margin-top:0.5rem;">Sans sélection, le dossier suit les classes autorisées sur le thème.</small>
+                    <small style="display:block;color:#6c757d;margin-top:0.5rem;">Les classes cochées auront accès à ce dossier et au thème.</small>
                 </div>
             </div>
         </div>

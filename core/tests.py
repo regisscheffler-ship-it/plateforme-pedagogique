@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from datetime import date, datetime, timedelta
 from django.utils import timezone
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM, Theme, Dossier
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM, Theme, Dossier, FicheRevision
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
@@ -685,6 +685,7 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         self.niveau = Niveau.objects.create(nom='CAP', description='CAP')
         self.classe = Classe.objects.create(nom='2M', niveau=self.niveau)
         self.classe_b = Classe.objects.create(nom='2B', niveau=self.niveau)
+        self.classe_c = Classe.objects.create(nom='2C', niveau=self.niveau)
         self.admin = User.objects.create_user(
             username='admin_comptes', password='motdepasse-admin', is_staff=True,
             first_name='Admin', last_name='Site',
@@ -837,9 +838,13 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         theme_source = Theme.objects.create(nom='Thème source', createur=self.prof, ordre=2)
         theme_cible.classes.add(self.classe)
         theme_source.classes.add(self.classe_b)
+        dossier_cible = Dossier.objects.create(theme=theme_cible, nom='Dossier cible', ordre=1)
+        dossier_cible.classes.add(self.classe)
         dossier_1 = Dossier.objects.create(theme=theme_source, nom='Dossier A', ordre=1)
         dossier_2 = Dossier.objects.create(theme=theme_source, nom='Dossier B', ordre=2)
+        dossier_sans_classe = Dossier.objects.create(theme=theme_source, nom='Dossier non attribué', ordre=3)
         dossier_1.classes.add(self.classe_b)
+        dossier_2.classes.add(self.classe_b)
 
         self.client.force_login(self.prof)
         response = self.client.post(reverse('core:theme_update', args=[theme_source.pk]), {
@@ -856,17 +861,23 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         self.assertEqual(theme_cible.nom, 'Thème fusionné')
         self.assertFalse(Theme.objects.filter(pk=theme_source.pk).exists())
         self.assertSetEqual(set(theme_cible.classes.all()), {self.classe, self.classe_b})
-        self.assertEqual(list(Dossier.objects.filter(pk__in=[dossier_1.pk, dossier_2.pk]).values_list('theme_id', flat=True)), [theme_cible.pk, theme_cible.pk])
+        self.assertEqual(list(Dossier.objects.filter(pk__in=[dossier_cible.pk, dossier_1.pk, dossier_2.pk, dossier_sans_classe.pk]).values_list('theme_id', flat=True)), [theme_cible.pk, theme_cible.pk, theme_cible.pk, theme_cible.pk])
         self.assertSetEqual(set(dossier_1.classes.all()), {self.classe_b})
         self.assertSetEqual(set(dossier_2.classes.all()), {self.classe_b})
+        self.assertFalse(dossier_sans_classe.classes.exists())
 
     def test_dossiers_peuvent_etre_visibles_selon_la_classe_dans_un_meme_theme(self):
         theme = Theme.objects.create(nom='Thème commun', createur=self.prof, visible_eleves=True)
-        theme.classes.add(self.classe, self.classe_b)
-        dossier_a = Dossier.objects.create(theme=theme, nom='Contenu 2M', visible_eleves=True)
-        dossier_b = Dossier.objects.create(theme=theme, nom='Contenu 2B', visible_eleves=True)
-        dossier_a.classes.add(self.classe)
-        dossier_b.classes.add(self.classe_b)
+        self.client.force_login(self.prof)
+        self.client.post(reverse('core:dossier_create', args=[theme.pk]), {
+            'nom': 'Contenu 2M', 'visible_eleves': 'on', 'classes': [self.classe.pk],
+        })
+        self.client.post(reverse('core:dossier_create', args=[theme.pk]), {
+            'nom': 'Contenu 2B', 'visible_eleves': 'on', 'classes': [self.classe_b.pk],
+        })
+        dossier_a = Dossier.objects.get(theme=theme, nom='Contenu 2M')
+        dossier_b = Dossier.objects.get(theme=theme, nom='Contenu 2B')
+        fiche_b = FicheRevision.objects.create(dossier=dossier_b, titre='Fiche classe 2B', createur=self.prof)
 
         eleve_a = User.objects.create_user(username='eleve_2m', password='motdepasse')
         ProfilUtilisateur.objects.create(user=eleve_a, type_utilisateur='eleve', classe=self.classe)
@@ -874,13 +885,22 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         ProfilUtilisateur.objects.create(user=eleve_b, type_utilisateur='eleve', classe=self.classe_b)
         eleve_sans_classe = User.objects.create_user(username='eleve_sans_classe', password='motdepasse')
         ProfilUtilisateur.objects.create(user=eleve_sans_classe, type_utilisateur='eleve')
+        eleve_c = User.objects.create_user(username='eleve_2c', password='motdepasse')
+        ProfilUtilisateur.objects.create(user=eleve_c, type_utilisateur='eleve', classe=self.classe_c)
 
         self.client.force_login(eleve_a)
+        tableau_a = self.client.get(reverse('core:dashboard_eleve'))
         reponse_a = self.client.get(reverse('core:theme_detail', args=[theme.pk]))
         acces_direct_autorise = self.client.get(reverse('core:dossier_detail', args=[dossier_a.pk]))
         acces_direct_refuse = self.client.get(reverse('core:dossier_detail', args=[dossier_b.pk]))
+        fiche_directe_refusee = self.client.get(reverse('core:fiche_revision_detail', args=[fiche_b.pk]))
         self.client.force_login(eleve_b)
+        tableau_b = self.client.get(reverse('core:dashboard_eleve'))
         reponse_b = self.client.get(reverse('core:theme_detail', args=[theme.pk]))
+        fiche_directe_autorisee = self.client.get(reverse('core:fiche_revision_detail', args=[fiche_b.pk]))
+        self.client.force_login(eleve_c)
+        tableau_c = self.client.get(reverse('core:dashboard_eleve'))
+        acces_theme_refuse = self.client.get(reverse('core:theme_detail', args=[theme.pk]))
         self.client.force_login(eleve_sans_classe)
         acces_direct_sans_classe = self.client.get(reverse('core:dossier_detail', args=[dossier_b.pk]))
 
@@ -888,14 +908,49 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         noms_b = [item['dossier'].nom for item in reponse_b.context['dossiers_avec_fichiers']]
         self.assertEqual(noms_a, ['Contenu 2M'])
         self.assertEqual(noms_b, ['Contenu 2B'])
+        self.assertIn(theme, tableau_a.context['themes'])
+        self.assertIn(theme, tableau_b.context['themes'])
+        self.assertNotIn(theme, tableau_c.context['themes'])
+        self.assertEqual(acces_theme_refuse.status_code, 302)
         self.assertEqual(acces_direct_autorise.status_code, 200)
         self.assertEqual(acces_direct_refuse.status_code, 302)
+        self.assertEqual(fiche_directe_refusee.status_code, 302)
+        self.assertEqual(fiche_directe_autorisee.status_code, 200)
         self.assertEqual(acces_direct_sans_classe.status_code, 302)
+
+    def test_theme_est_visible_par_l_union_des_classes_des_dossiers(self):
+        theme = Theme.objects.create(nom='Thème dérivé', createur=self.prof, visible_eleves=True)
+        self.client.force_login(self.prof)
+        self.client.post(reverse('core:dossier_create', args=[theme.pk]), {
+            'nom': 'Dossier 2M', 'visible_eleves': 'on', 'classes': [self.classe.pk],
+        })
+        self.client.post(reverse('core:dossier_create', args=[theme.pk]), {
+            'nom': 'Dossier 2B', 'visible_eleves': 'on', 'classes': [self.classe_b.pk],
+        })
+
+        theme.refresh_from_db()
+        self.assertSetEqual(set(theme.classes.all()), {self.classe, self.classe_b})
+
+        eleve = User.objects.create_user(username='eleve_theme_2b', password='motdepasse')
+        ProfilUtilisateur.objects.create(user=eleve, type_utilisateur='eleve', classe=self.classe_b)
+        self.client.force_login(self.prof)
+        page_prof = self.client.get(reverse('core:theme_detail', args=[theme.pk]))
+        self.assertContains(page_prof, 'Classes accessibles')
+        self.assertContains(page_prof, '2M')
+        self.assertContains(page_prof, '2B')
+
+        self.client.force_login(eleve)
+        response = self.client.get(reverse('core:theme_detail', args=[theme.pk]))
+
+        self.assertEqual(response.status_code, 200)
 
     def test_creation_dossier_enregistre_les_classes_selectionnees(self):
         theme = Theme.objects.create(nom='Thème classes', createur=self.prof)
-        theme.classes.add(self.classe, self.classe_b)
+        theme.classes.add(self.classe)
         self.client.force_login(self.prof)
+
+        form = self.client.get(reverse('core:dossier_create', args=[theme.pk]))
+        self.assertContains(form, f'value="{self.classe_b.pk}"')
 
         response = self.client.post(reverse('core:dossier_create', args=[theme.pk]), {
             'nom': 'Dossier 2B',
@@ -906,6 +961,26 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         dossier = Dossier.objects.get(theme=theme, nom='Dossier 2B')
         self.assertEqual(response.status_code, 302)
         self.assertSetEqual(set(dossier.classes.all()), {self.classe_b})
+        theme.refresh_from_db()
+        self.assertSetEqual(set(theme.classes.all()), {self.classe_b})
+
+    def test_creation_theme_definit_les_classes_via_son_dossier_initial(self):
+        self.client.force_login(self.prof)
+
+        response = self.client.post(reverse('core:theme_create'), {
+            'nom': 'Thème créé par dossier',
+            'visible_eleves': 'on',
+            'creer_dossier': 'on',
+            'dossier_nom': 'Dossier classe 2B',
+            'dossier_visible': 'on',
+            'dossier_classes': [self.classe_b.pk],
+        })
+
+        theme = Theme.objects.get(nom='Thème créé par dossier')
+        dossier = Dossier.objects.get(theme=theme)
+        self.assertEqual(response.status_code, 302)
+        self.assertSetEqual(set(dossier.classes.all()), {self.classe_b})
+        self.assertSetEqual(set(theme.classes.all()), {self.classe_b})
 
 
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
