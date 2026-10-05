@@ -71,6 +71,9 @@ urlpatterns = [
     path('themes/<int:pk>/editer/',            views.theme_edit,              name='theme_edit'),
     path('themes/<int:pk>/supprimer/',         views.theme_delete,            name='theme_delete'),
     path('themes/<int:pk>/toggle-visibilite/', views.theme_toggle_visibilite, name='theme_toggle_visibilite'),
+    path('themes/<int:pk>/toggle-epingle/',    views.theme_toggle_epingle,    name='theme_toggle_epingle'),
+
+
 
     # ═══════════════════════════════════════
     # FICHES DE RÉVISION

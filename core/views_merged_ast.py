@@ -969,7 +969,7 @@ def gestion_themes(request):
         themes = Theme.objects.all()
     themes = themes.select_related('createur').prefetch_related('classes').annotate(
         nb_dossiers=Count('dossiers', distinct=True)
-    ).order_by('ordre', 'nom')
+    ).order_by('-epingle', 'ordre', 'nom')
     return render(request, 'core/gestion_themes.html', {'classes': classes, 'themes': themes, 'classe_selectionnee': classe_selectionnee})
 
 
@@ -985,6 +985,7 @@ def theme_create(request):
             createur=request.user,
             description=request.POST.get('description', ''),
             visible_eleves=request.POST.get('visible_eleves') == 'on',
+            epingle=request.POST.get('epingle') == 'on',
             ordre=request.POST.get('ordre', 0),
         )
         if classe_ids:
@@ -1056,6 +1057,41 @@ def theme_update(request, pk):
     theme = get_object_or_404(Theme, pk=pk)
     classes = Classe.objects.all().order_by('nom')
     if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'fusionner_theme':
+            theme_cible_id = request.POST.get('theme_cible')
+            if not theme_cible_id:
+                messages.error(request, '❌ Sélectionnez un thème cible pour la fusion.')
+                return redirect('core:theme_update', pk=theme.pk)
+            try:
+                theme_cible = Theme.objects.get(pk=theme_cible_id)
+            except Theme.DoesNotExist:
+                messages.error(request, '❌ Thème cible introuvable.')
+                return redirect('core:theme_update', pk=theme.pk)
+            if theme_cible.pk == theme.pk:
+                messages.error(request, '❌ Un thème ne peut pas se fusionner avec lui-même.')
+                return redirect('core:theme_update', pk=theme.pk)
+
+            nouveau_nom = (request.POST.get('nouveau_nom') or theme_cible.nom).strip()
+            if not nouveau_nom:
+                messages.error(request, '❌ Le nouveau nom du thème fusionné est obligatoire.')
+                return redirect('core:theme_update', pk=theme.pk)
+
+            with transaction.atomic():
+                theme_cible.nom = nouveau_nom
+                theme_cible.description = theme_cible.description or theme.description
+                theme_cible.visible_eleves = theme_cible.visible_eleves or theme.visible_eleves
+                theme_cible.epingle = theme_cible.epingle or theme.epingle
+                theme_cible.save()
+
+                Dossier.objects.filter(theme=theme).update(theme=theme_cible)
+                QCM.objects.filter(theme=theme).update(theme=theme_cible)
+                ModeOperatoire.objects.filter(theme=theme).update(theme=theme_cible)
+                theme.delete()
+
+            messages.success(request, f'✅ Fusion effectuée : les dossiers ont été intégrés dans "{theme_cible.nom}".')
+            return redirect('core:theme_detail', pk=theme_cible.pk)
+
         nom = request.POST.get('nom')
         if not nom:
             messages.error(request, '❌ Le nom du thème est obligatoire.')
@@ -1063,6 +1099,7 @@ def theme_update(request, pk):
             theme.nom = nom
             theme.description = request.POST.get('description', '')
             theme.visible_eleves = request.POST.get('visible_eleves') == 'on'
+            theme.epingle = request.POST.get('epingle') == 'on'
             if not theme.createur_id:
                 theme.createur = request.user
             classe_ids = request.POST.getlist('classes')
@@ -1097,7 +1134,8 @@ def theme_update(request, pk):
                     messages.warning(request, "⚠️ Sélectionnez un dossier et un nom.")
             return redirect('core:theme_detail', pk=theme.id)
     dossiers = Dossier.objects.filter(theme=theme).order_by('ordre', 'nom')
-    return render(request, 'core/theme_update.html', {'theme': theme, 'classes': classes, 'dossiers': dossiers})
+    themes_disponibles = Theme.objects.exclude(pk=theme.pk).order_by('nom')
+    return render(request, 'core/theme_update.html', {'theme': theme, 'classes': classes, 'dossiers': dossiers, 'themes_disponibles': themes_disponibles})
 
 
 def theme_delete(request, pk):
@@ -1115,6 +1153,14 @@ def theme_toggle_visibilite(request, pk):
     theme.save()
     messages.success(request, f'Thème {"visible" if theme.visible_eleves else "masqué"} !')
     return redirect('core:theme_detail', pk=pk)
+
+
+def theme_toggle_epingle(request, pk):
+    theme = get_object_or_404(Theme, pk=pk)
+    theme.epingle = not theme.epingle
+    theme.save(update_fields=['epingle'])
+    messages.success(request, f'Thème {"épinglé" if theme.epingle else "détaché"} !')
+    return redirect('core:gestion_themes')
 
 
 theme_edit = theme_update
@@ -5980,7 +6026,7 @@ def dashboard_eleve(request):
 
         context = {
             'ma_classe': classe,
-            'themes': Theme.objects.filter(classes=classe, visible_eleves=True).order_by('ordre', 'nom'),
+            'themes': Theme.objects.filter(classes=classe, visible_eleves=True).order_by('-epingle', 'ordre', 'nom'),
             'travaux_a_faire': travaux_qs,
             'mes_rendus': RenduEleve.objects.filter(eleve=profil).select_related('travail').order_by('-date_rendu'),
             'notifications': Notification.objects.filter(destinataire=request.user, lue=False).order_by('-date_creation'),

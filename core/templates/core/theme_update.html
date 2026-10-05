@@ -81,6 +81,7 @@
 
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
+            <input type="hidden" name="action" id="form-action" value="modifier_theme">
             
             <div class="form-row">
                 <div class="form-group">
@@ -108,6 +109,41 @@
             <div class="checkbox-wrapper">
                 <input type="checkbox" name="visible_eleves" id="vis" {% if theme.visible_eleves %}checked{% endif %}>
                 <label for="vis">Rendre ce thème visible aux élèves immédiatement</label>
+            </div>
+
+            <div class="checkbox-wrapper" style="margin-top:1rem;">
+                <input type="checkbox" name="epingle" id="epingle" {% if theme.epingle %}checked{% endif %}>
+                <label for="epingle">Épingler ce thème pour le garder en haut de la liste</label>
+            </div>
+
+            <div class="quick-add-section" style="margin-top:2rem;">
+                <div class="quick-add-header">
+                    <input type="checkbox" name="fusionner_theme" id="fusionner_theme" style="width:22px; height:22px; accent-color:#7c5cbf; cursor:pointer;">
+                    <label for="fusionner_theme" style="font-weight:700; color:#3d2d6b; margin:0; cursor:pointer;">
+                        Fusionner ce thème avec un autre thème
+                    </label>
+                </div>
+
+                <div class="quick-add-content" id="fusion-content" style="display:none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Thème cible :</label>
+                            <select name="theme_cible">
+                                <option value="">-- Choisir un thème --</option>
+                                {% for autre_theme in themes_disponibles %}
+                                    {% if autre_theme.pk != theme.pk %}
+                                        <option value="{{ autre_theme.pk }}">{{ autre_theme.nom }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nouveau nom du thème cible :</label>
+                            <input type="text" name="nouveau_nom" placeholder="Ex: Électronique et automatismes">
+                        </div>
+                    </div>
+                    <p style="margin:0;color:#4b5563;">La fusion conserve les dossiers et les ressources du thème actuel dans le thème choisi.</p>
+                </div>
             </div>
 
             {% if dossiers %}
@@ -186,6 +222,18 @@
         checkRes.addEventListener('change', function() {
             document.getElementById('ressource-content').style.display = this.checked ? 'block' : 'none';
         });
+
+        const checkFusion = document.getElementById('fusionner_theme');
+        if (checkFusion) {
+            checkFusion.addEventListener('change', function() {
+                document.getElementById('fusion-content').style.display = this.checked ? 'block' : 'none';
+                if (this.checked) {
+                    document.getElementById('form-action').value = 'fusionner_theme';
+                } else {
+                    document.getElementById('form-action').value = 'modifier_theme';
+                }
+            });
+        }
 
         const radios = document.querySelectorAll('input[name="type_ressource"]');
         radios.forEach(r => {

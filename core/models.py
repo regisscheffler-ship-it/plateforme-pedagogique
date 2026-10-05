@@ -217,13 +217,14 @@ class Theme(models.Model):
     description = models.TextField(blank=True, null=True)
     ressources_html = models.TextField(blank=True, null=True, verbose_name="Ressources intégrées (HTML)")
     ordre = models.IntegerField(default=0)
+    epingle = models.BooleanField(default=False, verbose_name='Épinglé')
     couleur = models.CharField(max_length=7, default='#20c997')
     visible_eleves = models.BooleanField(default=True)
     date_creation = models.DateTimeField(auto_now_add=True)
     actif = models.BooleanField(default=True, verbose_name="Actif")
 
     class Meta:
-        ordering = ['ordre', 'nom']
+        ordering = ['-epingle', 'ordre', 'nom']
         verbose_name = "Thème"
         verbose_name_plural = "Thèmes"
 

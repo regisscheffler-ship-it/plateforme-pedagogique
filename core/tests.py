@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from datetime import date, datetime, timedelta
 from django.utils import timezone
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM, Theme
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM, Theme, Dossier
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
@@ -820,6 +820,38 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
 
         self.assertContains(liste, 'Ancien thème')
         self.assertContains(liste, 'Équipe')
+
+    def test_un_theme_epingle_est_affiche_en_haut_de_la_liste(self):
+        Theme.objects.create(nom='Thème normal', createur=self.prof, ordre=10)
+        theme_epingle = Theme.objects.create(nom='Thème épinglé', createur=self.prof, ordre=5, epingle=True)
+
+        self.client.force_login(self.prof)
+        response = self.client.get(reverse('core:gestion_themes'))
+
+        html = response.content.decode('utf-8')
+        self.assertLess(html.index(theme_epingle.nom), html.index('Thème normal'))
+
+    def test_fusion_d_un_theme_deplace_les_dossiers_vers_le_theme_cible(self):
+        theme_cible = Theme.objects.create(nom='Thème cible', createur=self.prof, ordre=1)
+        theme_source = Theme.objects.create(nom='Thème source', createur=self.prof, ordre=2)
+        dossier_1 = Dossier.objects.create(theme=theme_source, nom='Dossier A', ordre=1)
+        dossier_2 = Dossier.objects.create(theme=theme_source, nom='Dossier B', ordre=2)
+
+        self.client.force_login(self.prof)
+        response = self.client.post(reverse('core:theme_update', args=[theme_source.pk]), {
+            'action': 'fusionner_theme',
+            'theme_cible': theme_cible.pk,
+            'nouveau_nom': 'Thème fusionné',
+            'nom': theme_source.nom,
+            'description': '',
+            'visible_eleves': 'on',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        theme_cible.refresh_from_db()
+        self.assertEqual(theme_cible.nom, 'Thème fusionné')
+        self.assertFalse(Theme.objects.filter(pk=theme_source.pk).exists())
+        self.assertEqual(list(Dossier.objects.filter(pk__in=[dossier_1.pk, dossier_2.pk]).values_list('theme_id', flat=True)), [theme_cible.pk, theme_cible.pk])
 
 
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
