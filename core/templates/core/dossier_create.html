@@ -130,6 +130,19 @@
                 </div>
             </div>
 
+            <div class="dc-form-group" style="margin-top:1.5rem;">
+                <label>Classes autorisées à voir ce dossier</label>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.6rem;">
+                    {% for classe in classes %}
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-weight:500;">
+                        <input type="checkbox" name="classes" value="{{ classe.id }}">
+                        {{ classe.nom }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <small style="display:block;color:#6c757d;margin-top:0.5rem;">Sans sélection, le dossier suit les classes autorisées sur le thème.</small>
+            </div>
+
             <div class="dc-actions">
                 <a href="{% url 'core:theme_detail' theme.id %}" class="btn-dc-cancel">
                     <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">

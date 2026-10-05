@@ -245,6 +245,7 @@ class Theme(models.Model):
 # =====================================================
 class Dossier(models.Model):
     theme = models.ForeignKey(Theme, on_delete=models.CASCADE, related_name='dossiers')
+    classes = models.ManyToManyField(Classe, related_name='dossiers_visibles', blank=True)
     nom = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     ordre = models.IntegerField(default=0)

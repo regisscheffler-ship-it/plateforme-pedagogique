@@ -1001,6 +1001,7 @@ def theme_create(request):
                     ordre=request.POST.get('dossier_ordre', 0),
                     visible_eleves=request.POST.get('dossier_visible') == 'on'
                 )
+                dossier.classes.set(Classe.objects.filter(id__in=request.POST.getlist('dossier_classes')))
                 messages.success(request, f'📂 Dossier "{dossier.nom}" créé !')
         if dossier and request.POST.get('ajouter_fichier') == 'on':
             fichier_nom = request.POST.get('fichier_nom', '').strip()
@@ -1028,10 +1029,16 @@ def theme_detail(request, pk):
     is_prof = est_professeur(request.user)
     
     if hasattr(request.user, 'profil') and request.user.profil.est_eleve():
-        if request.user.profil.classe and not theme.classes.filter(pk=request.user.profil.classe_id).exists():
+        classe_id = request.user.profil.classe_id
+        if not theme.visible_eleves or (classe_id and not theme.classes.filter(pk=classe_id).exists()):
             messages.error(request, "❌ Vous n'avez pas accès à ce thème.")
             return redirect('core:dashboard_eleve')
-        dossiers = Dossier.objects.filter(theme=theme, actif=True, visible_eleves=True).order_by('ordre', 'nom')
+        dossiers = Dossier.objects.filter(theme=theme, actif=True, visible_eleves=True)
+        if classe_id:
+            dossiers = dossiers.filter(Q(classes__isnull=True) | Q(classes=classe_id))
+        else:
+            dossiers = dossiers.filter(classes__isnull=True)
+        dossiers = dossiers.distinct().order_by('ordre', 'nom')
     else:
         dossiers = Dossier.objects.filter(theme=theme, actif=True).order_by('ordre', 'nom')
         
@@ -1078,6 +1085,20 @@ def theme_update(request, pk):
                 return redirect('core:theme_update', pk=theme.pk)
 
             with transaction.atomic():
+                classes_cible = list(theme_cible.classes.all())
+                classes_source = list(theme.classes.all())
+
+                dossiers_cible_sans_classe = Dossier.objects.filter(theme=theme_cible, classes__isnull=True).distinct()
+                dossiers_source_sans_classe = Dossier.objects.filter(theme=theme, classes__isnull=True).distinct()
+
+                if classes_cible:
+                    for dossier in dossiers_cible_sans_classe:
+                        dossier.classes.add(*classes_cible)
+                if classes_source:
+                    for dossier in dossiers_source_sans_classe:
+                        dossier.classes.add(*classes_source)
+
+                theme_cible.classes.add(*classes_source)
                 theme_cible.nom = nouveau_nom
                 theme_cible.description = theme_cible.description or theme.description
                 theme_cible.visible_eleves = theme_cible.visible_eleves or theme.visible_eleves
@@ -1171,22 +1192,35 @@ def dossier_create(request, theme_id):
     if request.method == 'POST':
         nom = request.POST.get('nom')
         if nom:
-            Dossier.objects.create(
+            dossier = Dossier.objects.create(
                 theme=theme, nom=nom,
                 description=request.POST.get('description', ''),
                 ordre=request.POST.get('ordre', 0),
                 visible_eleves=request.POST.get('visible_eleves') == 'on'
             )
+            dossier.classes.set(Classe.objects.filter(id__in=request.POST.getlist('classes')))
             messages.success(request, f'✅ Dossier "{nom}" créé !')
             return redirect('core:theme_detail', pk=theme_id)
-    return render(request, 'core/dossier_create.html', {'theme': theme})
+    classes = theme.classes.all() or Classe.objects.all().order_by('nom')
+    return render(request, 'core/dossier_create.html', {'theme': theme, 'classes': classes})
 
 
 def dossier_detail(request, pk):
     dossier = get_object_or_404(Dossier, pk=pk)
     try:
-        if not request.user.profil.est_prof():
-            if not dossier.visible_eleves or not dossier.theme.visible_eleves:
+        profil = request.user.profil
+        if not profil.est_prof():
+            classe_id = profil.classe_id
+            classe_autorisee = (
+                not classe_id or not dossier.theme.classes.exists()
+                or dossier.theme.classes.filter(pk=classe_id).exists()
+            )
+            dossier_classes = dossier.classes.all()
+            dossier_visible_pour_classe = (
+                not dossier_classes.exists()
+                or (classe_id and dossier_classes.filter(pk=classe_id).exists())
+            )
+            if not dossier.visible_eleves or not dossier.theme.visible_eleves or not classe_autorisee or not dossier_visible_pour_classe:
                 messages.error(request, "❌ Ce dossier n'est pas accessible.")
                 return redirect('core:dashboard_eleve')
     except ProfilUtilisateur.DoesNotExist:
@@ -1206,9 +1240,11 @@ def dossier_update(request, pk):
         dossier.ordre = request.POST.get('ordre', 0)
         dossier.visible_eleves = request.POST.get('visible_eleves') == 'on'
         dossier.save()
+        dossier.classes.set(Classe.objects.filter(id__in=request.POST.getlist('classes')))
         messages.success(request, '✅ Dossier modifié !')
         return redirect('core:theme_detail', pk=dossier.theme.id)
-    return render(request, 'core/dossier_update.html', {'dossier': dossier})
+    classes = dossier.theme.classes.all() or Classe.objects.all().order_by('nom')
+    return render(request, 'core/dossier_update.html', {'dossier': dossier, 'classes': classes})
 
 
 def dossier_delete(request, pk):
