@@ -940,6 +940,11 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         self.assertContains(page_prof, 'Classes autorisées : 2B')
         self.assertContains(page_prof, '2M')
         self.assertContains(page_prof, '2B')
+        liste_themes = self.client.get(reverse('core:gestion_themes'))
+        self.assertContains(liste_themes, 'Dossier 2M')
+        self.assertContains(liste_themes, 'Dossier 2B')
+        self.assertContains(liste_themes, 'Classes : 2M')
+        self.assertContains(liste_themes, 'Classes : 2B')
 
         self.client.force_login(eleve)
         response = self.client.get(reverse('core:theme_detail', args=[theme.pk]))

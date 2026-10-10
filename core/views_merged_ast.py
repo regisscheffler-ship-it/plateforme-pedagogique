@@ -974,7 +974,7 @@ def gestion_themes(request):
         themes = Theme.objects.filter(classes__id=classe_selectionnee)
     else:
         themes = Theme.objects.all()
-    themes = themes.select_related('createur').prefetch_related('classes').annotate(
+    themes = themes.select_related('createur').prefetch_related('classes', 'dossiers__classes').annotate(
         nb_dossiers=Count('dossiers', filter=Q(dossiers__actif=True), distinct=True)
     ).order_by('-epingle', 'ordre', 'nom')
     return render(request, 'core/gestion_themes.html', {'classes': classes, 'themes': themes, 'classe_selectionnee': classe_selectionnee})

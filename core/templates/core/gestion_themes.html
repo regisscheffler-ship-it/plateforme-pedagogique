@@ -339,6 +339,16 @@
                             </svg>
                             {{ theme.nb_dossiers }} dossier(s)
                         </p>
+                        <div class="theme-dossiers" style="margin-top:0.6rem;font-size:0.85rem;color:#52606d;">
+                            <strong>Dossiers :</strong>
+                            {% for dossier in theme.dossiers.all %}
+                                {% if dossier.actif %}
+                                    <div>{{ dossier.nom }} — Classes : {{ dossier.classes.all|join:", "|default:"Aucune" }}</div>
+                                {% endif %}
+                            {% empty %}
+                                <div>Aucun dossier</div>
+                            {% endfor %}
+                        </div>
                         {% if theme.description %}
                             <p class="theme-description">{{ theme.description }}</p>
                         {% endif %}
