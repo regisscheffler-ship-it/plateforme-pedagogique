@@ -22,9 +22,7 @@ def _appeler_gemini(model, contents):
         cles = [cle] if cle else []
 
     if not cles:
-        class _FakeResp:
-            text = "Clé API Gemini non configurée. Contactez l'administrateur."
-        return _FakeResp()
+        raise RuntimeError("Aucune clé GEMINI_API_KEY n'est configurée.")
 
     derniere_erreur = None
     for cle in cles:
@@ -97,69 +95,51 @@ def extraire_texte_pdf(fichier):
 
 def generer_qcm_depuis_texte(texte, nb_questions=10):
     try:
-        from google import genai
-        from django.conf import settings
-
-        api_key = settings.GEMINI_API_KEY
-        if not api_key:
-            print("[Gemini] GEMINI_API_KEY non configurée dans settings.py")
+        if not texte or not texte.strip():
             return None
-
-        client = genai.Client(api_key=api_key)
+        if nb_questions not in (5, 10, 15, 20, 30, 40, 50):
+            raise ValueError("Le nombre de questions demandé n'est pas autorisé.")
 
         texte_tronque = texte[:8000] if len(texte) > 8000 else texte
         texte_tronque = texte_tronque.replace('\\', ' ').replace('"', "'")
-
-        prompt = (
-            f"Tu es un professeur expert en construction et bâtiment. "
-            f"Génère exactement {nb_questions} questions QCM en français à partir de ce texte. "
-            f"Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans bloc code, sans explication. "
-            f"Format strict :\n"
-            f'{{"questions": [{{'
-            f'"enonce": "...", '
-            f'"choix_a": "...", '
-            f'"choix_b": "...", '
-            f'"choix_c": "...", '
-            f'"choix_d": "...", '
-            f'"bonne_reponse": "A ou B ou C ou D"'
-            f'}}]}}\n'
-            f"Texte : {texte_tronque}"
-        )
-
-        response = _appeler_gemini('gemini-2.5-flash-lite', prompt)
-        raw = response.text.strip()
-        print(f"[Gemini] Réponse brute ({len(raw)} chars) : {raw[:200]}...")
-
-        raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
-        raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE)
-        raw = raw.strip()
-        raw = re.sub(r'\\([^"\\/bfnrtu])', r'\1', raw)
-
-        data = json.loads(raw)
-        questions_brutes = data.get('questions', [])
-
         questions_valides = []
         champs_requis = {'enonce', 'choix_a', 'choix_b', 'bonne_reponse'}
-        for i, q in enumerate(questions_brutes):
-            manquants = champs_requis - set(q.keys())
-            if manquants:
-                print(f"[Gemini] Question #{i+1} ignorée — champs manquants : {manquants}")
+        for debut in range(0, nb_questions, 10):
+            if len(questions_valides) >= nb_questions:
+                break
+            taille_lot = min(10, nb_questions - debut)
+            prompt = (
+                "Tu es un professeur expert en construction et bâtiment. "
+                f"Génère exactement {taille_lot} questions QCM différentes en français à partir de ce texte. "
+                "Réponds UNIQUEMENT avec du JSON valide, sans markdown ni explication. "
+                'Format : {"questions":[{"enonce":"...","choix_a":"...",'
+                '"choix_b":"...","choix_c":"...","choix_d":"...",'
+                '"bonne_reponse":"A"}]} ; bonne_reponse doit être la lettre A, B, C ou D.\n'
+                f"Texte : {texte_tronque}"
+            )
+            try:
+                response = _appeler_gemini('gemini-2.5-flash-lite', prompt)
+                raw = _reparer_json(response.text or '')
+                questions_brutes = json.loads(raw).get('questions', [])
+            except Exception as e:
+                print(f"[Gemini] Échec du lot {debut // 10 + 1}: {e}")
                 continue
-            if not q.get('bonne_reponse', '').upper() in ('A', 'B', 'C', 'D'):
-                print(f"[Gemini] Question #{i+1} ignorée — bonne_reponse invalide : {q.get('bonne_reponse')}")
-                continue
-            q['bonne_reponse'] = q['bonne_reponse'].upper()
-            q.setdefault('choix_c', '')
-            q.setdefault('choix_d', '')
-            questions_valides.append(q)
 
-        print(f"[Gemini] {len(questions_valides)}/{len(questions_brutes)} questions valides.")
-        return questions_valides if questions_valides else None
+            for q in questions_brutes:
+                if not isinstance(q, dict) or champs_requis - set(q):
+                    continue
+                bonne_reponse = str(q.get('bonne_reponse', '')).upper()
+                if bonne_reponse not in ('A', 'B', 'C', 'D'):
+                    continue
+                q['bonne_reponse'] = bonne_reponse
+                q.setdefault('choix_c', '')
+                q.setdefault('choix_d', '')
+                questions_valides.append(q)
+                if len(questions_valides) == nb_questions:
+                    break
 
-    except json.JSONDecodeError as e:
-        print(f"[Gemini] Erreur parsing JSON : {e}")
-        print(f"[Gemini] Texte reçu : {raw[:500] if 'raw' in dir() else 'N/A'}")
-        return None
+        print(f"[Gemini] {len(questions_valides)}/{nb_questions} questions demandées générées.")
+        return questions_valides[:nb_questions] or None
     except Exception as e:
         print(f"[Gemini] Erreur inattendue : {e}")
         return None
@@ -181,59 +161,41 @@ def generer_distracteurs_depuis_cartes(cartes):
     if not cartes:
         return None
     try:
-        from google import genai
-        from django.conf import settings
-
-        api_key = settings.GEMINI_API_KEY
-        if not api_key:
-            print("[Gemini-Cartes] GEMINI_API_KEY manquante")
-            return None
-
-        client = genai.Client(api_key=api_key)
-
-        cartes_str = '\n'.join(
-            f'{i+1}. Question: "{_nettoyer_texte(c.question)}" | Réponse correcte: "{_nettoyer_texte(c.reponse)}"'
-            for i, c in enumerate(cartes)
-        )
-        n = len(cartes)
-
-        prompt = (
-            f"Tu es un professeur expert en construction et bâtiment. "
-            f"Pour chacune de ces {n} cartes de révision, génère 3 réponses fausses mais plausibles en français. "
-            f"Règles strictes : enonce = la question exacte, choix_a = la réponse correcte exacte, "
-            f"choix_b/c/d = 3 fausses réponses plausibles, bonne_reponse = toujours 'A'. "
-            f"Réponds UNIQUEMENT avec du JSON valide sans markdown ni bloc code.\n"
-            f'{{"questions": [{{"enonce":"...", "choix_a":"bonne", "choix_b":"faux1", "choix_c":"faux2", "choix_d":"faux3", "bonne_reponse":"A"}}]}}\n\n'
-            f"Cartes:\n{cartes_str}"
-        )
-
-        response = _appeler_gemini('gemini-2.5-flash-lite', prompt)
-        raw = response.text.strip()
-        print(f"[Gemini-Cartes] Réponse brute ({len(raw)} chars) : {raw[:150]}...")
-
-        raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
-        raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE)
-        raw = raw.strip()
-        raw = re.sub(r'\\([^"\\/bfnrtu])', r'\1', raw)
-
-        data = json.loads(raw)
-        questions_brutes = data.get('questions', [])
-
         valides = []
-        for q in questions_brutes:
-            if not q.get('enonce') or not q.get('choix_a') or not q.get('choix_b'):
+        for debut in range(0, len(cartes), 10):
+            lot = cartes[debut:debut + 10]
+            cartes_str = '\n'.join(
+                f'{i+1}. Question: "{_nettoyer_texte(c.question)}" | Réponse correcte: "{_nettoyer_texte(c.reponse)}"'
+                for i, c in enumerate(lot)
+            )
+            prompt = (
+                "Tu es un professeur expert en construction et bâtiment. "
+                f"Pour chacune de ces {len(lot)} cartes, génère 3 réponses fausses mais plausibles en français. "
+                "Conserve exactement chaque énoncé et chaque réponse correcte en choix_a. "
+                "bonne_reponse doit toujours être A. Réponds uniquement en JSON valide sans markdown.\n"
+                '{"questions":[{"enonce":"...","choix_a":"bonne",'
+                '"choix_b":"faux1","choix_c":"faux2","choix_d":"faux3",'
+                '"bonne_reponse":"A"}]}\n'
+                f"Cartes:\n{cartes_str}"
+            )
+            try:
+                response = _appeler_gemini('gemini-2.5-flash-lite', prompt)
+                raw = _reparer_json(response.text or '')
+                questions_brutes = json.loads(raw).get('questions', [])
+            except Exception as e:
+                print(f"[Gemini-Cartes] Échec du lot {debut // 10 + 1}: {e}")
                 continue
-            q.setdefault('choix_c', '')
-            q.setdefault('choix_d', '')
-            q['bonne_reponse'] = 'A'
-            valides.append(q)
 
-        print(f"[Gemini-Cartes] {len(valides)}/{len(questions_brutes)} questions valides.")
-        return valides if valides else None
+            for q in questions_brutes[:len(lot)]:
+                if not isinstance(q, dict) or not q.get('enonce') or not q.get('choix_a') or not q.get('choix_b'):
+                    continue
+                q.setdefault('choix_c', '')
+                q.setdefault('choix_d', '')
+                q['bonne_reponse'] = 'A'
+                valides.append(q)
 
-    except json.JSONDecodeError as e:
-        print(f"[Gemini-Cartes] Erreur JSON : {e}")
-        return None
+        print(f"[Gemini-Cartes] {len(valides)}/{len(cartes)} questions valides.")
+        return valides or None
     except Exception as e:
         print(f"[Gemini-Cartes] Erreur : {e}")
         return None
@@ -245,51 +207,32 @@ def generer_distracteurs_depuis_cartes(cartes):
 
 def generer_une_question(sujet, contexte=''):
     try:
-        from google import genai
-        from django.conf import settings
-
-        api_key = settings.GEMINI_API_KEY
-        if not api_key:
-            return None
-
-        client = genai.Client(api_key=api_key)
-
         sujet_nettoye = _nettoyer_texte(sujet[:500] if len(sujet) > 500 else sujet)
-
         prompt = (
-            f"Tu es un professeur expert en construction et bâtiment. "
+            "Tu es un professeur expert en construction et bâtiment. "
             f"Génère exactement 1 nouvelle question QCM sur le même thème que : '{sujet_nettoye}'. "
-            f"La question doit être différente mais couvrir le même domaine. "
-            f"Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans explication. "
-            f"Format strict : "
-            f'{{"enonce": "...", "choix_a": "...", "choix_b": "...", "choix_c": "...", "choix_d": "...", "bonne_reponse": "A ou B ou C ou D"}}'
+            "La question doit être différente mais couvrir le même domaine. "
+            "Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans explication. "
+            'Format : {"enonce":"...","choix_a":"...","choix_b":"...",'
+            '"choix_c":"...","choix_d":"...","bonne_reponse":"A ou B ou C ou D"}'
         )
+        if contexte:
+            prompt += f"\nContexte complémentaire : {_nettoyer_texte(contexte)}"
 
         response = _appeler_gemini('gemini-2.5-flash-lite', prompt)
-        raw = response.text.strip()
-        raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
-        raw = re.sub(r'```\s*$', '', raw, flags=re.MULTILINE).strip()
-        raw = re.sub(r'\\([^"\\/bfnrtu])', r'\1', raw)
-
-        q = json.loads(raw)
-        if isinstance(q, list) and q:
-            q = q[0]
-        if not isinstance(q, dict):
+        raw = _reparer_json(response.text or '')
+        question = json.loads(raw)
+        if isinstance(question, list) and question:
+            question = question[0]
+        if not isinstance(question, dict):
             return None
-        if not q.get('enonce') or not q.get('choix_a') or not q.get('choix_b'):
+        if not question.get('enonce') or not question.get('choix_a') or not question.get('choix_b'):
             return None
-        q.setdefault('choix_c', '')
-        q.setdefault('choix_d', '')
-        br = q.get('bonne_reponse', 'A')
-        if isinstance(br, str) and len(br) >= 1:
-            br = br.strip()[0].upper()
-        q['bonne_reponse'] = br if br in ('A', 'B', 'C', 'D') else 'A'
-        print(f"[Gemini-1Q] Question générée : {q['enonce'][:60]}")
-        return q
-
-    except json.JSONDecodeError as e:
-        print(f"[Gemini-1Q] Erreur JSON : {e}")
-        return None
+        question.setdefault('choix_c', '')
+        question.setdefault('choix_d', '')
+        bonne_reponse = str(question.get('bonne_reponse', 'A')).strip()[:1].upper()
+        question['bonne_reponse'] = bonne_reponse if bonne_reponse in ('A', 'B', 'C', 'D') else 'A'
+        return question
     except Exception as e:
         print(f"[Gemini-1Q] Erreur : {e}")
         return None

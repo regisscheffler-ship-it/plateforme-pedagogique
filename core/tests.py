@@ -443,6 +443,15 @@ class TestQCMDeadlinesAndImages(TestCase):
         qcm.refresh_from_db()
         self.assertEqual(qcm.date_limite, nouvelle_date_locale)
 
+    def test_menu_qcm_rapide_propose_egalement_jusqua_50_questions(self):
+        self.client.force_login(self.prof_user)
+
+        response = self.client.get(reverse('core:qcm_gestion'))
+
+        self.assertContains(response, '<option value="30">30</option>', html=True)
+        self.assertContains(response, '<option value="40">40</option>', html=True)
+        self.assertContains(response, '<option value="50">50</option>', html=True)
+
     def test_generation_qcm_accepte_50_questions(self):
         self.client.force_login(self.prof_user)
         date_locale = (timezone.localtime() + timedelta(days=2)).replace(second=0, microsecond=0)
@@ -459,6 +468,49 @@ class TestQCMDeadlinesAndImages(TestCase):
 
         self.assertEqual(response.status_code, 302)
         generer_qcm.assert_called_once_with('Texte de cours pour générer les questions.', 50)
+
+    def test_creation_rapide_accepte_50_questions_et_date_locale(self):
+        self.client.force_login(self.prof_user)
+        date_locale = (timezone.localtime() + timedelta(days=2)).replace(second=0, microsecond=0)
+
+        with patch('core.services.generer_qcm_depuis_texte', return_value=None) as generer_qcm:
+            response = self.client.post(reverse('core:qcm_creer_depuis_dashboard'), {
+                'titre': 'QCM rapide 50',
+                'theme_id': self.theme.pk,
+                'classes': [self.classe.pk],
+                'date_limite': date_locale.strftime('%Y-%m-%dT%H:%M'),
+                'nb_questions': '50',
+                'source_type': 'texte',
+                'texte_source': 'Texte source du formulaire rapide.',
+            })
+
+        qcm = QCM.objects.get(titre='QCM rapide 50')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(qcm.date_limite, date_locale)
+        generer_qcm.assert_called_once_with('Texte source du formulaire rapide.', 50)
+
+    def test_service_gemini_genere_par_lots_et_garde_les_lots_reussis(self):
+        import json
+        from types import SimpleNamespace
+        from core.services import generer_qcm_depuis_texte
+
+        lot_json = json.dumps({'questions': [{
+            'enonce': f'Question {index}', 'choix_a': 'A', 'choix_b': 'B',
+            'bonne_reponse': 'A',
+        } for index in range(10)]})
+        reponses = [
+            SimpleNamespace(text=f'```json\n{lot_json}\n```'),
+            RuntimeError('quota simulé'),
+            SimpleNamespace(text=lot_json),
+            SimpleNamespace(text=lot_json),
+            SimpleNamespace(text=lot_json),
+        ]
+
+        with patch('core.services._appeler_gemini', side_effect=reponses) as appeler:
+            questions = generer_qcm_depuis_texte('Contenu de cours', 50)
+
+        self.assertEqual(appeler.call_count, 5)
+        self.assertEqual(len(questions), 40)
 
     def test_qcm_expire_bloque_leleve_et_attribue_zero_a_toute_la_classe(self):
         eleve = self.creer_eleve('eleve_qcm_en_retard')

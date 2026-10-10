@@ -5201,7 +5201,7 @@ def qcm_create(request, theme_id):
 
         if source_type == 'fiches' and fiche_id:
             try:
-                fiche  = FicheRevision.objects.get(id=fiche_id, theme=theme)
+                fiche  = FicheRevision.objects.get(id=fiche_id, dossier__theme=theme)
                 cartes = list(fiche.cartes.all()[:nb_q])
                 if cartes:
                     from .services import generer_distracteurs_depuis_cartes
@@ -5214,6 +5214,9 @@ def qcm_create(request, theme_id):
             except FicheRevision.DoesNotExist:
                 messages.warning(request, '⚠️ Fiche introuvable.')
                 ia_erreur = True
+        elif source_type == 'fiches':
+            messages.warning(request, '⚠️ Sélectionnez une fiche de révision pour générer le QCM.')
+            ia_erreur = True
         else:
             texte_final = None
             if pdf_src:
@@ -5221,6 +5224,10 @@ def qcm_create(request, theme_id):
                 texte_final = extraire_texte_pdf(pdf_src)
                 if not texte_final:
                     messages.warning(request, '⚠️ Impossible de lire le PDF. QCM créé sans questions IA.')
+                    ia_erreur = True
+            elif source_type == 'pdf':
+                messages.warning(request, '⚠️ Sélectionnez un fichier PDF avant de lancer la génération.')
+                ia_erreur = True
             if not texte_final and texte_src:
                 texte_final = texte_src
             if texte_final:
@@ -5237,9 +5244,12 @@ def qcm_create(request, theme_id):
                     choix_c=q.get('choix_c', ''), choix_d=q.get('choix_d', ''),
                     bonne_reponse=q['bonne_reponse'], ordre=i,
                 )
-            messages.success(request, f'✅ QCM "{qcm.titre}" créé avec {len(questions)} questions générées par l\'IA !')
+            if len(questions) < nb_q:
+                messages.warning(request, f'⚠️ QCM créé avec {len(questions)} questions sur {nb_q} demandées. Vous pouvez compléter le brouillon manuellement.')
+            else:
+                messages.success(request, f'✅ QCM "{qcm.titre}" créé avec {len(questions)} questions générées par l\'IA !')
         elif ia_erreur:
-            messages.warning(request, '⚠️ QCM créé mais la génération IA a échoué. Ajoutez les questions manuellement.')
+            messages.warning(request, '⚠️ QCM créé mais la génération IA a échoué. Vérifiez la clé Gemini, le quota et la lisibilité de la source ; les détails sont dans les logs Render. Vous pouvez aussi ajouter les questions manuellement.')
         else:
             messages.success(request, f'✅ QCM "{qcm.titre}" créé. Ajoutez maintenant vos questions.')
 
@@ -5651,8 +5661,13 @@ def qcm_creer_depuis_dashboard(request):
     titre       = request.POST.get('titre', '').strip()
     theme_id    = request.POST.get('theme_id')
     classes_ids = request.POST.getlist('classes')
-    date_limite = request.POST.get('date_limite')
-    nb_q        = int(request.POST.get('nb_questions', 10))
+    date_limite = _parser_date_limite_qcm(request.POST.get('date_limite', '').strip())
+    try:
+        nb_q = int(request.POST.get('nb_questions', 10))
+    except (TypeError, ValueError):
+        nb_q = 10
+    if nb_q not in (5, 10, 15, 20, 30, 40, 50):
+        nb_q = 10
     melange     = request.POST.get('melange_questions') == 'on'
     source_type = request.POST.get('source_type', 'texte')
     texte_src   = request.POST.get('texte_source', '').strip()
@@ -5681,7 +5696,7 @@ def qcm_creer_depuis_dashboard(request):
 
     if source_type == 'fiches' and fiche_id:
         try:
-            fiche  = FicheRevision.objects.get(id=fiche_id)
+            fiche  = FicheRevision.objects.get(id=fiche_id, dossier__theme=theme)
             cartes = list(fiche.cartes.all()[:nb_q])
             if cartes:
                 from .services import generer_distracteurs_depuis_cartes
@@ -5692,6 +5707,9 @@ def qcm_creer_depuis_dashboard(request):
                 ia_erreur = True
         except FicheRevision.DoesNotExist:
             ia_erreur = True
+    elif source_type == 'fiches':
+        messages.warning(request, 'Sélectionnez une fiche de révision pour générer le QCM.')
+        ia_erreur = True
     else:
         texte_final = None
         if pdf_src:
@@ -5724,9 +5742,12 @@ def qcm_creer_depuis_dashboard(request):
                 choix_c=q.get('choix_c', ''), choix_d=q.get('choix_d', ''),
                 bonne_reponse=q['bonne_reponse'], ordre=i,
             )
-        messages.success(request, f'✅ QCM "{qcm.titre}" créé avec {len(questions)} questions générées par l\'IA !')
+        if len(questions) < nb_q:
+            messages.warning(request, f'⚠️ QCM créé avec {len(questions)} questions sur {nb_q} demandées. Vous pouvez compléter le brouillon manuellement.')
+        else:
+            messages.success(request, f'✅ QCM "{qcm.titre}" créé avec {len(questions)} questions générées par l\'IA !')
     elif ia_erreur:
-        messages.warning(request, '⚠️ QCM créé mais la génération IA a échoué. Ajoutez les questions manuellement.')
+        messages.warning(request, '⚠️ QCM créé mais la génération IA a échoué. Vérifiez la clé Gemini, le quota et la lisibilité de la source ; les détails sont dans les logs Render. Vous pouvez aussi ajouter les questions manuellement.')
     else:
         messages.success(request, f'✅ QCM "{qcm.titre}" créé. Ajoutez maintenant vos questions.')
 
