@@ -186,7 +186,7 @@
     <div class="stats-row">
         <div class="stat-card">
             <div class="val val-blue">{{ nb_passes }}</div>
-            <div class="lbl">élève{{ nb_passes|pluralize }} a{{ nb_passes|pluralize:"," }} passé{{ nb_passes|pluralize }}</div>
+            <div class="lbl">élève{{ nb_passes|pluralize }} noté{{ nb_passes|pluralize }}</div>
         </div>
         <div class="stat-card">
             <div class="val val-green">{% if moyenne %}{{ moyenne }}/20{% else %}—{% endif %}</div>
@@ -208,7 +208,7 @@
                 <th>Note</th>
                 <th>Bonnes / Total</th>
                 <th>Progression</th>
-                <th>Passé le</th>
+                <th>Soumis / échéance</th>
                 <th>Détail</th>
             </tr>
         </thead>

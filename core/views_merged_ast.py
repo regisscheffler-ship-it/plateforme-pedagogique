@@ -5102,19 +5102,81 @@ def qcm_gestion(request):
     })
 
 
+def _parser_date_limite_qcm(valeur):
+    from django.utils.dateparse import parse_datetime
+
+    date_limite = parse_datetime(valeur) if valeur else None
+    if date_limite and timezone.is_naive(date_limite):
+        date_limite = timezone.make_aware(date_limite, timezone.get_current_timezone())
+    return date_limite
+
+
+def _valider_image_question_qcm(image):
+    if not image:
+        return None, None
+    if image.size > 5 * 1024 * 1024:
+        return None, "L'image ne peut pas dépasser 5 Mo."
+
+    from django import forms
+    from django.core.exceptions import ValidationError
+
+    try:
+        return forms.ImageField().clean(image), None
+    except ValidationError:
+        return None, "Le fichier choisi n'est pas une image valide."
+
+
+def _qcm_est_expire(qcm):
+    return timezone.now() >= qcm.date_limite
+
+
+def _finaliser_sessions_qcm_expire(qcm):
+    maintenant = timezone.now()
+    eleves = ProfilUtilisateur.objects.filter(
+        type_utilisateur='eleve',
+        compte_approuve=True,
+        est_sorti=False,
+        classe_id__in=qcm.classes.values_list('pk', flat=True),
+    )
+    for eleve in eleves.iterator():
+        session, _ = SessionQCM.objects.get_or_create(qcm=qcm, eleve=eleve)
+        session_avant_echeance = (
+            session.termine
+            and session.date_soumission
+            and session.date_soumission <= qcm.date_limite
+            and session.note_sur_20 is not None
+        )
+        if session_avant_echeance:
+            continue
+
+        session.reponses = {}
+        session.nb_bonnes_reponses = 0
+        session.note_sur_20 = 0
+        session.date_soumission = session.date_soumission or maintenant
+        session.termine = True
+        session.save(update_fields=[
+            'reponses', 'nb_bonnes_reponses', 'note_sur_20', 'date_soumission', 'termine',
+        ])
+
+
 def qcm_create(request, theme_id):
     """Créer un QCM depuis un thème — 3 sources IA : PDF, texte, fiches de révision."""
     theme = get_object_or_404(Theme, id=theme_id)
     classes = Classe.objects.all().order_by('nom')
-    fiches_revision = FicheRevision.objects.filter(theme=theme).annotate(
+    fiches_revision = FicheRevision.objects.filter(dossier__theme=theme).annotate(
         nb_cartes=Count('cartes')
     ).order_by('titre')
 
     if request.method == 'POST':
         titre        = request.POST.get('titre', '').strip()
         classes_ids  = request.POST.getlist('classes')
-        date_limite  = request.POST.get('date_limite')
-        nb_q         = int(request.POST.get('nb_questions', 10))
+        date_limite  = _parser_date_limite_qcm(request.POST.get('date_limite', '').strip())
+        try:
+            nb_q = int(request.POST.get('nb_questions', 10))
+        except (TypeError, ValueError):
+            nb_q = 10
+        if nb_q not in (5, 10, 15, 20, 30, 40, 50):
+            nb_q = 10
         melange      = request.POST.get('melange_questions') == 'on'
         source_type  = request.POST.get('source_type', 'texte')
         texte_src    = request.POST.get('texte_source', '').strip()
@@ -5204,13 +5266,16 @@ def qcm_edit(request, pk):
             choix_c    = request.POST.get('choix_c', '').strip()
             choix_d    = request.POST.get('choix_d', '').strip()
             bonne_rep  = request.POST.get('bonne_reponse', '').upper()
-            if enonce and choix_a and choix_b and bonne_rep in ('A', 'B', 'C', 'D'):
+            image, image_error = _valider_image_question_qcm(request.FILES.get('image'))
+            if image_error:
+                messages.error(request, image_error)
+            elif enonce and choix_a and choix_b and bonne_rep in ('A', 'B', 'C', 'D'):
                 ordre = qcm.questions.count()
                 QuestionQCM.objects.create(
                     qcm=qcm, enonce=enonce,
                     choix_a=choix_a, choix_b=choix_b,
                     choix_c=choix_c, choix_d=choix_d,
-                    bonne_reponse=bonne_rep, ordre=ordre,
+                    bonne_reponse=bonne_rep, ordre=ordre, image=image,
                 )
                 messages.success(request, '✅ Question ajoutée.')
             else:
@@ -5222,15 +5287,17 @@ def qcm_edit(request, pk):
             date_limite_str = request.POST.get('date_limite', '').strip()
             if titre:
                 qcm.titre = titre
-            if classes_ids:
+            if classes_ids or 'classes_ids' in request.POST:
                 qcm.classes.set(classes_ids)
             if date_limite_str:
-                from django.utils.dateparse import parse_datetime
-                dt = parse_datetime(date_limite_str)
+                dt = _parser_date_limite_qcm(date_limite_str)
                 if dt:
                     qcm.date_limite = dt
+                else:
+                    messages.error(request, 'La date limite saisie est invalide.')
             qcm.save()
-            messages.success(request, '✅ Paramètres mis à jour.')
+            if not date_limite_str or dt:
+                messages.success(request, '✅ Paramètres mis à jour.')
 
     questions    = qcm.questions.all()
     peut_activer = questions.count() >= 3
@@ -5257,15 +5324,24 @@ def question_edit(request, pk):
         choix_c   = request.POST.get('choix_c', '').strip()
         choix_d   = request.POST.get('choix_d', '').strip()
         bonne_rep = request.POST.get('bonne_reponse', '').upper()
-        image_url = request.POST.get('image_url', '').strip()
-        if enonce and choix_a and choix_b and bonne_rep in ('A', 'B', 'C', 'D'):
+        image, image_error = _valider_image_question_qcm(request.FILES.get('image'))
+        if image_error:
+            messages.error(request, image_error)
+        elif enonce and choix_a and bonne_rep in ('A', 'B', 'C', 'D'):
             question.enonce       = enonce
             question.choix_a      = choix_a
             question.choix_b      = choix_b
             question.choix_c      = choix_c
             question.choix_d      = choix_d
             question.bonne_reponse = bonne_rep
-            question.image_url    = image_url
+            if image:
+                question.image = image
+                question.image_url = ''
+            elif request.POST.get('remove_image') == 'on':
+                if question.image:
+                    question.image.delete(save=False)
+                question.image = None
+                question.image_url = ''
             question.save()
             messages.success(request, 'Question mise à jour.')
         else:
@@ -5321,6 +5397,12 @@ def qcm_passer(request, pk):
         messages.error(request, 'Ce QCM n\'est pas disponible pour votre classe.')
         return redirect('core:dashboard_eleve')
 
+    if _qcm_est_expire(qcm):
+        _finaliser_sessions_qcm_expire(qcm)
+        session_expiree = get_object_or_404(SessionQCM, qcm=qcm, eleve=profil)
+        messages.warning(request, 'La date limite est dépassée. Votre note est de 0/20.')
+        return redirect('core:qcm_resultats', pk=session_expiree.id)
+
     # Vérifier si déjà terminé
     session_existante = SessionQCM.objects.filter(qcm=qcm, eleve=profil, termine=True).first()
     if session_existante:
@@ -5353,6 +5435,12 @@ def qcm_passer(request, pk):
     ]
 
     if request.method == 'POST':
+        if _qcm_est_expire(qcm):
+            _finaliser_sessions_qcm_expire(qcm)
+            session_expiree = get_object_or_404(SessionQCM, qcm=qcm, eleve=profil)
+            messages.warning(request, 'La date limite est dépassée. Votre note est de 0/20.')
+            return redirect('core:qcm_resultats', pk=session_expiree.id)
+
         reponses = {}
         nb_bonnes = 0
         for q in qcm.questions.all():
@@ -5431,6 +5519,8 @@ def qcm_resultats(request, pk):
 def qcm_resultats_prof(request, pk):
     """Vue professeur : résultats de TOUS les élèves pour un QCM."""
     qcm = get_object_or_404(QCM, pk=pk)
+    if _qcm_est_expire(qcm):
+        _finaliser_sessions_qcm_expire(qcm)
     sessions_qs = (SessionQCM.objects
                    .filter(qcm=qcm, termine=True)
                    .select_related('eleve__user')

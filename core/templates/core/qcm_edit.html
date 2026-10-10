@@ -357,7 +357,12 @@
                 <div class="q-enonce">{{ q.enonce }}</div>
                 <span class="bonne-rep-badge">✓ {{ q.bonne_reponse }}</span>
             </div>
-            {% if q.image_url %}
+            {% if q.image %}
+            <div style="margin:0.5rem 1rem 0;text-align:center;">
+                <img src="{{ q.image.url }}" alt="Illustration question"
+                     style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #e9ecef;object-fit:contain;">
+            </div>
+            {% elif q.image_url %}
             <div style="margin:0.5rem 1rem 0;text-align:center;">
                 <img src="{{ q.image_url }}" alt="Illustration question"
                      style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #e9ecef;object-fit:contain;">
@@ -406,7 +411,7 @@
                         data-choix-c="{{ q.choix_c|escapejs }}"
                         data-choix-d="{{ q.choix_d|escapejs }}"
                         data-bonne="{{ q.bonne_reponse }}"
-                        data-image="{{ q.image_url|escapejs }}"
+                        data-image="{% if q.image %}{{ q.image.url|escapejs }}{% else %}{{ q.image_url|escapejs }}{% endif %}"
                         onclick="ouvrirModalEdition(this)">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -454,7 +459,7 @@
             Ajouter une question manuellement
         </h3>
 
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="action" value="add_question">
 
@@ -462,6 +467,11 @@
                 <label>Énoncé de la question *</label>
                 <textarea name="enonce" rows="3" required
                     placeholder="Ex : Quelle est la résistance caractéristique du béton C25/30 ?"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="nouvelle-image">Image de la question (facultative)</label>
+                <input type="file" id="nouvelle-image" name="image" accept="image/*">
+                <small>Image JPG, PNG ou WebP, 5 Mo maximum.</small>
             </div>
 
             <div class="section-title-small">Choix (A et B obligatoires, C et D optionnels)</div>
@@ -520,7 +530,7 @@
             </svg>
             Modifier la question
         </div>
-        <form id="form-edition" method="post" action="">
+        <form id="form-edition" method="post" enctype="multipart/form-data" action="">
             {% csrf_token %}
             <div class="form-group">
                 <label>Énoncé *</label>
@@ -558,17 +568,13 @@
                 </select>
             </div>
             <div class="form-group">
-                <label style="display:flex;align-items:center;gap:0.5rem;">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--qcm)"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                    URL d'image (optionnel)
+                <label for="me-image-file">Remplacer l'image par un fichier (facultatif)</label>
+                <input type="file" id="me-image-file" name="image" accept="image/*">
+                <small>Image JPG, PNG ou WebP, 5 Mo maximum.</small>
+                <label style="display:flex;align-items:center;gap:0.5rem;margin-top:0.6rem;">
+                    <input type="checkbox" id="me-remove-image" name="remove_image">
+                    Supprimer l'image actuelle
                 </label>
-                <input type="url" id="me-image" name="image_url"
-                       placeholder="https://exemple.com/image.jpg">
                 <div id="me-preview" style="margin-top:0.5rem;display:none;">
                     <img id="me-preview-img" src="" alt=""
                          style="max-width:100%;max-height:180px;border-radius:8px;
@@ -618,7 +624,8 @@ function ouvrirModalEdition(btn) {
     document.getElementById('me-choix-c').value = choixC;
     document.getElementById('me-choix-d').value = choixD;
     document.getElementById('me-bonne').value   = bonne;
-    document.getElementById('me-image').value   = image;
+    document.getElementById('me-image-file').value = '';
+    document.getElementById('me-remove-image').checked = false;
     afficherPreview(image);
     document.getElementById('modal-edition').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -630,8 +637,10 @@ function fermerModal(e) {
     document.body.style.overflow = '';
 }
 
-document.getElementById('me-image').addEventListener('input', function() {
-    afficherPreview(this.value);
+document.getElementById('me-image-file').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        afficherPreview(URL.createObjectURL(this.files[0]));
+    }
 });
 
 function afficherPreview(url) {

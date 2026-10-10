@@ -106,7 +106,11 @@
         <div class="q-card" data-qid="{{ item.q.id }}">
             <div class="q-numero">Question {{ forloop.counter }} / {{ nb_questions }}</div>
             <div class="q-enonce">{{ item.q.enonce }}</div>
-            {% if item.q.image_url %}
+            {% if item.q.image %}
+            <div class="q-image">
+                <img src="{{ item.q.image.url }}" alt="Illustration">
+            </div>
+            {% elif item.q.image_url %}
             <div class="q-image">
                 <img src="{{ item.q.image_url }}" alt="Illustration">
             </div>

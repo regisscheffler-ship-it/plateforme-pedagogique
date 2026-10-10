@@ -1413,6 +1413,7 @@ class QuestionQCM(models.Model):
         related_name='questions'
     )
     enonce = models.TextField()
+    image = models.ImageField(upload_to='qcm_images/', blank=True, null=True)
     image_url = models.URLField(blank=True)
     choix_a = models.CharField(max_length=300)
     choix_b = models.CharField(max_length=300)

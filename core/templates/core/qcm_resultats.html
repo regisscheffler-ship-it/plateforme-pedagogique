@@ -166,7 +166,11 @@
             <div class="recap-enonce">{{ item.question.enonce }}</div>
         </div>
 
-        {% if item.question.image_url %}
+        {% if item.question.image %}
+        <div class="recap-image">
+            <img src="{{ item.question.image.url }}" alt="">
+        </div>
+        {% elif item.question.image_url %}
         <div class="recap-image">
             <img src="{{ item.question.image_url }}" alt="">
         </div>

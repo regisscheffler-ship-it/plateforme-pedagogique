@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from datetime import date, datetime, timedelta
 from django.utils import timezone
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM, Theme, Dossier, Fichier, FicheRevision
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, QuestionQCM, SessionQCM, Theme, Dossier, Fichier, FicheRevision
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
@@ -346,6 +346,188 @@ class TestEvaluationListFilters(TestCase):
         )
         self.assertContains(response, 'Toutes les classes')
         self.assertContains(response, 'Date du TP, à partir du')
+
+
+class TestQCMDeadlinesAndImages(TestCase):
+    def setUp(self):
+        niveau = Niveau.objects.create(nom='CAP', description='CAP')
+        self.classe = Classe.objects.create(nom='2M', niveau=niveau)
+        self.prof_user = User.objects.create_user(username='prof_qcm_features', password='test123456')
+        ProfilUtilisateur.objects.create(
+            user=self.prof_user, type_utilisateur='professeur', compte_approuve=True,
+        )
+        self.theme = Theme.objects.create(nom='Thème QCM', createur=self.prof_user)
+        self.qcm = QCM.objects.create(
+            theme=self.theme, titre='QCM de test', createur=self.prof_user,
+            date_limite=timezone.now() + timedelta(days=1),
+        )
+        self.qcm.classes.add(self.classe)
+
+    def creer_eleve(self, username):
+        user = User.objects.create_user(username=username, password='test123456')
+        return ProfilUtilisateur.objects.create(
+            user=user, type_utilisateur='eleve', classe=self.classe, compte_approuve=True,
+        )
+
+    def creer_image_png(self, nom):
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        contenu = BytesIO()
+        Image.new('RGB', (2, 2), color='red').save(contenu, format='PNG')
+        return SimpleUploadedFile(nom, contenu.getvalue(), content_type='image/png')
+
+    def test_creation_et_modification_question_acceptent_un_fichier_image(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            self.client.force_login(self.prof_user)
+            response = self.client.post(reverse('core:qcm_edit', args=[self.qcm.pk]), {
+                'action': 'add_question',
+                'enonce': 'Que montre cette image ?',
+                'choix_a': 'Une image',
+                'choix_b': 'Un document',
+                'bonne_reponse': 'A',
+                'image': self.creer_image_png('question.png'),
+            })
+            question = QuestionQCM.objects.get(qcm=self.qcm)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(question.image.name.startswith('qcm_images/'))
+            self.assertEqual(question.image_url, '')
+            self.assertContains(response, question.image.url)
+
+            eleve = self.creer_eleve('eleve_qcm_image')
+            self.client.force_login(eleve.user)
+            passage = self.client.get(reverse('core:qcm_passer', args=[self.qcm.pk]))
+            self.assertContains(passage, question.image.url)
+
+            self.client.force_login(self.prof_user)
+            edition = self.client.post(reverse('core:question_edit', args=[question.pk]), {
+                'enonce': question.enonce,
+                'choix_a': question.choix_a,
+                'choix_b': question.choix_b,
+                'bonne_reponse': question.bonne_reponse,
+                'image': self.creer_image_png('question-remplacee.png'),
+            })
+            question.refresh_from_db()
+            self.assertEqual(edition.status_code, 302)
+            self.assertTrue(question.image.name.endswith('question-remplacee.png'))
+
+    def test_creation_qcm_accepte_une_date_locale_et_affiche_les_grands_formats(self):
+        self.client.force_login(self.prof_user)
+        formulaire = self.client.get(reverse('core:qcm_create', args=[self.theme.pk]))
+        self.assertContains(formulaire, 'value="30"')
+        self.assertContains(formulaire, 'value="40"')
+        self.assertContains(formulaire, 'value="50"')
+
+        date_locale = (timezone.localtime() + timedelta(days=2)).replace(second=0, microsecond=0)
+        valeur_date = date_locale.strftime('%Y-%m-%dT%H:%M')
+        response = self.client.post(reverse('core:qcm_create', args=[self.theme.pk]), {
+            'titre': 'QCM date locale',
+            'classes': [self.classe.pk],
+            'date_limite': valeur_date,
+        })
+
+        qcm = QCM.objects.get(titre='QCM date locale')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(qcm.date_limite, date_locale)
+
+        nouvelle_date_locale = date_locale + timedelta(days=1)
+        self.client.post(reverse('core:qcm_edit', args=[qcm.pk]), {
+            'action': 'update_meta',
+            'titre': qcm.titre,
+            'classes_ids': [self.classe.pk],
+            'date_limite': nouvelle_date_locale.strftime('%Y-%m-%dT%H:%M'),
+        })
+        qcm.refresh_from_db()
+        self.assertEqual(qcm.date_limite, nouvelle_date_locale)
+
+    def test_generation_qcm_accepte_50_questions(self):
+        self.client.force_login(self.prof_user)
+        date_locale = (timezone.localtime() + timedelta(days=2)).replace(second=0, microsecond=0)
+
+        with patch('core.services.generer_qcm_depuis_texte', return_value=None) as generer_qcm:
+            response = self.client.post(reverse('core:qcm_create', args=[self.theme.pk]), {
+                'titre': 'QCM 50 questions',
+                'classes': [self.classe.pk],
+                'date_limite': date_locale.strftime('%Y-%m-%dT%H:%M'),
+                'nb_questions': '50',
+                'source_type': 'texte',
+                'texte_source': 'Texte de cours pour générer les questions.',
+            })
+
+        self.assertEqual(response.status_code, 302)
+        generer_qcm.assert_called_once_with('Texte de cours pour générer les questions.', 50)
+
+    def test_qcm_expire_bloque_leleve_et_attribue_zero_a_toute_la_classe(self):
+        eleve = self.creer_eleve('eleve_qcm_en_retard')
+        absent = self.creer_eleve('eleve_qcm_absent')
+        self.qcm.date_limite = timezone.now() - timedelta(minutes=5)
+        self.qcm.save(update_fields=['date_limite'])
+        self.client.force_login(eleve.user)
+
+        response = self.client.get(reverse('core:qcm_passer', args=[self.qcm.pk]))
+
+        session = SessionQCM.objects.get(qcm=self.qcm, eleve=eleve)
+        self.assertRedirects(response, reverse('core:qcm_resultats', args=[session.pk]))
+        self.assertEqual(session.note_sur_20, 0)
+        self.assertEqual(session.nb_bonnes_reponses, 0)
+        session_absent = SessionQCM.objects.get(qcm=self.qcm, eleve=absent)
+        self.assertEqual(session_absent.note_sur_20, 0)
+        self.assertTrue(session_absent.termine)
+
+    def test_soumission_apres_echeance_est_notee_zero(self):
+        eleve = self.creer_eleve('eleve_qcm_soumission_tardive')
+        question = QuestionQCM.objects.create(
+            qcm=self.qcm, enonce='Question ?', choix_a='A', choix_b='B', bonne_reponse='A',
+        )
+        self.client.force_login(eleve.user)
+        page = self.client.get(reverse('core:qcm_passer', args=[self.qcm.pk]))
+        self.assertEqual(page.status_code, 200)
+
+        with patch(
+            'core.views_merged_ast.timezone.now',
+            return_value=self.qcm.date_limite + timedelta(seconds=1),
+        ):
+            response = self.client.post(reverse('core:qcm_passer', args=[self.qcm.pk]), {
+                f'q_{question.pk}': 'A',
+            })
+
+        session = SessionQCM.objects.get(qcm=self.qcm, eleve=eleve)
+        self.assertRedirects(response, reverse('core:qcm_resultats', args=[session.pk]))
+        self.assertEqual(session.note_sur_20, 0)
+        self.assertEqual(session.reponses, {})
+
+    def test_resultats_expirees_preservent_les_notes_a_temps_et_notent_les_absents_zero(self):
+        eleve_a_temps = self.creer_eleve('eleve_qcm_a_temps')
+        eleve_tardif = self.creer_eleve('eleve_qcm_resultat_tardif')
+        eleve_absent = self.creer_eleve('eleve_qcm_resultat_absent')
+        self.qcm.date_limite = timezone.now() - timedelta(hours=1)
+        self.qcm.save(update_fields=['date_limite'])
+        SessionQCM.objects.create(
+            qcm=self.qcm, eleve=eleve_a_temps, termine=True,
+            note_sur_20=16, nb_bonnes_reponses=4,
+            date_soumission=self.qcm.date_limite - timedelta(minutes=1),
+        )
+        session_tardive = SessionQCM.objects.create(
+            qcm=self.qcm, eleve=eleve_tardif, termine=True,
+            note_sur_20=18, nb_bonnes_reponses=5,
+            date_soumission=self.qcm.date_limite + timedelta(minutes=1),
+        )
+        self.client.force_login(self.prof_user)
+
+        response = self.client.get(reverse('core:qcm_resultats_prof', args=[self.qcm.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        session_tardive.refresh_from_db()
+        self.assertEqual(session_tardive.note_sur_20, 0)
+        self.assertEqual(
+            SessionQCM.objects.get(qcm=self.qcm, eleve=eleve_a_temps).note_sur_20, 16,
+        )
+        self.assertEqual(
+            SessionQCM.objects.get(qcm=self.qcm, eleve=eleve_absent).note_sur_20, 0,
+        )
 
 
 class TestPFMPAttendanceHistory(TestCase):
