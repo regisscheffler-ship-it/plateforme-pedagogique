@@ -975,7 +975,7 @@ def gestion_themes(request):
     else:
         themes = Theme.objects.all()
     themes = themes.select_related('createur').prefetch_related('classes').annotate(
-        nb_dossiers=Count('dossiers', distinct=True)
+        nb_dossiers=Count('dossiers', filter=Q(dossiers__actif=True), distinct=True)
     ).order_by('-epingle', 'ordre', 'nom')
     return render(request, 'core/gestion_themes.html', {'classes': classes, 'themes': themes, 'classe_selectionnee': classe_selectionnee})
 
@@ -1211,6 +1211,45 @@ def dossier_detail(request, pk):
     return render(request, 'core/dossier_detail.html', {
         'dossier': dossier, 'fichiers': fichiers, 'travaux': travaux, 'theme': dossier.theme,
     })
+
+
+@login_required
+def fichier_download(request, pk):
+    fichier = get_object_or_404(Fichier.objects.select_related('dossier__theme'), pk=pk, actif=True)
+    if fichier.type_contenu != 'fichier' or not fichier.fichier:
+        raise Http404("Fichier introuvable")
+
+    profil = getattr(request.user, 'profil', None)
+    if profil and profil.est_eleve():
+        classe_id = profil.classe_id
+        dossier = fichier.dossier
+        if (
+            not classe_id
+            or not fichier.visible_eleves
+            or not dossier.actif
+            or not dossier.visible_eleves
+            or not dossier.theme.visible_eleves
+            or not dossier.theme.classes.filter(pk=classe_id).exists()
+            or not dossier.classes.filter(pk=classe_id).exists()
+        ):
+            messages.error(request, "❌ Vous n'avez pas accès à ce fichier.")
+            return redirect('core:dashboard_eleve')
+
+    if getattr(settings, 'USE_CLOUDINARY', False) and fichier.fichier.name.lower().endswith('.pdf'):
+        try:
+            from cloudinary.utils import cloudinary_url
+            url, _ = cloudinary_url(
+                fichier.fichier.name, resource_type='raw', sign_url=True, secure=True,
+            )
+            return redirect(url)
+        except Exception:
+            pass
+
+    try:
+        return redirect(fichier.fichier.url)
+    except Exception:
+        messages.error(request, "❌ Impossible d'accéder au fichier.")
+        return redirect('core:theme_detail', pk=fichier.dossier.theme_id)
 
 
 def dossier_update(request, pk):

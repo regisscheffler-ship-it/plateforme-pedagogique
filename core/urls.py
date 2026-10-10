@@ -67,6 +67,7 @@ urlpatterns = [
     path('gestion/themes/',                    views.gestion_themes,          name='gestion_themes'),
     path('themes/creer/',                      views.theme_create,            name='theme_create'),
     path('themes/<int:pk>/',                   views.theme_detail,            name='theme_detail'),
+    path('themes/fichier/<int:pk>/telecharger/', views.fichier_download,       name='fichier_download'),
     path('themes/<int:pk>/modifier/',          views.theme_update,            name='theme_update'),
     path('themes/<int:pk>/editer/',            views.theme_edit,              name='theme_edit'),
     path('themes/<int:pk>/supprimer/',         views.theme_delete,            name='theme_delete'),

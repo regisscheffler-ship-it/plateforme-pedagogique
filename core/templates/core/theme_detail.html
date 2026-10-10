@@ -57,6 +57,7 @@
 
     .dossier-card { background: white; border-radius: 12px; margin-bottom: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e9ecef; overflow: hidden; }
     .dossier-header { background: #f8f9fa; padding: 1rem 1.4rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; }
+    .dossier-classes { margin: 0; padding: 0.65rem 1.4rem; color: #52606d; font-size: 0.82rem; border-bottom: 1px solid #e9ecef; }
     .dossier-title { display: flex; align-items: center; gap: 0.75rem; }
     .dossier-title h3 { margin: 0; font-size: 1rem; color: #2c3e50; font-weight: 700; }
     .dossier-icon { color: #6c757d; }
@@ -225,6 +226,9 @@
             </div>
 
             <!-- Liste des Fichiers/Ressources classiques -->
+            {% if is_prof %}
+                <p class="dossier-classes">Classes autorisées : {{ item.dossier.classes.all|join:", "|default:"Aucune" }}</p>
+            {% endif %}
             <div class="files-list">
                 {% if item.fichiers %}
                     {% for fichier in item.fichiers %}
@@ -252,7 +256,7 @@
                             {% elif fichier.type_contenu == 'lien' %}
                                 <a href="{{ fichier.lien_externe }}" target="_blank" class="btn-download">Ouvrir</a>
                             {% elif fichier.fichier %}
-                                <a href="{{ fichier.fichier.url }}" target="_blank" class="btn-download">Consulter</a>
+                                <a href="{% url 'core:fichier_download' fichier.id %}" class="btn-download">Télécharger</a>
                             {% endif %}
                             
                             {% if request.user.is_staff %}

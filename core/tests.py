@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from datetime import date, datetime, timedelta
 from django.utils import timezone
-from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM, Theme, Dossier, FicheRevision
+from core.models import ProfilUtilisateur, Classe, Niveau, Referentiel, FicheContrat, FicheEvaluation, Archive, MessageEleve, DiplomeEleve, PFMP, SuiviPFMP, ConnexionEleve, QCM, SessionQCM, Theme, Dossier, Fichier, FicheRevision
 from django.core.files.base import ContentFile
 from unittest.mock import patch
 from core.storage import AutoMediaCloudinaryStorage, RESOURCE_TYPES
@@ -936,6 +936,8 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         self.client.force_login(self.prof)
         page_prof = self.client.get(reverse('core:theme_detail', args=[theme.pk]))
         self.assertContains(page_prof, 'Classes accessibles')
+        self.assertContains(page_prof, 'Classes autorisées : 2M')
+        self.assertContains(page_prof, 'Classes autorisées : 2B')
         self.assertContains(page_prof, '2M')
         self.assertContains(page_prof, '2B')
 
@@ -943,6 +945,43 @@ class TestProfessorAccountsAndThemeOwners(TestCase):
         response = self.client.get(reverse('core:theme_detail', args=[theme.pk]))
 
         self.assertEqual(response.status_code, 200)
+
+    def test_telechargement_pdf_theme_utilise_une_url_cloudinary_signee(self):
+        theme = Theme.objects.create(nom='Thème PDF', createur=self.prof)
+        dossier = Dossier.objects.create(theme=theme, nom='Cours')
+        fichier = Fichier.objects.create(
+            dossier=dossier, nom='Cours PDF', type_contenu='fichier', fichier='fichiers/cours.pdf',
+        )
+        self.client.force_login(self.prof)
+
+        with patch('core.views_merged_ast.settings.USE_CLOUDINARY', True), patch(
+            'cloudinary.utils.cloudinary_url', return_value=('https://cloudinary.test/cours.pdf', {}),
+        ) as cloudinary_url:
+            response = self.client.get(reverse('core:fichier_download', args=[fichier.pk]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], 'https://cloudinary.test/cours.pdf')
+        cloudinary_url.assert_called_once_with(
+            'fichiers/cours.pdf', resource_type='raw', sign_url=True, secure=True,
+        )
+
+    def test_eleve_hors_classe_ne_peut_pas_telecharger_un_fichier_de_theme(self):
+        theme = Theme.objects.create(nom='Thème réservé', createur=self.prof, visible_eleves=True)
+        theme.classes.add(self.classe)
+        dossier = Dossier.objects.create(
+            theme=theme, nom='Cours 2M', visible_eleves=True,
+        )
+        dossier.classes.add(self.classe)
+        fichier = Fichier.objects.create(
+            dossier=dossier, nom='Cours PDF', type_contenu='fichier', fichier='fichiers/cours.pdf',
+        )
+        eleve = User.objects.create_user(username='eleve_hors_classe_pdf', password='motdepasse')
+        ProfilUtilisateur.objects.create(user=eleve, type_utilisateur='eleve', classe=self.classe_b)
+        self.client.force_login(eleve)
+
+        response = self.client.get(reverse('core:fichier_download', args=[fichier.pk]))
+
+        self.assertRedirects(response, reverse('core:dashboard_eleve'))
 
     def test_creation_dossier_enregistre_les_classes_selectionnees(self):
         theme = Theme.objects.create(nom='Thème classes', createur=self.prof)
