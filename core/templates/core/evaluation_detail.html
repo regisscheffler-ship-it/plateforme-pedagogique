@@ -388,7 +388,15 @@
     </div>
 
     <!-- Boutons d'action -->
+    {% if lecture_seule %}
+    <div class="info-card" style="border-left-color:#4a9fc1;">
+        Lecture seule : cette évaluation a été créée par
+        <strong>{{ fiche_contrat.createur.get_full_name|default:fiche_contrat.createur.username }}</strong>.
+        Vous pouvez la consulter et l'imprimer, mais pas la modifier.
+    </div>
+    {% endif %}
     <div class="action-bar">
+        {% if not lecture_seule %}
         <a href="{% url 'core:fiche_contrat_modifier' fiche_contrat.id %}" class="btn-action btn-blue">
             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -396,6 +404,7 @@
             </svg>
             Modifier la fiche
         </a>
+        {% endif %}
         <a href="{% url 'core:generer_fiches_eleves' fiche_contrat.id %}" target="_blank" class="btn-action btn-blue">
             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -421,6 +430,7 @@
             </svg>
             Télécharger l'archive
         </a>
+        {% if not lecture_seule %}
         {% if peut_archiver %}
         <form method="post" action="{% url 'core:fiche_contrat_archiver' fiche_contrat.id %}" style="display:inline;"
               onsubmit="return confirm('Archiver ce TP et notifier les élèves ?')">
@@ -454,6 +464,7 @@
             </svg>
             Supprimer
         </a>
+        {% endif %}
     </div>
 
     <!-- Informations du TP -->
@@ -502,7 +513,11 @@
             <div class="info-item">
                 <div class="info-label">Atelier lié</div>
                 <div class="info-value">
-                    {% if fiche_contrat.atelier %}
+                    {% if fiche_contrat.atelier and lecture_seule %}
+                        <a href="{% url 'core:atelier_detail' fiche_contrat.atelier.id %}">{{ fiche_contrat.atelier.titre }}</a>
+                    {% elif lecture_seule %}
+                        <span style="color:#94a3b8;font-style:italic;">Aucun atelier lié</span>
+                    {% elif fiche_contrat.atelier %}
                         <div style="display:flex;align-items:center;gap:0.6rem;">
                             <a href="{% url 'core:atelier_detail' fiche_contrat.atelier.id %}">{{ fiche_contrat.atelier.titre }}</a>
                             <form method="post" action="{% url 'core:evaluation_lier_atelier' fiche_contrat.id %}" style="display:inline;margin:0;">
@@ -561,10 +576,10 @@
         <div class="students-grid">
             {% for evaluation in evaluations %}
             <div style="display:flex;align-items:center;gap:0;">
-                <a href="{% url 'core:fiche_evaluation_saisie' fiche_contrat.id evaluation.eleve.id %}" class="student-card" style="flex:1;border-radius:{% if evaluation.validee %}12px 0 0 12px{% else %}12px{% endif %};">
+                <a href="{% url 'core:fiche_evaluation_saisie' fiche_contrat.id evaluation.eleve.id %}" class="student-card" style="flex:1;border-radius:{% if evaluation.validee and not lecture_seule %}12px 0 0 12px{% else %}12px{% endif %};">
                     <div class="student-info">
                         <div>{{ evaluation.eleve.user.last_name|upper }} {{ evaluation.eleve.user.first_name }}</div>
-                        <div>{% if evaluation.validee %}Validée — lecture seule{% else %}Cliquez pour noter{% endif %}</div>
+                        <div>{% if evaluation.validee %}Validée — lecture seule{% elif lecture_seule %}Cliquez pour consulter{% else %}Cliquez pour noter{% endif %}</div>
                     </div>
                     {% if evaluation.validee %}
                         <span class="grade-badge done">{{ evaluation.note_sur_20|floatformat:1 }}/20</span>
@@ -572,7 +587,7 @@
                         <span class="grade-badge">En cours</span>
                     {% endif %}
                 </a>
-                {% if evaluation.validee %}
+                {% if evaluation.validee and not lecture_seule %}
                 <form method="post" action="{% url 'core:deverrouiller_fiche_evaluation' evaluation.id %}" style="margin:0;"
                       onsubmit="return confirm('Déverrouiller la fiche de {{ evaluation.eleve.user.get_full_name }} ? Les notes pourront être modifiées.');">
                     {% csrf_token %}
@@ -588,7 +603,7 @@
         </div>
     </div>
 
-    {% if eleves_sans_fiche %}
+    {% if eleves_sans_fiche and not lecture_seule %}
     <!-- Élèves absents sans fiche -->
     <div class="info-card" style="border-left-color:#e74c3c;">
         <div class="info-title" style="color:#e74c3c;">

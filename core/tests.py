@@ -629,6 +629,172 @@ class TestQCMDeadlinesAndImages(TestCase):
         )
 
 
+class TestProfessorsSharedReadOnlyAccess(TestCase):
+    def setUp(self):
+        niveau = Niveau.objects.create(nom='CAP', description='CAP')
+        self.classe = Classe.objects.create(nom='2M', niveau=niveau)
+        self.auteur = User.objects.create_user(
+            username='prof_auteur', password='test123456', first_name='Alice', last_name='Auteur',
+        )
+        ProfilUtilisateur.objects.create(user=self.auteur, type_utilisateur='professeur', compte_approuve=True)
+        self.collegue = User.objects.create_user(username='prof_collegue', password='test123456')
+        ProfilUtilisateur.objects.create(user=self.collegue, type_utilisateur='professeur', compte_approuve=True)
+        self.eleve_user = User.objects.create_user(username='eleve_acces', password='test123456')
+        self.eleve = ProfilUtilisateur.objects.create(
+            user=self.eleve_user, type_utilisateur='eleve', classe=self.classe, compte_approuve=True,
+        )
+        referentiel = Referentiel.objects.create(nom='Référentiel partagé', description='Test')
+        self.fiche = FicheContrat.objects.create(
+            referentiel=referentiel, classe=self.classe, titre_tp='TP partagé', createur=self.auteur,
+        )
+        self.fiche_eval = FicheEvaluation.objects.create(fiche_contrat=self.fiche, eleve=self.eleve)
+        self.qcm = QCM.objects.create(
+            titre='QCM partagé', createur=self.auteur, actif=True,
+            date_limite=timezone.now() + timedelta(days=3),
+        )
+        self.qcm.classes.add(self.classe)
+        self.question = QuestionQCM.objects.create(
+            qcm=self.qcm, enonce='Question ?', choix_a='A', choix_b='B', bonne_reponse='A',
+        )
+
+    def test_collegue_voit_les_evaluations_en_lecture_seule(self):
+        self.client.force_login(self.collegue)
+
+        liste = self.client.get(reverse('core:evaluations_home'))
+        detail = self.client.get(reverse('core:evaluation_detail', args=[self.fiche.pk]))
+        saisie = self.client.get(
+            reverse('core:fiche_evaluation_saisie', args=[self.fiche.pk, self.eleve.pk])
+        )
+        contrat = self.client.get(reverse('core:generer_fiches_eleves', args=[self.fiche.pk]))
+        evaluation = self.client.get(reverse('core:generer_fiches_evaluation', args=[self.fiche.pk]))
+
+        self.assertContains(liste, 'TP partagé')
+        self.assertContains(liste, 'Par Alice Auteur')
+        for reponse in (detail, saisie, contrat, evaluation):
+            self.assertEqual(reponse.status_code, 200)
+            self.assertTrue(reponse.context['lecture_seule'])
+        self.assertContains(detail, 'Lecture seule')
+        self.assertNotContains(detail, reverse('core:fiche_contrat_supprimer', args=[self.fiche.pk]))
+        self.assertNotContains(contrat, reverse('core:valider_contrat', args=[self.fiche.pk]))
+        self.assertNotContains(evaluation, reverse('core:valider_fiches_evaluation', args=[self.fiche.pk]))
+
+    def test_createur_garde_les_actions_de_modification(self):
+        self.client.force_login(self.auteur)
+
+        detail = self.client.get(reverse('core:evaluation_detail', args=[self.fiche.pk]))
+
+        self.assertEqual(detail.status_code, 200)
+        self.assertFalse(detail.context['lecture_seule'])
+        self.assertContains(detail, reverse('core:fiche_contrat_supprimer', args=[self.fiche.pk]))
+
+    def test_collegue_ne_peut_pas_modifier_valider_ni_supprimer_une_evaluation(self):
+        self.client.force_login(self.collegue)
+
+        saisie = self.client.post(
+            reverse('core:fiche_evaluation_saisie', args=[self.fiche.pk, self.eleve.pk]),
+            {'action': 'valider', 'compte_rendu': 'Modifié'},
+        )
+        validation = self.client.post(reverse('core:valider_contrat', args=[self.fiche.pk]))
+        suppression = self.client.post(reverse('core:fiche_contrat_supprimer', args=[self.fiche.pk]))
+        archivage = self.client.post(reverse('core:fiche_contrat_archiver', args=[self.fiche.pk]))
+
+        self.assertEqual(saisie.status_code, 302)
+        self.assertEqual(validation.status_code, 404)
+        self.assertEqual(suppression.status_code, 404)
+        self.assertEqual(archivage.status_code, 404)
+        self.fiche.refresh_from_db()
+        self.fiche_eval.refresh_from_db()
+        self.assertFalse(self.fiche.contrat_valide)
+        self.assertTrue(self.fiche.actif)
+        self.assertFalse(self.fiche_eval.validee)
+        self.assertNotEqual(self.fiche_eval.compte_rendu, 'Modifié')
+
+    def test_un_eleve_n_accede_pas_aux_evaluations_ni_aux_qcm_des_professeurs(self):
+        self.client.force_login(self.eleve_user)
+
+        reponses = [
+            self.client.get(reverse('core:evaluations_home')),
+            self.client.get(reverse('core:evaluation_detail', args=[self.fiche.pk])),
+            self.client.get(reverse('core:generer_fiches_evaluation', args=[self.fiche.pk])),
+            self.client.get(reverse('core:qcm_gestion')),
+            self.client.get(reverse('core:qcm_resultats_prof', args=[self.qcm.pk])),
+            self.client.post(reverse('core:qcm_delete', args=[self.qcm.pk])),
+        ]
+
+        for reponse in reponses:
+            self.assertEqual(reponse.status_code, 302)
+            self.assertIn('login', reponse['Location'])
+        self.assertTrue(QCM.objects.filter(pk=self.qcm.pk).exists())
+
+    def test_collegue_voit_les_qcm_existants_mais_ne_peut_pas_les_modifier(self):
+        self.client.force_login(self.collegue)
+
+        gestion = self.client.get(reverse('core:qcm_gestion'))
+        edition = self.client.get(reverse('core:qcm_edit', args=[self.qcm.pk]))
+        resultats = self.client.get(reverse('core:qcm_resultats_prof', args=[self.qcm.pk]))
+        ajout = self.client.post(reverse('core:qcm_edit', args=[self.qcm.pk]), {
+            'action': 'add_question', 'enonce': 'Intrus', 'choix_a': 'A', 'choix_b': 'B',
+            'bonne_reponse': 'A',
+        })
+        activation = self.client.post(reverse('core:qcm_toggle_actif', args=[self.qcm.pk]))
+        suppression_question = self.client.post(
+            reverse('core:question_delete', args=[self.question.pk])
+        )
+        suppression = self.client.post(reverse('core:qcm_delete', args=[self.qcm.pk]))
+
+        self.assertIn(self.qcm, gestion.context['qcms'])
+        self.assertContains(gestion, 'Dupliquer')
+        self.assertEqual(edition.status_code, 200)
+        self.assertTrue(edition.context['lecture_seule'])
+        self.assertContains(edition, 'Lecture seule')
+        self.assertEqual(resultats.status_code, 200)
+        for reponse in (ajout, activation, suppression_question, suppression):
+            self.assertEqual(reponse.status_code, 302)
+        self.qcm.refresh_from_db()
+        self.assertTrue(self.qcm.actif)
+        self.assertEqual(self.qcm.questions.count(), 1)
+        self.assertTrue(QuestionQCM.objects.filter(pk=self.question.pk).exists())
+
+    def test_collegue_duplique_un_qcm_dans_son_compte(self):
+        import tempfile
+        from io import BytesIO
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            contenu = BytesIO()
+            Image.new('RGB', (2, 2), color='blue').save(contenu, format='PNG')
+            self.question.image.save('source.png', ContentFile(contenu.getvalue()))
+            self.client.force_login(self.collegue)
+
+            response = self.client.post(reverse('core:qcm_dupliquer', args=[self.qcm.pk]))
+
+            copie = QCM.objects.exclude(pk=self.qcm.pk).get()
+            copie_question = copie.questions.get()
+            self.assertRedirects(response, reverse('core:qcm_edit', args=[copie.pk]))
+            self.assertEqual(copie.createur, self.collegue)
+            self.assertFalse(copie.actif)
+            self.assertFalse(copie.classes.exists())
+            self.assertGreater(copie.date_limite, timezone.now())
+            self.assertEqual(copie_question.enonce, self.question.enonce)
+            self.assertTrue(copie_question.image)
+            self.assertNotEqual(copie_question.image.name, self.question.image.name)
+
+            edition = self.client.get(reverse('core:qcm_edit', args=[copie.pk]))
+            self.assertFalse(edition.context['lecture_seule'])
+
+    def test_administrateur_peut_modifier_le_qcm_d_un_autre_professeur(self):
+        admin = User.objects.create_user(username='admin_qcm', password='test123456', is_staff=True)
+        ProfilUtilisateur.objects.create(user=admin, type_utilisateur='professeur', compte_approuve=True)
+        self.client.force_login(admin)
+
+        edition = self.client.get(reverse('core:qcm_edit', args=[self.qcm.pk]))
+        suppression = self.client.post(reverse('core:qcm_delete', args=[self.qcm.pk]))
+
+        self.assertFalse(edition.context['lecture_seule'])
+        self.assertEqual(suppression.status_code, 302)
+        self.assertFalse(QCM.objects.filter(pk=self.qcm.pk).exists())
+
+
 class TestPFMPAttendanceHistory(TestCase):
     def setUp(self):
         niveau = Niveau.objects.create(nom='CAP', description='CAP')

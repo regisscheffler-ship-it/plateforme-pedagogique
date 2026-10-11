@@ -129,6 +129,8 @@ body { font-family: Arial, sans-serif; background: #666; margin: 0; padding: 0; 
 
     {% if fiche_contrat.fiches_eval_valide %}
         <div class="badge-ok">✅ Fiches validées</div>
+    {% elif lecture_seule %}
+        <div class="badge-ok">Lecture seule</div>
     {% else %}
         <form method="post" action="{% url 'core:valider_fiches_evaluation' fiche_contrat.id %}" id="frmValidate" style="display:inline;">
             {% csrf_token %}

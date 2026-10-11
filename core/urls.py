@@ -95,6 +95,7 @@ urlpatterns = [
     path('qcm/<int:pk>/editer/',            views.qcm_edit,                     name='qcm_edit'),
     path('qcm/<int:pk>/activer/',           views.qcm_toggle_actif,             name='qcm_toggle_actif'),
     path('qcm/<int:pk>/supprimer/',         views.qcm_delete,                   name='qcm_delete'),
+    path('qcm/<int:pk>/dupliquer/',         views.qcm_dupliquer,                name='qcm_dupliquer'),
     path('questions/<int:pk>/supprimer/',   views.question_delete,              name='question_delete'),
     path('questions/<int:pk>/editer/',      views.question_edit,                name='question_edit'),
     path('questions/<int:pk>/regenerer/',   views.question_regenerer,           name='question_regenerer'),

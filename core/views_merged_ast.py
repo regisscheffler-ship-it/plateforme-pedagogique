@@ -3999,12 +3999,14 @@ def passer_en_classe_superieure(request, eleve_id):
     })
 
 
+@login_required
+@user_passes_test(est_professeur)
 def evaluations_home(request):
     toutes_fiches_actives = FicheContrat.objects.filter(
-        createur=request.user, actif=True
-    ).select_related('classe', 'referentiel').prefetch_related('evaluations').order_by('-date_creation')
+        actif=True
+    ).select_related('classe', 'referentiel', 'createur').prefetch_related('evaluations').order_by('-date_creation')
     fiches_archivees = FicheContrat.objects.filter(
-        createur=request.user, actif=False
+        actif=False
     ).order_by('-date_modification')
     nb_fiches_contrat = toutes_fiches_actives.count()
     # Compter une évaluation par fiche-contrat (indépendamment du nombre d'élèves)
@@ -4020,7 +4022,7 @@ def evaluations_home(request):
             nb_validees += 1
 
     classes_filtres = Classe.objects.filter(
-        Q(fiches_contrat__createur=request.user, fiches_contrat__actif=True)
+        Q(fiches_contrat__actif=True)
         | Q(qcms__isnull=False)
     ).distinct().order_by('nom')
     selected_class_ids = [
@@ -4236,12 +4238,14 @@ def creer_evaluation(request):
         return redirect('core:evaluation_parametres')
 
 
+@login_required
+@user_passes_test(est_professeur)
 def evaluation_detail(request, pk):
-    fiche_contrat = get_object_or_404(FicheContrat, id=pk, createur=request.user)
+    fiche_contrat = get_object_or_404(FicheContrat, id=pk)
     evaluations = FicheEvaluation.objects.filter(fiche_contrat=fiche_contrat)\
         .select_related('eleve__user').order_by('eleve__user__last_name')
     for evaluation in evaluations:
-        if evaluation.note_sur_20 is None:
+        if evaluation.note_sur_20 is None and fiche_contrat.createur_id == request.user.id:
             evaluation.calculer_note_sur_20()
     lignes = fiche_contrat.lignes.select_related(
         'competence_pro', 'sous_competence', 'critere', 'indicateur'
@@ -4289,6 +4293,7 @@ def evaluation_detail(request, pk):
         'raison_blocage_archivage': raison_blocage_archivage,
         'ateliers': Atelier.objects.filter(classe=fiche_contrat.classe, actif=True).order_by('ordre', 'titre'),
         'atelier_selection': getattr(fiche_contrat, 'atelier', None),
+        'lecture_seule': fiche_contrat.createur_id != request.user.id,
     })
 
 
@@ -4350,11 +4355,11 @@ def fiche_contrat_modifier(request, pk):
 def export_fiche_contrat_archive(request, pk):
     """Génère un ZIP contenant : fichiers de l'atelier (si présent),
     la fiche contrat (PDF) et les fiches évaluations (PDF) pour téléchargement.
-    Accessible par le créateur (professeur) seulement.
+    Accessible par tous les professeurs (lecture seule).
     """
     logger = logging.getLogger(__name__)
     logger.info(f"Export archive requested pk={pk} by user={getattr(request.user, 'username', None)}")
-    fiche_contrat = get_object_or_404(FicheContrat, id=pk, createur=request.user)
+    fiche_contrat = get_object_or_404(FicheContrat, id=pk)
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
@@ -4466,16 +4471,23 @@ def creer_fiche_absent(request, fiche_contrat_id, eleve_id):
     return redirect('core:evaluation_detail', fiche_contrat.id)
 
 
+@login_required
+@user_passes_test(est_professeur)
 def fiche_evaluation_saisie(request, fiche_contrat_id, eleve_id):
-    fiche_contrat = get_object_or_404(FicheContrat, id=fiche_contrat_id, createur=request.user)
+    fiche_contrat = get_object_or_404(FicheContrat, id=fiche_contrat_id)
+    lecture_seule = fiche_contrat.createur_id != request.user.id
+    if lecture_seule and request.method == 'POST':
+        messages.error(request, "❌ Seul le créateur de cette évaluation peut la modifier.")
+        return redirect('core:fiche_evaluation_saisie', fiche_contrat_id, eleve_id)
     eleve = get_object_or_404(ProfilUtilisateur, id=eleve_id)
     fiche_eval = get_object_or_404(FicheEvaluation, fiche_contrat=fiche_contrat, eleve=eleve)
     lignes_contrat = fiche_contrat.lignes.select_related(
         'indicateur', 'competence_pro', 'sous_competence', 'critere'
     ).order_by('ordre')
-    for lc in lignes_contrat:
-        EvaluationLigne.objects.get_or_create(
-            fiche_evaluation=fiche_eval, ligne_contrat=lc, defaults={'note': 'NE'})
+    if not lecture_seule:
+        for lc in lignes_contrat:
+            EvaluationLigne.objects.get_or_create(
+                fiche_evaluation=fiche_eval, ligne_contrat=lc, defaults={'note': 'NE'})
     lignes_eval = fiche_eval.lignes_evaluation.select_related(
         'ligne_contrat__competence_pro', 'ligne_contrat__sous_competence',
         'ligne_contrat__critere', 'ligne_contrat__indicateur'
@@ -4527,6 +4539,7 @@ def fiche_evaluation_saisie(request, fiche_contrat_id, eleve_id):
         'groupes_competences': groupes_competences, 'nb_total': nb_total, 'nb_evalues': nb_evalues,
         'progression': progression, 'poids_total': poids_total,
         'detail_calcul': fiche_eval.get_detail_calcul(),
+        'lecture_seule': lecture_seule,
     })
 
 
@@ -4596,9 +4609,11 @@ def fiche_contrat_supprimer(request, pk):
     return redirect('core:evaluations_home')
 
 
+@login_required
+@user_passes_test(est_professeur)
 def generer_fiches_eleves(request, fiche_contrat_id):
     """✅ Fiche contrat imprimable — une par élève"""
-    fiche_contrat = get_object_or_404(FicheContrat, id=fiche_contrat_id, createur=request.user)
+    fiche_contrat = get_object_or_404(FicheContrat, id=fiche_contrat_id)
     eleves = ProfilUtilisateur.objects.filter(
         ficheevaluation__fiche_contrat=fiche_contrat
     ).select_related('user').order_by('user__last_name').distinct()
@@ -4626,16 +4641,19 @@ def generer_fiches_eleves(request, fiche_contrat_id):
         'fiche_contrat': fiche_contrat, 'eleves': eleves,
         'competences_vises': competences_vises, 'poids_auto': poids_auto,
         'savoirs_dedupliques': savoirs_dedupliques,
+        'lecture_seule': fiche_contrat.createur_id != request.user.id,
     })
 
 
 generer_fiches_contrat = generer_fiches_eleves
 
 
+@login_required
+@user_passes_test(est_professeur)
 def generer_fiches_evaluation(request, fiche_contrat_id):
     """✅ Fiche évaluation imprimable — une par élève avec CP/SC/critères.
     Accepte ?eleve_id=XX pour filtrer sur un seul élève (depuis l'archive par ex.)."""
-    fiche_contrat = get_object_or_404(FicheContrat, id=fiche_contrat_id, createur=request.user)
+    fiche_contrat = get_object_or_404(FicheContrat, id=fiche_contrat_id)
     fiches_eleves = FicheEvaluation.objects.filter(
         fiche_contrat=fiche_contrat
     ).select_related('eleve__user').order_by('eleve__user__last_name')
@@ -4672,6 +4690,7 @@ def generer_fiches_evaluation(request, fiche_contrat_id):
         donnees_impression.append({'eleve': fe.eleve, 'evaluation': fe, 'groupes_competences': groupes_competences})
     return render(request, 'core/fiche_evaluation_print.html', {
         'fiche_contrat': fiche_contrat, 'donnees_impression': donnees_impression, 'poids_auto': poids_auto,
+        'lecture_seule': fiche_contrat.createur_id != request.user.id,
     })
 
 
@@ -5081,9 +5100,15 @@ def fiche_revision_delete(request, pk):
     return redirect('core:theme_detail', pk=theme_id)
 
 
+def _peut_modifier_qcm(user, qcm):
+    return qcm.createur_id == user.id or user.is_staff
+
+
+@login_required
+@user_passes_test(est_professeur)
 def qcm_gestion(request):
     """Page principale QCM : liste de tous les QCM + formulaire de création."""
-    qcms = QCM.objects.filter(createur=request.user).select_related('theme').prefetch_related('classes').annotate(
+    qcms = QCM.objects.select_related('theme', 'createur').prefetch_related('classes').annotate(
         nb_questions=Count('questions')
     ).order_by('-id')
     classes = Classe.objects.all().order_by('nom')
@@ -5261,12 +5286,15 @@ def qcm_create(request, theme_id):
     })
 
 
+@login_required
+@user_passes_test(est_professeur)
 def qcm_edit(request, pk):
-    """Éditer un QCM : voir/ajouter des questions, activer/désactiver."""
+    """Éditer un QCM : voir/ajouter des questions, activer/désactiver (lecture seule hors créateur)."""
     qcm = get_object_or_404(QCM, id=pk)
-    if qcm.createur != request.user and not request.user.is_staff:
-        messages.error(request, "❌ Vous n'êtes pas le créateur de ce QCM.")
-        return redirect('core:gestion_themes')
+    lecture_seule = not _peut_modifier_qcm(request.user, qcm)
+    if lecture_seule and request.method == 'POST':
+        messages.error(request, "❌ Seul le créateur de ce QCM peut le modifier. Dupliquez-le pour l'adapter.")
+        return redirect('core:qcm_edit', pk=qcm.id)
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -5318,6 +5346,7 @@ def qcm_edit(request, pk):
         'questions': questions,
         'peut_activer': peut_activer,
         'classes': classes,
+        'lecture_seule': lecture_seule,
     })
 
 
@@ -5360,10 +5389,15 @@ def question_edit(request, pk):
     return redirect('core:qcm_edit', pk=qcm.id)
 
 
+@login_required
+@user_passes_test(est_professeur)
 def question_delete(request, pk):
     """Supprimer une question QCM (POST uniquement)."""
     question = get_object_or_404(QuestionQCM, id=pk)
     qcm_id   = question.qcm.id
+    if not _peut_modifier_qcm(request.user, question.qcm):
+        messages.error(request, "❌ Seul le créateur de ce QCM peut le modifier.")
+        return redirect('core:qcm_edit', pk=qcm_id)
     if request.method == 'POST':
         question.delete()
         messages.success(request, '🗑️ Question supprimée.')
@@ -5527,6 +5561,8 @@ def qcm_resultats(request, pk):
     })
 
 
+@login_required
+@user_passes_test(est_professeur)
 def qcm_resultats_prof(request, pk):
     """Vue professeur : résultats de TOUS les élèves pour un QCM."""
     qcm = get_object_or_404(QCM, pk=pk)
@@ -5630,9 +5666,14 @@ def qcm_archiver(request, pk):
     return redirect('core:archive_detail', pk=archive.pk)
 
 
+@login_required
+@user_passes_test(est_professeur)
 def qcm_toggle_actif(request, pk):
     """Activer / désactiver un QCM (POST uniquement)."""
     qcm = get_object_or_404(QCM, id=pk)
+    if not _peut_modifier_qcm(request.user, qcm):
+        messages.error(request, "❌ Seul le créateur de ce QCM peut l'activer ou le désactiver.")
+        return redirect('core:qcm_edit', pk=pk)
     if request.method == 'POST':
         if not qcm.actif and qcm.questions.count() < 3:
             messages.error(request, '❌ Impossible d\'activer : il faut au moins 3 questions.')
@@ -5644,14 +5685,53 @@ def qcm_toggle_actif(request, pk):
     return redirect('core:qcm_edit', pk=pk)
 
 
+@login_required
+@user_passes_test(est_professeur)
 def qcm_delete(request, pk):
     """Supprimer un QCM et toutes ses questions (POST uniquement)."""
     qcm = get_object_or_404(QCM, id=pk)
+    if not _peut_modifier_qcm(request.user, qcm):
+        messages.error(request, "❌ Seul le créateur de ce QCM peut le supprimer.")
+        return redirect('core:qcm_gestion')
     if request.method == 'POST':
         titre = qcm.titre
         qcm.delete()
         messages.success(request, f'QCM "{titre}" supprimé.')
     return redirect('core:qcm_gestion')
+
+
+@login_required
+@user_passes_test(est_professeur)
+def qcm_dupliquer(request, pk):
+    """Copie un QCM (questions et images) dans le compte du professeur, en brouillon et sans classe."""
+    original = get_object_or_404(QCM, id=pk)
+    if request.method != 'POST':
+        return redirect('core:qcm_edit', pk=pk)
+
+    with transaction.atomic():
+        copie = QCM.objects.create(
+            theme=original.theme, titre=f"{original.titre} (copie)"[:200],
+            createur=request.user, date_limite=timezone.now() + timedelta(days=7),
+            melange_questions=original.melange_questions, actif=False,
+        )
+        for question in original.questions.all():
+            nouvelle = QuestionQCM.objects.create(
+                qcm=copie, enonce=question.enonce, image_url=question.image_url,
+                choix_a=question.choix_a, choix_b=question.choix_b,
+                choix_c=question.choix_c, choix_d=question.choix_d,
+                bonne_reponse=question.bonne_reponse, ordre=question.ordre,
+            )
+            if question.image:
+                try:
+                    with question.image.open('rb') as source:
+                        nouvelle.image.save(
+                            os.path.basename(question.image.name), ContentFile(source.read()), save=True,
+                        )
+                except Exception:
+                    logging.getLogger(__name__).warning("Image de la question %s non copiée", question.pk)
+
+    messages.success(request, '✅ QCM dupliqué. Choisissez maintenant vos classes et la date limite.')
+    return redirect('core:qcm_edit', pk=copie.id)
 
 
 def qcm_creer_depuis_dashboard(request):

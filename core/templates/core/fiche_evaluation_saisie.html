@@ -135,6 +135,8 @@
 
         {% if fiche_eval.validee %}
             <div class="status-badge">✅ Évaluation Validée</div>
+        {% elif lecture_seule %}
+            <div class="status-badge">Lecture seule</div>
         {% else %}
             <button type="button" onclick="soumettre('valider')" class="btn btn-validate">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg> Valider l'évaluation
@@ -200,38 +202,38 @@
                                     <td class="radio-cell bg-ne">
                                         <input type="radio" name="note_{{ ligne.id }}" value="NE"
                                             {% if ligne.note == 'NE' %}checked{% endif %}
-                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            {% if fiche_eval.validee or lecture_seule %}disabled{% endif %}
                                             onchange="recalc()">
                                     </td>
                                     <td class="radio-cell bg-0">
                                         <input type="radio" name="note_{{ ligne.id }}" value="0"
                                             {% if ligne.note == '0' %}checked{% endif %}
-                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            {% if fiche_eval.validee or lecture_seule %}disabled{% endif %}
                                             onchange="recalc()">
                                     </td>
                                     <td class="radio-cell bg-1">
                                         <input type="radio" name="note_{{ ligne.id }}" value="1"
                                             {% if ligne.note == '1' %}checked{% endif %}
-                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            {% if fiche_eval.validee or lecture_seule %}disabled{% endif %}
                                             onchange="recalc()">
                                     </td>
                                     <td class="radio-cell bg-2">
                                         <input type="radio" name="note_{{ ligne.id }}" value="2"
                                             {% if ligne.note == '2' %}checked{% endif %}
-                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            {% if fiche_eval.validee or lecture_seule %}disabled{% endif %}
                                             onchange="recalc()">
                                     </td>
                                     <td class="radio-cell bg-3">
                                         <input type="radio" name="note_{{ ligne.id }}" value="3"
                                             {% if ligne.note == '3' %}checked{% endif %}
-                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            {% if fiche_eval.validee or lecture_seule %}disabled{% endif %}
                                             onchange="recalc()">
                                     </td>
                                     <td class="bg-pct">
                                         <input type="text" class="input-weight"
                                             name="poids_{{ ligne.id }}"
                                             value="{{ ligne.ligne_contrat.poids|floatformat:2 }}"
-                                            {% if fiche_eval.validee %}disabled{% endif %}
+                                            {% if fiche_eval.validee or lecture_seule %}disabled{% endif %}
                                             oninput="recalc()">
                                     </td>
                                 </tr>
@@ -260,10 +262,10 @@
             <div class="comments-section">
                 <div class="comments-label">Compte rendu / Observations :</div>
                 <textarea class="comments-box" name="compte_rendu"
-                    {% if fiche_eval.validee %}disabled{% endif %}>{{ fiche_eval.compte_rendu }}</textarea>
+                    {% if fiche_eval.validee or lecture_seule %}disabled{% endif %}>{{ fiche_eval.compte_rendu }}</textarea>
             </div>
 
-            {% if not fiche_eval.validee %}
+            {% if not fiche_eval.validee and not lecture_seule %}
             <input type="hidden" name="action" id="actionField" value="sauvegarder">
             {% endif %}
         </form>

@@ -209,7 +209,7 @@
             </div>
         </div>
         <div class="header-actions">
-            {% if peut_activer %}
+            {% if peut_activer and not lecture_seule %}
             <form method="post" action="{% url 'core:qcm_toggle_actif' qcm.id %}" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit" class="btn {% if qcm.actif %}btn-outline{% else %}btn-green{% endif %}">
@@ -236,6 +236,11 @@
                 </svg>
                 Résultats classe
             </a>
+            <form method="post" action="{% url 'core:qcm_dupliquer' qcm.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-green" title="Copier ce QCM dans mon compte">Dupliquer</button>
+            </form>
+            {% if not lecture_seule %}
             <form method="post" action="{% url 'core:qcm_archiver' qcm.id %}" style="display:inline;"
                   onsubmit="return confirm('Archiver ce QCM\u00a0? Il sera désactivé et les élèves notifiés.')">
                 {% csrf_token %}
@@ -261,11 +266,18 @@
                     Supprimer
                 </button>
             </form>
+            {% endif %}
         </div>
     </div>
 
     <!-- Alertes -->
-    {% if not peut_activer %}
+    {% if lecture_seule %}
+    <div class="alert alert-info">
+        Lecture seule : ce QCM a été créé par
+        <strong>{{ qcm.createur.get_full_name|default:qcm.createur.username }}</strong>.
+        Cliquez sur « Dupliquer » pour en obtenir une copie modifiable et l'attribuer à vos classes.
+    </div>
+    {% elif not peut_activer %}
     <div class="alert alert-warning">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -293,6 +305,7 @@
     {% endfor %}
     {% endif %}
 
+    {% if not lecture_seule %}
     <!-- Panneau paramètres -->
     <div class="params-panel">
         <h3 onclick="toggleParams()">
@@ -342,6 +355,7 @@
             </form>
         </div>
     </div>
+    {% endif %}
 
     <!-- Liste des questions -->
     <h2 style="font-size:1.1rem;color:#2c3e50;margin-bottom:1rem;font-weight:700;">
@@ -386,6 +400,7 @@
                 </div>
                 {% endif %}
             </div>
+            {% if not lecture_seule %}
             <div class="question-footer">
                 <!-- Bouton Régénérer IA -->
                 <form method="post" action="{% url 'core:question_regenerer' q.id %}"
@@ -432,6 +447,7 @@
                     </button>
                 </form>
             </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
@@ -448,6 +464,7 @@
     </div>
     {% endif %}
 
+    {% if not lecture_seule %}
     <!-- Ajouter une question manuellement -->
     <div class="add-question-card">
         <h3>
@@ -516,6 +533,7 @@
             </div>
         </form>
     </div>
+    {% endif %}
 
 </div>
 

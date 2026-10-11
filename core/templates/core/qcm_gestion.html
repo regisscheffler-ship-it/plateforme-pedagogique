@@ -443,7 +443,7 @@
                     <line x1="3" y1="12" x2="3.01" y2="12"></line>
                     <line x1="3" y1="18" x2="3.01" y2="18"></line>
                 </svg>
-                Questionnaires créés
+                Questionnaires disponibles
             </h2>
 
             {% if qcms %}
@@ -461,6 +461,7 @@
                     <div class="qcm-card-body">
                         <h3>{{ qcm.titre }}</h3>
                         <div class="qcm-meta">
+                            <span class="qcm-meta-item">Par {{ qcm.createur.get_full_name|default:qcm.createur.username }}</span>
                             <span class="qcm-meta-item">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                      stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;">
@@ -519,7 +520,7 @@
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
-                            Éditer
+                            {% if qcm.createur_id == request.user.id or request.user.is_staff %}Éditer{% else %}Voir{% endif %}
                         </a>
                         <a href="{% url 'core:qcm_resultats_prof' pk=qcm.id %}" class="btn-resultats">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -531,6 +532,11 @@
                             </svg>
                             Résultats
                         </a>
+                        <form method="post" action="{% url 'core:qcm_dupliquer' pk=qcm.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-resultats" title="Copier ce QCM dans mon compte">Dupliquer</button>
+                        </form>
+                        {% if qcm.createur_id == request.user.id or request.user.is_staff %}
                         <form method="post" action="{% url 'core:qcm_delete' pk=qcm.id %}"
                               onsubmit="return confirm('Supprimer le QCM « {{ qcm.titre }} » ?')">
                             {% csrf_token %}
@@ -544,6 +550,7 @@
                                 Supprimer
                             </button>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}

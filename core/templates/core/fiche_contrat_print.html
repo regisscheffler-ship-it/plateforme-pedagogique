@@ -108,6 +108,8 @@
     </button>
     {% if fiche_contrat.contrat_valide %}
         <div class="status-badge">✅ Contrat Validé</div>
+    {% elif lecture_seule %}
+        <div class="status-badge">Lecture seule</div>
     {% else %}
         <form method="post" action="{% url 'core:valider_contrat' fiche_contrat.id %}" style="display:inline;">
             {% csrf_token %}
