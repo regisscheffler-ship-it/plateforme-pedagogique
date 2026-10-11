@@ -93,7 +93,57 @@ def extraire_texte_pdf(fichier):
 # GÉNÉRATION QCM DEPUIS TEXTE — API GEMINI
 # =====================================================
 
-def generer_qcm_depuis_texte(texte, nb_questions=10):
+CONSIGNE_LONGUEUR = (
+    "Les 4 choix doivent avoir une longueur et un niveau de détail quasi identiques : "
+    "la bonne réponse ne doit jamais être la plus longue ni la plus détaillée. "
+)
+
+
+def _bonne_reponse_trop_longue(q):
+    choix = {lettre: q.get(f'choix_{lettre.lower()}') or '' for lettre in 'ABCD'}
+    bonne = len(choix.get(q['bonne_reponse'], ''))
+    autres = [len(t) for lettre, t in choix.items() if lettre != q['bonne_reponse'] and t]
+    return bool(autres) and bonne > 1.25 * max(autres)
+
+
+def _equilibrer_longueurs(questions):
+    """Réécrit les fausses réponses des questions où la bonne réponse est nettement la plus longue."""
+    a_corriger = [(i, q) for i, q in enumerate(questions) if _bonne_reponse_trop_longue(q)]
+    if not a_corriger:
+        return
+    try:
+        lignes = '\n'.join(
+            f"{i}. Question: {q['enonce']} | Bonne réponse ({q['bonne_reponse']}): "
+            f"{q.get('choix_' + q['bonne_reponse'].lower(), '')} | "
+            f"A: {q.get('choix_a', '')} | B: {q.get('choix_b', '')} | "
+            f"C: {q.get('choix_c', '')} | D: {q.get('choix_d', '')}"
+            for i, q in a_corriger
+        )
+        prompt = (
+            "Pour chaque question, réécris UNIQUEMENT les fausses réponses pour qu'elles aient "
+            "une longueur et un niveau de détail proches de la bonne réponse, tout en restant fausses et plausibles. "
+            "Ne modifie pas la bonne réponse. Réponds uniquement en JSON valide : "
+            '{"questions":[{"index":0,"choix_a":"...","choix_b":"...","choix_c":"...","choix_d":"..."}]}\n'
+            + lignes
+        )
+        response = _appeler_gemini('gemini-2.5-flash-lite', prompt)
+        corrections = json.loads(_reparer_json(response.text or '')).get('questions', [])
+    except Exception as e:
+        print(f"[Gemini] Équilibrage des longueurs impossible : {e}")
+        return
+
+    for correction in corrections:
+        try:
+            q = questions[int(correction['index'])]
+        except (KeyError, TypeError, ValueError, IndexError):
+            continue
+        for lettre in 'ABCD':
+            champ = f'choix_{lettre.lower()}'
+            if lettre != q['bonne_reponse'] and q.get(champ) and correction.get(champ):
+                q[champ] = correction[champ]
+
+
+def generer_qcm_depuis_texte(texte, nb_questions=10, equilibrer_longueur=False):
     try:
         if not texte or not texte.strip():
             return None
@@ -111,6 +161,7 @@ def generer_qcm_depuis_texte(texte, nb_questions=10):
             prompt = (
                 "Tu es un professeur expert en construction et bâtiment. "
                 f"Génère exactement {taille_lot} questions QCM différentes en français à partir de ce texte. "
+                + (CONSIGNE_LONGUEUR if equilibrer_longueur else "") +
                 "Réponds UNIQUEMENT avec du JSON valide, sans markdown ni explication. "
                 'Format : {"questions":[{"enonce":"...","choix_a":"...",'
                 '"choix_b":"...","choix_c":"...","choix_d":"...",'
@@ -138,6 +189,9 @@ def generer_qcm_depuis_texte(texte, nb_questions=10):
                 if len(questions_valides) == nb_questions:
                     break
 
+        if equilibrer_longueur:
+            _equilibrer_longueurs(questions_valides)
+
         print(f"[Gemini] {len(questions_valides)}/{nb_questions} questions demandées générées.")
         return questions_valides[:nb_questions] or None
     except Exception as e:
@@ -157,7 +211,7 @@ def _nettoyer_texte(texte):
     return texte.strip()
 
 
-def generer_distracteurs_depuis_cartes(cartes):
+def generer_distracteurs_depuis_cartes(cartes, equilibrer_longueur=False):
     if not cartes:
         return None
     try:
@@ -172,6 +226,7 @@ def generer_distracteurs_depuis_cartes(cartes):
                 "Tu es un professeur expert en construction et bâtiment. "
                 f"Pour chacune de ces {len(lot)} cartes, génère 3 réponses fausses mais plausibles en français. "
                 "Conserve exactement chaque énoncé et chaque réponse correcte en choix_a. "
+                + ("Les fausses réponses doivent avoir une longueur et un niveau de détail proches de la bonne réponse. " if equilibrer_longueur else "") +
                 "bonne_reponse doit toujours être A. Réponds uniquement en JSON valide sans markdown.\n"
                 '{"questions":[{"enonce":"...","choix_a":"bonne",'
                 '"choix_b":"faux1","choix_c":"faux2","choix_d":"faux3",'
@@ -193,6 +248,9 @@ def generer_distracteurs_depuis_cartes(cartes):
                 q.setdefault('choix_d', '')
                 q['bonne_reponse'] = 'A'
                 valides.append(q)
+
+        if equilibrer_longueur:
+            _equilibrer_longueurs(valides)
 
         print(f"[Gemini-Cartes] {len(valides)}/{len(cartes)} questions valides.")
         return valides or None

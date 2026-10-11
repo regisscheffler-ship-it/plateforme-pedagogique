@@ -467,7 +467,9 @@ class TestQCMDeadlinesAndImages(TestCase):
             })
 
         self.assertEqual(response.status_code, 302)
-        generer_qcm.assert_called_once_with('Texte de cours pour générer les questions.', 50)
+        generer_qcm.assert_called_once_with(
+            'Texte de cours pour générer les questions.', 50, equilibrer_longueur=False,
+        )
 
     def test_creation_rapide_accepte_50_questions_et_date_locale(self):
         self.client.force_login(self.prof_user)
@@ -487,7 +489,52 @@ class TestQCMDeadlinesAndImages(TestCase):
         qcm = QCM.objects.get(titre='QCM rapide 50')
         self.assertEqual(response.status_code, 302)
         self.assertEqual(qcm.date_limite, date_locale)
-        generer_qcm.assert_called_once_with('Texte source du formulaire rapide.', 50)
+        generer_qcm.assert_called_once_with(
+            'Texte source du formulaire rapide.', 50, equilibrer_longueur=False,
+        )
+
+    def test_option_equilibrer_longueur_est_transmise_au_generateur(self):
+        self.client.force_login(self.prof_user)
+        date_locale = (timezone.localtime() + timedelta(days=2)).replace(second=0, microsecond=0)
+
+        with patch('core.services.generer_qcm_depuis_texte', return_value=None) as generer_qcm:
+            self.client.post(reverse('core:qcm_create', args=[self.theme.pk]), {
+                'titre': 'QCM longueur',
+                'classes': [self.classe.pk],
+                'date_limite': date_locale.strftime('%Y-%m-%dT%H:%M'),
+                'nb_questions': '10',
+                'equilibrer_longueur': 'on',
+                'source_type': 'texte',
+                'texte_source': 'Texte de cours.',
+            })
+
+        generer_qcm.assert_called_once_with('Texte de cours.', 10, equilibrer_longueur=True)
+
+    def test_equilibrage_reecrit_les_fausses_reponses_quand_la_bonne_est_la_plus_longue(self):
+        import json
+        from types import SimpleNamespace
+        from core.services import generer_qcm_depuis_texte
+
+        question = {
+            'enonce': 'Quel liant ?', 'choix_a': 'Le ciment Portland utilisé pour le béton armé',
+            'choix_b': 'Sable', 'choix_c': 'Eau', 'choix_d': 'Bois', 'bonne_reponse': 'A',
+        }
+        correction = {'questions': [{
+            'index': 0, 'choix_b': 'Le sable fin utilisé pour les enduits',
+            'choix_c': "L'eau de gâchage utilisée pour le mortier",
+            'choix_d': 'Le bois de coffrage utilisé pour les planchers',
+        }]}
+        reponses = [
+            SimpleNamespace(text=json.dumps({'questions': [question]})),
+            SimpleNamespace(text=json.dumps(correction)),
+        ]
+
+        with patch('core.services._appeler_gemini', side_effect=reponses) as appeler:
+            questions = generer_qcm_depuis_texte('Cours', 5, equilibrer_longueur=True)
+
+        self.assertEqual(appeler.call_count, 2)
+        self.assertEqual(questions[0]['choix_a'], 'Le ciment Portland utilisé pour le béton armé')
+        self.assertEqual(questions[0]['choix_b'], 'Le sable fin utilisé pour les enduits')
 
     def test_service_gemini_genere_par_lots_et_garde_les_lots_reussis(self):
         import json

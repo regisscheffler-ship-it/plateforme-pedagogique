@@ -5178,6 +5178,7 @@ def qcm_create(request, theme_id):
         if nb_q not in (5, 10, 15, 20, 30, 40, 50):
             nb_q = 10
         melange      = request.POST.get('melange_questions') == 'on'
+        equilibrer   = request.POST.get('equilibrer_longueur') == 'on'
         source_type  = request.POST.get('source_type', 'texte')
         texte_src    = request.POST.get('texte_source', '').strip()
         pdf_src      = request.FILES.get('pdf_source')
@@ -5205,7 +5206,7 @@ def qcm_create(request, theme_id):
                 cartes = list(fiche.cartes.all()[:nb_q])
                 if cartes:
                     from .services import generer_distracteurs_depuis_cartes
-                    questions = generer_distracteurs_depuis_cartes(cartes)
+                    questions = generer_distracteurs_depuis_cartes(cartes, equilibrer_longueur=equilibrer)
                     if not questions:
                         ia_erreur = True
                 else:
@@ -5232,7 +5233,7 @@ def qcm_create(request, theme_id):
                 texte_final = texte_src
             if texte_final:
                 from .services import generer_qcm_depuis_texte
-                questions = generer_qcm_depuis_texte(texte_final, nb_q)
+                questions = generer_qcm_depuis_texte(texte_final, nb_q, equilibrer_longueur=equilibrer)
                 if not questions:
                     ia_erreur = True
 
@@ -5669,6 +5670,7 @@ def qcm_creer_depuis_dashboard(request):
     if nb_q not in (5, 10, 15, 20, 30, 40, 50):
         nb_q = 10
     melange     = request.POST.get('melange_questions') == 'on'
+    equilibrer  = request.POST.get('equilibrer_longueur') == 'on'
     source_type = request.POST.get('source_type', 'texte')
     texte_src   = request.POST.get('texte_source', '').strip()
     pdf_src     = request.FILES.get('pdf_source')
@@ -5700,7 +5702,7 @@ def qcm_creer_depuis_dashboard(request):
             cartes = list(fiche.cartes.all()[:nb_q])
             if cartes:
                 from .services import generer_distracteurs_depuis_cartes
-                questions = generer_distracteurs_depuis_cartes(cartes)
+                questions = generer_distracteurs_depuis_cartes(cartes, equilibrer_longueur=equilibrer)
                 if not questions:
                     ia_erreur = True
             else:
@@ -5729,7 +5731,7 @@ def qcm_creer_depuis_dashboard(request):
             texte_final = texte_src
         if texte_final:
             from .services import generer_qcm_depuis_texte
-            questions = generer_qcm_depuis_texte(texte_final, nb_q)
+            questions = generer_qcm_depuis_texte(texte_final, nb_q, equilibrer_longueur=equilibrer)
             if not questions:
                 print("[QCM-DEBUG] Gemini n'a retourne aucune question valide")
                 ia_erreur = True
