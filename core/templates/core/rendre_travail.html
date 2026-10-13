@@ -60,11 +60,13 @@
     textarea.form-control { resize: vertical; min-height: 100px; font-family: inherit; }
 
     .file-zone {
+        display: block; width: 100%; box-sizing: border-box;
         border: 2px dashed #20c997; border-radius: 12px;
         padding: 2rem; text-align: center; background: #f0fdf4; cursor: pointer;
         transition: all 0.3s;
     }
-    .file-zone:hover { background: #dcfce7; }
+    .file-zone:hover, .file-zone.dragover { background: #dcfce7; border-color: #0f9d75; }
+    .file-zone svg { display: block; margin: 0 auto 0.5rem; }
     .file-zone svg { width: 40px; height: 40px; stroke: #20c997; stroke-width: 1.5; fill: none; margin-bottom: 0.5rem; }
     .file-zone p { color: #065f46; font-weight: 600; margin: 0 0 0.3rem; }
     .file-zone small { color: #6c757d; }
@@ -119,7 +121,7 @@
             </span>
         </div>
         {% if travail.description %}
-        <p class="travail-desc">{{ travail.description }}</p>
+        <p class="travail-desc">{{ travail.description|urlize|linebreaksbr }}</p>
         {% endif %}
         {% if travail.fichier_consigne %}
         <a href="{{ travail.fichier_consigne.url }}" target="_blank" class="btn-dl-consigne">
@@ -170,7 +172,7 @@
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
-                    <p id="file-text">Cliquez pour sélectionner votre fichier</p>
+                    <p id="file-text">Glissez-déposez votre fichier ici ou cliquez pour le sélectionner</p>
                     <small>PDF, Word, Images... (max 10 Mo)</small>
                     <input type="file" name="fichier_rendu" id="fichier-input" required>
                 </label>
@@ -192,9 +194,26 @@
 </div>
 
 <script>
-document.getElementById('fichier-input')?.addEventListener('change', function() {
-    const name = this.files[0]?.name || 'Aucun fichier';
-    document.getElementById('file-text').textContent = name;
-});
+(function() {
+    const input = document.getElementById('fichier-input');
+    const zone = document.getElementById('file-label');
+    if (!input || !zone) return;
+    const text = document.getElementById('file-text');
+    input.addEventListener('change', function() {
+        text.textContent = this.files[0]?.name || 'Aucun fichier';
+    });
+    ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => {
+        e.preventDefault(); zone.classList.add('dragover');
+    }));
+    ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => {
+        e.preventDefault(); zone.classList.remove('dragover');
+    }));
+    zone.addEventListener('drop', e => {
+        if (e.dataTransfer.files.length) {
+            input.files = e.dataTransfer.files;
+            input.dispatchEvent(new Event('change'));
+        }
+    });
+})();
 </script>
 {% endblock %}

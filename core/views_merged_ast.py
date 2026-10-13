@@ -1497,17 +1497,32 @@ def rendre_travail(request, pk):
     if request.method == 'POST' and not deja_rendu:
         fichier_rendu = request.FILES.get('fichier_rendu')
         if fichier_rendu:
-            RenduEleve.objects.create(
-                travail=travail, eleve=profil,
-                fichier_rendu=fichier_rendu,
-                commentaire=request.POST.get('commentaire', ''), rendu=True
-            )
-            Notification.objects.create(
-                destinataire=travail.createur, type_notification='rendu',
-                titre=f'📥 Travail rendu : {travail.titre}',
-                message=f'{request.user.get_full_name()} a rendu le travail "{travail.titre}".',
-                lien=f'/travaux/detail/{travail.id}/'
-            )
+            if fichier_rendu.size > 10 * 1024 * 1024:
+                messages.error(request, '❌ Fichier trop volumineux (10 Mo maximum).')
+                return render(request, 'core/rendre_travail.html', {
+                    'travail': travail, 'deja_rendu': deja_rendu,
+                })
+            try:
+                RenduEleve.objects.create(
+                    travail=travail, eleve=profil,
+                    fichier_rendu=fichier_rendu,
+                    commentaire=request.POST.get('commentaire', ''), rendu=True
+                )
+            except Exception:
+                logging.getLogger(__name__).exception('Echec du depot du rendu')
+                messages.error(request, "❌ L'envoi du fichier a échoué. Réessayez (10 Mo max) ou contactez votre professeur.")
+                return render(request, 'core/rendre_travail.html', {
+                    'travail': travail, 'deja_rendu': deja_rendu,
+                })
+            try:
+                Notification.objects.create(
+                    destinataire=travail.createur, type_notification='rendu',
+                    titre=f'📥 Travail rendu : {travail.titre}',
+                    message=f'{request.user.get_full_name()} a rendu le travail "{travail.titre}".',
+                    lien=reverse('core:travail_detail', args=[travail.id])
+                )
+            except Exception:
+                logging.getLogger(__name__).exception('Echec notification rendu')
             messages.success(request, '✅ Travail envoyé à votre professeur !')
             return redirect('core:mes_travaux_eleve')
         else:
